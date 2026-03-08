@@ -530,17 +530,20 @@ export function DesignSystemHub() {
             <>
               {/* Preview / Code Tabs */}
               <div className="glass-card overflow-hidden">
-                <div className="flex border-b border-border">
+                <div className="flex flex-wrap border-b border-border">
                   {([
                     { key: "preview", label: "Preview", icon: Eye },
+                    { key: "react", label: "React", icon: FileCode },
+                    { key: "vue", label: "Vue", icon: FileCode },
+                    { key: "html", label: "HTML/Tailwind", icon: Code2 },
                     { key: "specs", label: "Design Specs", icon: FileCode },
-                    { key: "flutter", label: "Flutter Widget (Dart)", icon: Code2 },
-                    { key: "theme", label: "ThemeData Config", icon: Palette },
+                    { key: "flutter", label: "Flutter (Dart)", icon: Code2 },
+                    { key: "theme", label: "ThemeData", icon: Palette },
                   ] as const).map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() => setCodeTab(tab.key)}
-                      className={`flex items-center gap-1.5 px-4 py-2.5 text-[10px] font-medium transition-colors border-b-2 ${
+                      className={`flex items-center gap-1.5 px-3 py-2.5 text-[10px] font-medium transition-colors border-b-2 ${
                         codeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -549,14 +552,16 @@ export function DesignSystemHub() {
                     </button>
                   ))}
                   {codeTab !== "preview" && (
-                    <div className="ml-auto mr-3 flex items-center gap-1.5">
+                    <div className="ml-auto mr-3 flex items-center gap-1.5 py-2">
                       <button onClick={copyCode} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
                         {copied ? <Check className="w-3 h-3 text-status-develop" /> : <Copy className="w-3 h-3" />}
-                        {copied ? "Copiado!" : "Copiar Widget"}
+                        {copied ? "Copiado!" : "Copiar"}
                       </button>
-                      <button onClick={exportPubspec} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors">
-                        <FileCode className="w-3 h-3" /> Exportar pubspec
-                      </button>
+                      {(codeTab === "flutter" || codeTab === "theme") && (
+                        <button onClick={exportPubspec} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors">
+                          <FileCode className="w-3 h-3" /> pubspec
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
