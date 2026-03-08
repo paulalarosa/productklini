@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchProject, fetchTasks, fetchTeamMembers, fetchPersonas, fetchUxMetrics } from "@/lib/api";
+import { fetchProject, fetchTasks, fetchTeamMembers, fetchPersonas, fetchUxMetrics, fetchDocuments, fetchAllDocuments } from "@/lib/api";
 
 export function useProject() {
   return useQuery({ queryKey: ["project"], queryFn: fetchProject });
@@ -11,7 +11,6 @@ export function useTasks() {
   const queryClient = useQueryClient();
   const query = useQuery({ queryKey: ["tasks"], queryFn: fetchTasks });
 
-  // Real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel("tasks-realtime")
@@ -43,6 +42,28 @@ export function useUxMetrics() {
       .channel("ux-metrics-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "ux_metrics" }, () => {
         queryClient.invalidateQueries({ queryKey: ["ux-metrics"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+  return query;
+}
+
+export function useDocuments(docType?: string) {
+  const queryClient = useQueryClient();
+  const queryKey = docType ? ["documents", docType] : ["documents"];
+  const query = useQuery({
+    queryKey,
+    queryFn: () => docType ? fetchDocuments(docType) : fetchAllDocuments(),
+  });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("docs-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "project_documents" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["documents"] });
       })
       .subscribe();
 
