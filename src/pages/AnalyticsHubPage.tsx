@@ -502,6 +502,14 @@ export function AnalyticsHubPage() {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Analisadas por IA</h3>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleReanalyzeAll}
+              disabled={analyzing || !reviews || reviews.length === 0}
+              className="flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg bg-status-deliver/10 text-status-deliver border border-status-deliver/20 hover:bg-status-deliver/20 transition-colors disabled:opacity-50"
+            >
+              {analyzing ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />}
+              {analyzing ? "Analisando..." : "Re-analisar com IA"}
+            </button>
+            <button
               onClick={() => setShowImport(!showImport)}
               className="flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
             >
