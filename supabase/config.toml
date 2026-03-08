@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.design-studio]
 verify_jwt = false
+
+[functions.share-view]
+verify_jwt = false
+
+[functions.generate-docs]
+verify_jwt = false
