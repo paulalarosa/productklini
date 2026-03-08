@@ -112,6 +112,170 @@ const insightIcons: Record<string, React.ElementType> = {
   usage: BarChart3,
 };
 
+// ---- Flutter Code Generators ----
+function generateFlutterWidget(comp: DSComponent): string {
+  const className = comp.name.replace(/\s+/g, '');
+  return `import 'package:flutter/material.dart';
+
+class ${className} extends StatelessWidget {
+  final String? label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const ${className}({
+    super.key,
+    this.label,
+    this.onPressed,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 14,
+            ),
+            child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Text(
+                  label ?? '${comp.name}',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+          ),
+        ),
+      ),
+    );
+  }
+}`;
+}
+
+function generateThemeData(comp: DSComponent): string {
+  return `// ThemeData config for ${comp.name}
+// Cole no seu arquivo theme.dart
+
+import 'package:flutter/material.dart';
+
+final appTheme = ThemeData(
+  useMaterial3: true,
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color(0xFF6366F1),  // --primary
+    brightness: Brightness.dark,
+    surface: const Color(0xFF131620),     // --background
+    onSurface: const Color(0xFFE2E8F0),  // --foreground
+    primary: const Color(0xFF818CF8),     // --primary
+    onPrimary: const Color(0xFFFFFFFF),
+    secondary: const Color(0xFF1E2130),   // --secondary
+    error: const Color(0xFFEF4444),       // --destructive
+  ),
+  textTheme: const TextTheme(
+    headlineLarge: TextStyle(
+      fontSize: 28,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.5,
+    ),
+    titleMedium: TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+    ),
+    bodyMedium: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      height: 1.5,
+    ),
+    labelLarge: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+    ),
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+  ),
+  cardTheme: CardThemeData(
+    color: const Color(0xFF1E2130),
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+      side: BorderSide(color: Colors.white.withOpacity(0.06)),
+    ),
+  ),
+);`;
+}
+
+function generateDesignSpecs(comp: DSComponent): string {
+  return `// Design Specs — ${comp.name}
+// ─────────────────────────────────────
+
+📐 Dimensões:
+   Padding Horizontal: 24dp
+   Padding Vertical:   14dp
+   Border Radius:      12dp
+   Min Height:         48dp
+
+🎨 Cores:
+   Background:  Linear Gradient (Primary → Primary/80%)
+   Text:        OnPrimary (#FFFFFF)
+   Shadow:      Primary @ 30% opacity, blur 12dp, offset (0, 4)
+
+📝 Tipografia:
+   Font:        labelLarge (14sp, w600)
+   Tracking:    0.1
+
+🔄 Estados:
+   Default:     Gradient + Shadow
+   Pressed:     Ripple InkWell (Material)
+   Loading:     CircularProgressIndicator (20x20, stroke 2)
+   Disabled:    opacity 0.5, onTap null
+
+📱 Responsividade:
+   Mobile:      Full width (stretch)
+   Tablet+:     Wrap content
+
+♿ Acessibilidade:
+   Semantics:   Button role
+   Min target:  48x48dp
+   Contrast:    Verificar ratio ≥ 4.5:1`;
+}
+
 // ---- Main Component ----
 export function DesignSystemHub() {
   const [activeItem, setActiveItem] = useState("colors");
