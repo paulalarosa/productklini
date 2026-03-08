@@ -430,6 +430,13 @@ export function AnalyticsHubPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Painel de Insights IA</span>
                 <span className="text-[10px] text-muted-foreground">({aiInsightsSummary.total} reviews analisadas)</span>
+                <button
+                  onClick={handleExportPDF}
+                  className="ml-auto flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                >
+                  <FileText size={10} />
+                  Exportar PDF
+                </button>
               </div>
 
               {/* Tag distribution */}
