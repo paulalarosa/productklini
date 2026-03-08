@@ -169,12 +169,19 @@ export function DesignSystemHub() {
 
   const copyCode = () => {
     if (!selectedComponent) return;
-    const code = codeTab === "react" ? selectedComponent.code_react : codeTab === "vue" ? selectedComponent.code_vue : selectedComponent.code_html;
+    const code = codeTab === "flutter" ? generateFlutterWidget(selectedComponent) : codeTab === "theme" ? generateThemeData(selectedComponent) : codeTab === "specs" ? generateDesignSpecs(selectedComponent) : "";
     if (!code) { toast.error("Sem código disponível"); return; }
     navigator.clipboard.writeText(code);
     setCopied(true);
     toast.success("Código copiado!");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const exportPubspec = () => {
+    if (!selectedComponent) return;
+    const yaml = `# Assets for ${selectedComponent.name}\nflutter:\n  assets:\n    - assets/icons/${selectedComponent.name.toLowerCase().replace(/\s+/g, '_')}.svg\n  fonts:\n    - family: AppIcons\n      fonts:\n        - asset: assets/fonts/app_icons.ttf`;
+    navigator.clipboard.writeText(yaml);
+    toast.success("pubspec.yaml copiado!");
   };
 
   const handleGenerate = async () => {
