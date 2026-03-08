@@ -116,9 +116,49 @@ export function AnalyticsHubPage() {
     ];
   }, [reviews]);
 
-  const filteredReviews = platform === "all"
-    ? (reviews ?? [])
-    : (reviews ?? []).filter((r) => r.platform === platform);
+  const filteredReviews = useMemo(() => {
+    let result = reviews ?? [];
+    if (platform !== "all") result = result.filter(r => r.platform === platform);
+    if (tagFilter !== "all") result = result.filter(r => r.ai_tag_type === tagFilter);
+    return result;
+  }, [reviews, platform, tagFilter]);
+
+  // Compute tag counts for filter chips
+  const tagCounts = useMemo(() => {
+    const base = platform === "all" ? (reviews ?? []) : (reviews ?? []).filter(r => r.platform === platform);
+    const counts: Record<string, number> = {};
+    base.forEach(r => { counts[r.ai_tag_type] = (counts[r.ai_tag_type] || 0) + 1; });
+    return counts;
+  }, [reviews, platform]);
+
+  // AI Insights summary panel data
+  const aiInsightsSummary = useMemo(() => {
+    if (!reviews || reviews.length === 0) return null;
+    const total = reviews.length;
+    const grouped: Record<string, DbAppReview[]> = {};
+    reviews.forEach(r => {
+      if (!grouped[r.ai_tag_type]) grouped[r.ai_tag_type] = [];
+      grouped[r.ai_tag_type].push(r);
+    });
+
+    const sorted = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
+    const topIssues = sorted.filter(([type]) => type !== "praise").slice(0, 3);
+    const praiseCount = grouped["praise"]?.length || 0;
+    const bugCount = grouped["bug"]?.length || 0;
+    const crashCount = grouped["crash"]?.length || 0;
+    const perfCount = grouped["performance"]?.length || 0;
+    const negativeCount = reviews.filter(r => r.stars <= 2).length;
+    const positiveCount = reviews.filter(r => r.stars >= 4).length;
+
+    const recommendations: string[] = [];
+    if (bugCount + crashCount > 0) recommendations.push(`Priorizar correção de ${bugCount + crashCount} problemas técnicos (bugs + crashes) reportados pelos usuários.`);
+    if (perfCount > 0) recommendations.push(`Investigar ${perfCount} reclamações de performance — possível impacto na retenção.`);
+    if (negativeCount > total * 0.3) recommendations.push("Mais de 30% das reviews são negativas. Considere um sprint dedicado à qualidade.");
+    if (positiveCount > total * 0.6) recommendations.push("Sentimento majoritariamente positivo! Aproveite para solicitar reviews e melhorar o ranking na loja.");
+    if (recommendations.length === 0) recommendations.push("Métricas equilibradas. Continue monitorando tendências semanalmente.");
+
+    return { total, sorted, topIssues, praiseCount, negativeCount, positiveCount, recommendations };
+  }, [reviews]);
 
   const handleCreateCard = (review: DbAppReview, type: "ux" | "dev") => {
     toast.success(
