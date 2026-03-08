@@ -418,8 +418,9 @@ export function DesignSystemHub() {
       title: `Componentes (${components.length})`,
       items: componentNavItems.length > 0 ? componentNavItems : [{ label: "Nenhum ainda", icon: Box, id: "empty-comp" }],
     },
-    STATIC_NAV[1], // patterns
-    STATIC_NAV[2], // ai-analysis
+    STATIC_NAV[1], // flutter-core
+    STATIC_NAV[2], // patterns
+    STATIC_NAV[3], // ai-analysis
   ];
 
   const isComponentView = activeItem.startsWith("comp-");
