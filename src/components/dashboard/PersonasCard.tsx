@@ -1,15 +1,17 @@
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
-import { personas } from "@/data/mockData";
+import { usePersonas } from "@/hooks/useProjectData";
 
 export function PersonasCard() {
+  const { data: personas } = usePersonas();
+
   return (
-    <div className="glass-card p-5">
+    <div className="glass-card p-4 md:p-5">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
         Personas
       </h3>
       <div className="space-y-3">
-        {personas.map((p, i) => (
+        {(personas ?? []).map((p, i) => (
           <motion.div
             key={p.id}
             className="p-3 rounded-lg bg-secondary/50 hover:bg-accent/50 transition-colors cursor-pointer"
@@ -27,7 +29,7 @@ export function PersonasCard() {
               </div>
             </div>
             <div className="flex flex-wrap gap-1">
-              {p.goals.map(g => (
+              {p.goals.map((g) => (
                 <span key={g} className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-develop/10 text-status-develop">
                   {g}
                 </span>

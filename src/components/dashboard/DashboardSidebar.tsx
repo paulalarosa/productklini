@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Search,
@@ -15,12 +16,14 @@ import {
   GitBranch,
   Settings,
   ChevronDown,
+  Menu,
+  X,
 } from "lucide-react";
 
 interface NavItem {
   label: string;
   icon: React.ElementType;
-  active?: boolean;
+  path: string;
 }
 
 interface NavGroup {
@@ -31,54 +34,59 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     title: "Geral",
-    items: [
-      { label: "Visão Geral", icon: LayoutDashboard, active: true },
-    ],
+    items: [{ label: "Visão Geral", icon: LayoutDashboard, path: "/" }],
   },
   {
     title: "UX Research",
     items: [
-      { label: "Pesquisas", icon: Search },
-      { label: "Personas", icon: Users },
-      { label: "Fluxos de Jornada", icon: Route },
+      { label: "Pesquisas", icon: Search, path: "/ux/pesquisas" },
+      { label: "Personas", icon: Users, path: "/ux/personas" },
+      { label: "Fluxos de Jornada", icon: Route, path: "/ux/fluxos" },
     ],
   },
   {
     title: "UI Design",
     items: [
-      { label: "Design System", icon: Palette },
-      { label: "Telas", icon: Layers },
-      { label: "Handoff", icon: ArrowRightLeft },
+      { label: "Design System", icon: Palette, path: "/ui/design-system" },
+      { label: "Telas", icon: Layers, path: "/ui/telas" },
+      { label: "Handoff", icon: ArrowRightLeft, path: "/ui/handoff" },
     ],
   },
   {
     title: "Desenvolvimento",
     items: [
-      { label: "Kanban", icon: Kanban },
-      { label: "Sprints", icon: Zap },
-      { label: "QA", icon: ShieldCheck },
+      { label: "Kanban", icon: Kanban, path: "/dev/kanban" },
+      { label: "Sprints", icon: Zap, path: "/dev/sprints" },
+      { label: "QA", icon: ShieldCheck, path: "/dev/qa" },
     ],
   },
   {
     title: "Integrações",
     items: [
-      { label: "Figma", icon: Figma },
-      { label: "GitHub", icon: GitBranch },
-      { label: "Configurações", icon: Settings },
+      { label: "Figma", icon: Figma, path: "/integracoes/figma" },
+      { label: "GitHub", icon: GitBranch, path: "/integracoes/github" },
+      { label: "Configurações", icon: Settings, path: "/integracoes/config" },
     ],
   },
 ];
 
-export function DashboardSidebar() {
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const toggle = (title: string) =>
-    setCollapsed(prev => ({ ...prev, [title]: !prev[title] }));
+    setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));
+
+  const handleNav = (path: string) => {
+    navigate(path);
+    onNavigate?.();
+  };
 
   return (
-    <aside className="w-[220px] h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0">
+    <>
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-sidebar-border">
+      <div className="px-4 py-4 border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center">
             <Layers className="w-4 h-4 text-primary-foreground" />
@@ -101,29 +109,80 @@ export function DashboardSidebar() {
               />
             </button>
             {!collapsed[group.title] && (
-              <motion.div
-                className="space-y-0.5"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-              >
-                {group.items.map(item => (
-                  <button
-                    key={item.label}
-                    className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
-                      item.active
-                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                    }`}
-                  >
-                    <item.icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </motion.div>
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <button
+                      key={item.label}
+                      onClick={() => handleNav(item.path)}
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
+                      <item.icon className="w-3.5 h-3.5 shrink-0" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             )}
           </div>
         ))}
       </nav>
-    </aside>
+    </>
+  );
+}
+
+export function DashboardSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile trigger */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed top-3 left-3 z-50 p-2 rounded-lg bg-card border border-border md:hidden"
+      >
+        <Menu className="w-5 h-5 text-foreground" />
+      </button>
+
+      {/* Mobile overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.aside
+              className="fixed inset-y-0 left-0 z-50 w-[260px] bg-sidebar border-r border-sidebar-border flex flex-col md:hidden"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.25 }}
+            >
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="absolute top-3 right-3 p-1 rounded-md hover:bg-accent"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-[220px] h-screen bg-sidebar border-r border-sidebar-border flex-col shrink-0">
+        <SidebarContent />
+      </aside>
+    </>
   );
 }

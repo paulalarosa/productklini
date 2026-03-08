@@ -1,23 +1,34 @@
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { uxMetrics } from "@/data/mockData";
+import { useUxMetrics } from "@/hooks/useProjectData";
 
 export function UXMetricsCard() {
-  const metrics = [
-    { ...uxMetrics.sus, format: (v: number) => v.toString(), inverted: false },
-    { ...uxMetrics.nps, format: (v: number) => `+${v}`, inverted: false },
-    { ...uxMetrics.taskSuccess, format: (v: number) => `${v}%`, inverted: false },
-    { ...uxMetrics.timeOnTask, format: (v: number) => `${v}min`, inverted: true },
-  ];
+  const { data: metrics } = useUxMetrics();
+
+  const items = (metrics ?? []).map((m) => ({
+    label: m.metric_name,
+    score: Number(m.score),
+    previous: m.previous_score ? Number(m.previous_score) : null,
+    inverted: m.metric_name.toLowerCase().includes("tempo"),
+  }));
+
+  const format = (label: string, v: number) => {
+    if (label.toLowerCase().includes("tempo")) return `${v}min`;
+    if (label.toLowerCase().includes("nps")) return `+${v}`;
+    if (label.toLowerCase().includes("taxa")) return `${v}%`;
+    return v.toString();
+  };
 
   return (
-    <div className="glass-card p-5">
+    <div className="glass-card p-4 md:p-5">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
         Métricas de UX
       </h3>
-      <div className="grid grid-cols-2 gap-4">
-        {metrics.map((m, i) => {
-          const improved = m.inverted ? m.score < m.previous : m.score > m.previous;
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
+        {items.map((m, i) => {
+          const improved = m.previous !== null
+            ? m.inverted ? m.score < m.previous : m.score > m.previous
+            : true;
           return (
             <motion.div
               key={m.label}
@@ -28,16 +39,18 @@ export function UXMetricsCard() {
             >
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{m.label}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-foreground">{m.format(m.score)}</span>
+                <span className="text-lg md:text-xl font-bold text-foreground">{format(m.label, m.score)}</span>
                 {improved ? (
                   <TrendingUp className="w-3.5 h-3.5 text-status-develop" />
                 ) : (
                   <TrendingDown className="w-3.5 h-3.5 text-status-urgent" />
                 )}
               </div>
-              <span className="text-[10px] text-muted-foreground">
-                Anterior: {m.format(m.previous)}
-              </span>
+              {m.previous !== null && (
+                <span className="text-[10px] text-muted-foreground">
+                  Anterior: {format(m.label, m.previous)}
+                </span>
+              )}
             </motion.div>
           );
         })}
