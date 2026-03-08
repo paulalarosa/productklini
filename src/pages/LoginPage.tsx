@@ -1,11 +1,15 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Layers, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
+  const { user, loading } = useAuth();
+
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
