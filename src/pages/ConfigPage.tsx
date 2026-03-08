@@ -436,6 +436,46 @@ export function ConfigPage() {
             )}
           </div>
         </div>
+        {/* System Status */}
+        <div className="glass-card p-5">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+            <Activity className="w-4 h-4 text-primary" /> Status do Sistema
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Indicadores de conectividade dos serviços de infraestrutura do projeto.
+          </p>
+          <div className="space-y-3">
+            {[
+              { label: "Conexão com Banco de Dados", status: dbStatus, icon: Database, detail: "PostgreSQL / Lovable Cloud" },
+              { label: "Status da API de IA", status: aiStatus, icon: Bot, detail: "Gemini 2.5 Flash via Lovable AI" },
+              { label: "Conexão MCP com Figma", status: mcpStatus, icon: Figma, detail: "Endpoint scaffold pronto — aguardando credenciais" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">{item.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.detail}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-medium ${
+                    item.status === "online" ? "text-[hsl(160,70%,50%)]" :
+                    item.status === "offline" ? "text-destructive" :
+                    "text-muted-foreground"
+                  }`}>
+                    {item.status === "checking" ? "Verificando…" : item.status === "online" ? "Online" : "Offline"}
+                  </span>
+                  <div className={`w-2.5 h-2.5 rounded-full ${
+                    item.status === "online" ? "bg-[hsl(160,70%,50%)]" :
+                    item.status === "offline" ? "bg-destructive" :
+                    "bg-muted-foreground/40 animate-pulse"
+                  }`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </ModulePage>
   );
