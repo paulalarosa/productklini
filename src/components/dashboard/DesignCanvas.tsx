@@ -407,9 +407,10 @@ export function DesignCanvas() {
     if (!aiPrompt.trim()) return;
     setAiLoading(true);
     try {
+      const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-wireframe`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers,
         body: JSON.stringify({ prompt: aiPrompt, screenType: screenPreset.label, existingElements: elements.length > 0 ? elements : undefined }),
       });
       if (!resp.ok) { const err = await resp.json().catch(() => ({})); toast.error(err.error || `Erro ${resp.status}`); setAiLoading(false); return; }

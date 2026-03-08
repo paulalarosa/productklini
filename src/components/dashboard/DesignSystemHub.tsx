@@ -169,12 +169,10 @@ export function DesignSystemHub() {
     if (!genPrompt.trim()) return;
     setGenLoading(true);
     try {
+      const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers,
         body: JSON.stringify({ prompt: genPrompt, mode: "ui-make" }),
       });
 
