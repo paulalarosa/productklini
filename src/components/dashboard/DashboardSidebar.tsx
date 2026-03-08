@@ -14,6 +14,7 @@ import {
   BarChart3,
   Sparkles,
   CircleDot,
+  FileBarChart,
   Settings,
   ChevronDown,
   Menu,
