@@ -82,6 +82,9 @@ const App = () => (
               <Route path="/ui/telas" element={<TelasPage />} />
               <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />
               <Route path="/ui/handoff" element={<HandoffPage />} />
+              <Route path="/ui/visual-checker" element={<VisualCheckerPage />} />
+              <Route path="/ui/motion-gallery" element={<MotionGalleryPage />} />
+              <Route path="/ui/svg-manager" element={<SVGManagerPage />} />
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
