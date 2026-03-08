@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import type { DbTask } from "@/lib/api";
+import { getProjectId, type DbTask } from "@/lib/api";
 
 const statusLabels: Record<string, string> = {
   todo: "A Fazer", in_progress: "Em Andamento", review: "Em Revisão", done: "Concluído", blocked: "Bloqueado",
