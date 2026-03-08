@@ -14,7 +14,238 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          project_id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          project_id: string
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personas: {
+        Row: {
+          created_at: string
+          goals: string[]
+          id: string
+          name: string
+          pain_points: string[]
+          project_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          goals?: string[]
+          id?: string
+          name: string
+          pain_points?: string[]
+          project_id: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          goals?: string[]
+          id?: string
+          name?: string
+          pain_points?: string[]
+          project_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          created_at: string
+          current_phase: string
+          description: string | null
+          id: string
+          name: string
+          phase_progress: Json
+          progress: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_phase?: string
+          description?: string | null
+          id?: string
+          name: string
+          phase_progress?: Json
+          progress?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_phase?: string
+          description?: string | null
+          id?: string
+          name?: string
+          phase_progress?: Json
+          progress?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assignee: string | null
+          avatar: string | null
+          created_at: string
+          days_in_phase: number
+          estimated_days: number
+          id: string
+          module: string
+          phase: string
+          priority: string
+          project_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee?: string | null
+          avatar?: string | null
+          created_at?: string
+          days_in_phase?: number
+          estimated_days?: number
+          id?: string
+          module: string
+          phase: string
+          priority?: string
+          project_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee?: string | null
+          avatar?: string | null
+          created_at?: string
+          days_in_phase?: number
+          estimated_days?: number
+          id?: string
+          module?: string
+          phase?: string
+          priority?: string
+          project_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          avatar: string
+          created_at: string
+          id: string
+          name: string
+          project_id: string
+          role: string
+        }
+        Insert: {
+          avatar: string
+          created_at?: string
+          id?: string
+          name: string
+          project_id: string
+          role: string
+        }
+        Update: {
+          avatar?: string
+          created_at?: string
+          id?: string
+          name?: string
+          project_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ux_metrics: {
+        Row: {
+          id: string
+          measured_at: string
+          metric_name: string
+          previous_score: number | null
+          project_id: string
+          score: number
+        }
+        Insert: {
+          id?: string
+          measured_at?: string
+          metric_name: string
+          previous_score?: number | null
+          project_id: string
+          score: number
+        }
+        Update: {
+          id?: string
+          measured_at?: string
+          metric_name?: string
+          previous_score?: number | null
+          project_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ux_metrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
