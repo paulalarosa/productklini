@@ -87,6 +87,12 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    title: "Analytics & Feedback",
+    items: [
+      { label: "Analytics Hub", icon: BarChart3, path: "/analytics" },
+    ],
+  },
+  {
     title: "Desenvolvimento",
     items: [
       { label: "Kanban", icon: Kanban, path: "/dev/kanban" },

@@ -89,6 +89,7 @@ const App = () => (
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
+              <Route path="/analytics" element={<AnalyticsHubPage />} />
               <Route path="/relatorio" element={<ReportPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>

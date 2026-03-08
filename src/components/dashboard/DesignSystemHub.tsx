@@ -648,6 +648,8 @@ export function DesignSystemHub() {
             <FlutterColorSchemeView />
           ) : activeItem === "flutter-native-components" ? (
             <FlutterNativeComponentsView />
+          ) : activeItem === "flutter-token-automation" ? (
+            <FlutterTokenAutomationView />
           ) : (
             <div className="glass-card p-12 text-center">
               <Box className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
