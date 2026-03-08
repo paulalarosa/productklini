@@ -740,6 +740,20 @@ export function DesignCanvas() {
               )}
             </div>
           )}
+          {/* Hotspot Editor Panel */}
+          {showHotspots && currentDesignId && (
+            <div className="w-56 glass-card p-3 flex flex-col gap-2 shrink-0 overflow-y-auto">
+              <HotspotEditor
+                designId={currentDesignId}
+                designs={designs}
+                canvasWidth={screenPreset.w}
+                canvasHeight={screenPreset.h}
+                zoom={zoom}
+                panX={panX}
+                panY={panY}
+              />
+            </div>
+          )}
         </div>
 
         {/* Properties bar */}
@@ -763,6 +777,7 @@ export function DesignCanvas() {
 
       <AnimatePresence>
         {showPresentation && <PresentationMode onClose={() => setShowPresentation(false)} />}
+        {showPrototype && <PrototypePlayer onClose={() => setShowPrototype(false)} />}
       </AnimatePresence>
     </>
   );
