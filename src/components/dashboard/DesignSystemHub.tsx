@@ -116,7 +116,7 @@ const insightIcons: Record<string, React.ElementType> = {
 export function DesignSystemHub() {
   const [activeItem, setActiveItem] = useState("colors");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ components: true, foundations: true });
-  const [codeTab, setCodeTab] = useState<"preview" | "react" | "vue" | "html">("preview");
+  const [codeTab, setCodeTab] = useState<"preview" | "flutter" | "theme" | "specs">("preview");
   const [copied, setCopied] = useState(false);
   const [showGenModal, setShowGenModal] = useState(false);
   const [genPrompt, setGenPrompt] = useState("");
