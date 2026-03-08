@@ -12,8 +12,8 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { PesquisasPage, PersonasPage, FluxosPage } from "./pages/UXPages";
 import { DesignSystemPage, TelasPage, HandoffPage } from "./pages/UIPages";
 import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
-import { KanbanPage, SprintsPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
-import { FigmaPage, GitHubPage, ConfigPage } from "./pages/IntegrationPages";
+import { KanbanPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
+import { ConfigPage } from "./pages/ConfigPage";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
 import NotFound from "./pages/NotFound";
 
@@ -46,12 +46,9 @@ const App = () => (
               <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />
               <Route path="/ui/handoff" element={<HandoffPage />} />
               <Route path="/dev/kanban" element={<KanbanPage />} />
-              <Route path="/dev/sprints" element={<SprintsPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
-              <Route path="/integracoes/figma" element={<FigmaPage />} />
-              <Route path="/integracoes/github" element={<GitHubPage />} />
-              <Route path="/integracoes/config" element={<ConfigPage />} />
+              <Route path="/config" element={<ConfigPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
