@@ -360,9 +360,9 @@ export function DesignSystemHub() {
                 <div className="flex border-b border-border">
                   {([
                     { key: "preview", label: "Preview", icon: Eye },
-                    { key: "react", label: "React Code", icon: FileCode },
-                    { key: "vue", label: "Vue Code", icon: FileCode },
-                    { key: "html", label: "HTML/Tailwind", icon: Code2 },
+                    { key: "specs", label: "Design Specs", icon: FileCode },
+                    { key: "flutter", label: "Flutter Widget (Dart)", icon: Code2 },
+                    { key: "theme", label: "ThemeData Config", icon: Palette },
                   ] as const).map((tab) => (
                     <button
                       key={tab.key}
@@ -376,10 +376,15 @@ export function DesignSystemHub() {
                     </button>
                   ))}
                   {codeTab !== "preview" && (
-                    <button onClick={copyCode} className="ml-auto mr-3 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                      {copied ? <Check className="w-3 h-3 text-status-develop" /> : <Copy className="w-3 h-3" />}
-                      {copied ? "Copiado!" : "Copiar"}
-                    </button>
+                    <div className="ml-auto mr-3 flex items-center gap-1.5">
+                      <button onClick={copyCode} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                        {copied ? <Check className="w-3 h-3 text-status-develop" /> : <Copy className="w-3 h-3" />}
+                        {copied ? "Copiado!" : "Copiar Widget"}
+                      </button>
+                      <button onClick={exportPubspec} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors">
+                        <FileCode className="w-3 h-3" /> Exportar pubspec
+                      </button>
+                    </div>
                   )}
                 </div>
 
