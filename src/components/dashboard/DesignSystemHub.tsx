@@ -53,6 +53,15 @@ const STATIC_NAV: { category: DSCategory; title: string; items: DSNavItem[] }[] 
     ],
   },
   {
+    category: "flutter-core",
+    title: "Flutter Core",
+    items: [
+      { label: "Tipografia (TextTheme)", icon: Type, id: "flutter-text-theme" },
+      { label: "Cores (ColorScheme)", icon: Droplets, id: "flutter-color-scheme" },
+      { label: "Nativos Customizados", icon: Box, id: "flutter-native-components" },
+    ],
+  },
+  {
     category: "patterns",
     title: "Padrões",
     items: [
