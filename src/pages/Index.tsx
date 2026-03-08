@@ -3,6 +3,7 @@ import { StatusCards } from "@/components/dashboard/StatusCards";
 import { TaskList } from "@/components/dashboard/TaskList";
 import { UXMetricsCard } from "@/components/dashboard/UXMetricsCard";
 import { PersonasCard } from "@/components/dashboard/PersonasCard";
+import { AnalyticsCharts } from "@/components/dashboard/AnalyticsCharts";
 
 const OverviewPage = () => {
   return (
@@ -18,6 +19,7 @@ const OverviewPage = () => {
           <PersonasCard />
         </div>
       </div>
+      <AnalyticsCharts />
     </div>
   );
 };

@@ -1,4 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { fetchProject, fetchTasks, fetchTeamMembers, fetchPersonas, fetchUxMetrics } from "@/lib/api";
 
 export function useProject() {
@@ -6,7 +8,22 @@ export function useProject() {
 }
 
 export function useTasks() {
-  return useQuery({ queryKey: ["tasks"], queryFn: fetchTasks });
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: ["tasks"], queryFn: fetchTasks });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("tasks-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+  return query;
 }
 
 export function useTeamMembers() {
@@ -18,5 +35,19 @@ export function usePersonas() {
 }
 
 export function useUxMetrics() {
-  return useQuery({ queryKey: ["ux-metrics"], queryFn: fetchUxMetrics });
+  const queryClient = useQueryClient();
+  const query = useQuery({ queryKey: ["ux-metrics"], queryFn: fetchUxMetrics });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("ux-metrics-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "ux_metrics" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["ux-metrics"] });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
+  return query;
 }

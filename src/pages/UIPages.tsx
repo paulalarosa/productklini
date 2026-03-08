@@ -1,6 +1,7 @@
 import { Palette, Layers, ArrowRightLeft } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useTasks } from "@/hooks/useProjectData";
+import { DesignCanvas } from "@/components/dashboard/DesignCanvas";
 
 export function DesignSystemPage() {
   const { data: tasks } = useTasks();
@@ -32,13 +33,8 @@ export function DesignSystemPage() {
 
 export function TelasPage() {
   return (
-    <ModulePage title="Telas" subtitle="Designs e mockups do projeto" icon={<Layers className="w-4 h-4 text-primary-foreground" />}>
-      <div className="glass-card p-5">
-        <div className="text-center py-12">
-          <Layers className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Conecte o Figma para visualizar as telas aqui.</p>
-        </div>
-      </div>
+    <ModulePage title="Design Canvas" subtitle="Editor visual de telas" icon={<Layers className="w-4 h-4 text-primary-foreground" />}>
+      <DesignCanvas />
     </ModulePage>
   );
 }
@@ -50,7 +46,7 @@ export function HandoffPage() {
         <div className="text-center py-12">
           <ArrowRightLeft className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">O Inspetor de Design System e gerador de snippets aparecerão aqui.</p>
-          <p className="text-xs text-muted-foreground mt-1">Componentes do Figma serão comparados com o código existente.</p>
+          <p className="text-xs text-muted-foreground mt-1">Componentes do canvas serão comparados com o código existente.</p>
         </div>
       </div>
     </ModulePage>
