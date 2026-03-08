@@ -530,8 +530,31 @@ export function AnalyticsHubPage() {
                     {scraping ? "Extraindo..." : "Extrair"}
                   </button>
                 </div>
-              </div>
+        </div>
 
+        {/* Tag Filter Chips */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <button
+            onClick={() => setTagFilter("all")}
+            className={`text-[10px] px-2.5 py-1 rounded-full border font-medium transition-colors ${
+              tagFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/50"
+            }`}
+          >
+            Todas ({reviews?.length ?? 0})
+          </button>
+          {Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+            <button
+              key={type}
+              onClick={() => setTagFilter(tagFilter === type ? "all" : type)}
+              className={`text-[10px] px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                tagFilter === type
+                  ? `${TAG_STYLES[type] || ""} ring-1 ring-offset-1 ring-offset-background ring-primary/30`
+                  : `${TAG_STYLES[type] || "bg-muted/30 text-muted-foreground border-border/50"} opacity-70 hover:opacity-100`
+              }`}
+            >
+              {TAG_LABELS[type] || type} ({count})
+            </button>
+          ))}
               {/* Manual Import */}
               <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
                 <div className="flex items-center gap-2">
