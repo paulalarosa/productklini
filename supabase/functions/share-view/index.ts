@@ -5,6 +5,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// --- PBKDF2 helpers ---
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, "0")).join("");
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derived = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 310000, hash: "SHA-256" }, keyMaterial, 256);
+  const derivedHex = Array.from(new Uint8Array(derived)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return `${saltHex}:${derivedHex}`;
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  // Support legacy unsalted SHA-256 hashes (no colon)
+  if (!storedHash.includes(":")) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const legacyHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    return legacyHash === storedHash;
+  }
+  const [saltHex, derivedHex] = storedHash.split(":");
+  const salt = new Uint8Array(saltHex.match(/.{2}/g)!.map(h => parseInt(h, 16)));
+  const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derived = await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 310000, hash: "SHA-256" }, keyMaterial, 256);
+  const computedHex = Array.from(new Uint8Array(derived)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return computedHex === derivedHex;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -35,14 +63,23 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Hash the password using Web Crypto
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const passwordHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+      // Verify ownership: userClient respects RLS, so only the owner's projects are visible
+      const { data: proj } = await userClient
+        .from("projects")
+        .select("id")
+        .eq("id", project_id)
+        .single();
 
-      const { data: link, error } = await supabase
+      if (!proj) {
+        return new Response(JSON.stringify({ error: "Projeto não encontrado ou sem permissão" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const passwordHash = await hashPassword(password);
+
+      // Use userClient so RLS enforces ownership on share_links too
+      const { data: link, error } = await userClient
         .from("share_links")
         .insert({
           project_id,
@@ -71,7 +108,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Find active share link
+      // Find active share link (service role needed since viewer is unauthenticated)
       const { data: shareLink } = await supabase
         .from("share_links")
         .select("*")
@@ -92,14 +129,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Verify password
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const passwordHash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
-      if (passwordHash !== shareLink.password_hash) {
+      // Verify password (supports both PBKDF2 and legacy SHA-256)
+      const passwordValid = await verifyPassword(password, shareLink.password_hash);
+      if (!passwordValid) {
         return new Response(JSON.stringify({ error: "Senha incorreta" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
