@@ -174,6 +174,7 @@ export function QAPage() {
 
   return (
     <ModulePage title="QA" subtitle="Qualidade e testes" icon={<ShieldCheck className="w-4 h-4 text-primary-foreground" />}>
+
       <div className="glass-card p-5">
         <h3 className="text-sm font-semibold text-foreground mb-4">Tarefas em Revisão / Bloqueadas</h3>
         <div className="space-y-2">
