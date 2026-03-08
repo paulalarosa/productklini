@@ -13,6 +13,7 @@ import {
   Zap,
   ShieldCheck,
   BarChart3,
+  Sparkles,
   Figma,
   GitBranch,
   Settings,
@@ -35,7 +36,10 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     title: "Geral",
-    items: [{ label: "Visão Geral", icon: LayoutDashboard, path: "/" }],
+    items: [
+      { label: "Visão Geral", icon: LayoutDashboard, path: "/" },
+      { label: "AI Design Studio", icon: Sparkles, path: "/ai-studio" },
+    ],
   },
   {
     title: "UX Research",

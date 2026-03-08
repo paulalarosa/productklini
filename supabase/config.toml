@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-wireframe]
 verify_jwt = false
+
+[functions.design-studio]
+verify_jwt = false
