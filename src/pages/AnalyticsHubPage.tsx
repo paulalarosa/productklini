@@ -213,8 +213,8 @@ export function AnalyticsHubPage() {
         text: r.text || r.review || r.content || "",
         author: r.author || r.user || r.name || "Anônimo",
         platform: (r.platform || "android").toLowerCase(),
-        ai_tag: r.ai_tag || r.tag || "Feedback",
-        ai_tag_type: r.ai_tag_type || r.tag_type || "ux",
+        ai_tag: "Pendente",
+        ai_tag_type: "ux",
       })).filter((r: any) => r.text.length > 0);
 
       if (reviewsToInsert.length === 0) {
@@ -224,8 +224,14 @@ export function AnalyticsHubPage() {
       }
       await insertAppReviews(reviewsToInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
-      toast.success(`${reviewsToInsert.length} reviews importadas do arquivo!`);
+      toast.success(`${reviewsToInsert.length} reviews importadas! Analisando com IA...`);
       setShowImport(false);
+      // Auto-analyze
+      const freshReviews = await fetchAppReviews();
+      const pendingReviews = freshReviews.filter(r => r.ai_tag === "Pendente");
+      if (pendingReviews.length > 0) {
+        await runAIAnalysis(pendingReviews);
+      }
     } catch (e: any) {
       toast.error("Erro ao processar arquivo. Verifique o formato.");
     }
