@@ -20,6 +20,7 @@ import { EmpathyMapPage, BenchmarkPage, JTBDPage, CSDMatrixPage, HMWPage, Affini
 import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages/UXWritingPages";
 import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
 import { PrioritizationMatrixPage, SitemapPage } from "./pages/StrategyPages";
+import { ShareViewPage } from "./pages/ShareViewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/share/:token" element={<ShareViewPage />} />
             <Route
               element={
                 <ProtectedRoute>
