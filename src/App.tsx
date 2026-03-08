@@ -49,6 +49,7 @@ const App = () => (
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
+              <Route path="/relatorio" element={<ReportPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
