@@ -26,10 +26,11 @@ export function NotificationsPanel() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const fetchNotifications = async () => {
+    const projectId = await getProjectId();
     const { data } = await supabase
       .from("notifications")
       .select("*")
-      .eq("project_id", PROJECT_ID)
+      .eq("project_id", projectId)
       .order("created_at", { ascending: false })
       .limit(50);
     if (data) setNotifications(data as Notification[]);
