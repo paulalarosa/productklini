@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Layers, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -7,7 +7,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function LoginPage() {
+const LoginPage = forwardRef<HTMLDivElement>(function LoginPage(_props, _ref) {
   const { user, loading: authLoading } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
