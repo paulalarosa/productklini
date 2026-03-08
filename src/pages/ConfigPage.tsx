@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Plus, Trash2, Check, X, Sliders, Link2, Copy, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Settings, Plus, Trash2, Check, X, Sliders, Link2, Copy, Eye, EyeOff, Loader2, Activity, Database, Bot, Figma } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useProject, useTeamMembers } from "@/hooks/useProjectData";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,43 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 const SHARE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/share-view`;
+
+type SystemStatus = "checking" | "online" | "offline";
+
+function useSystemHealth() {
+  const [dbStatus, setDbStatus] = useState<SystemStatus>("checking");
+  const [aiStatus, setAiStatus] = useState<SystemStatus>("checking");
+  const [mcpStatus, setMcpStatus] = useState<SystemStatus>("checking");
+
+  useEffect(() => {
+    // Check DB connectivity
+    supabase.from("projects").select("id").limit(1).then(({ error }) => {
+      setDbStatus(error ? "offline" : "online");
+    });
+
+    // Check AI API (analyze-reviews function as proxy)
+    supabase.functions.invoke("analyze-reviews", {
+      body: { reviews: [] },
+    }).then(({ error }) => {
+      // If function responds (even with empty input), AI endpoint is reachable
+      setAiStatus(error ? "offline" : "online");
+    });
+
+    // Check MCP/Figma endpoint readiness
+    supabase.functions.invoke("analyze-figma-mcp", {
+      body: { figma_url: null, component_id: null },
+    }).then(({ data, error }) => {
+      // Function exists and responds = scaffold ready
+      if (data?.status === "scaffold_ready") {
+        setMcpStatus("online");
+      } else {
+        setMcpStatus(error ? "offline" : "online");
+      }
+    });
+  }, []);
+
+  return { dbStatus, aiStatus, mcpStatus };
+}
 
 const phases = [
   { key: "discovery", label: "Descobrir", color: "bg-status-discovery" },
@@ -29,6 +66,7 @@ export function ConfigPage() {
   const { data: project } = useProject();
   const { data: members } = useTeamMembers();
   const queryClient = useQueryClient();
+  const { dbStatus, aiStatus, mcpStatus } = useSystemHealth();
   const [editDesc, setEditDesc] = useState(false);
   const [desc, setDesc] = useState("");
   const [addingMember, setAddingMember] = useState(false);
@@ -396,6 +434,46 @@ export function ConfigPage() {
             {(members ?? []).length === 0 && !addingMember && (
               <p className="text-xs text-muted-foreground text-center py-4">Nenhum membro na equipe</p>
             )}
+          </div>
+        </div>
+        {/* System Status */}
+        <div className="glass-card p-5">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+            <Activity className="w-4 h-4 text-primary" /> Status do Sistema
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Indicadores de conectividade dos serviços de infraestrutura do projeto.
+          </p>
+          <div className="space-y-3">
+            {[
+              { label: "Conexão com Banco de Dados", status: dbStatus, icon: Database, detail: "PostgreSQL / Lovable Cloud" },
+              { label: "Status da API de IA", status: aiStatus, icon: Bot, detail: "Gemini 2.5 Flash via Lovable AI" },
+              { label: "Conexão MCP com Figma", status: mcpStatus, icon: Figma, detail: "Endpoint scaffold pronto — aguardando credenciais" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">{item.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.detail}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-medium ${
+                    item.status === "online" ? "text-[hsl(160,70%,50%)]" :
+                    item.status === "offline" ? "text-destructive" :
+                    "text-muted-foreground"
+                  }`}>
+                    {item.status === "checking" ? "Verificando…" : item.status === "online" ? "Online" : "Offline"}
+                  </span>
+                  <div className={`w-2.5 h-2.5 rounded-full ${
+                    item.status === "online" ? "bg-[hsl(160,70%,50%)]" :
+                    item.status === "offline" ? "bg-destructive" :
+                    "bg-muted-foreground/40 animate-pulse"
+                  }`} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

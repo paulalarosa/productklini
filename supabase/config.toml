@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.analyze-reviews]
 verify_jwt = false
+
+[functions.analyze-figma-mcp]
+verify_jwt = false

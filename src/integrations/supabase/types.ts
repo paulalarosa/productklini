@@ -744,6 +744,53 @@ export type Database = {
           },
         ]
       }
+      ux_research: {
+        Row: {
+          conducted_at: string
+          created_at: string
+          findings: Json
+          id: string
+          participants: number
+          project_id: string
+          research_type: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          conducted_at?: string
+          created_at?: string
+          findings?: Json
+          id?: string
+          participants?: number
+          project_id: string
+          research_type?: string
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          conducted_at?: string
+          created_at?: string
+          findings?: Json
+          id?: string
+          participants?: number
+          project_id?: string
+          research_type?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ux_research_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
