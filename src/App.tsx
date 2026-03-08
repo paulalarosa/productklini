@@ -15,6 +15,7 @@ import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
 import { KanbanPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { ConfigPage } from "./pages/ConfigPage";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
+import { ReportPage } from "./pages/ReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
+              <Route path="/relatorio" element={<ReportPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />

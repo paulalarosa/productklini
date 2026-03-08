@@ -14,6 +14,7 @@ import {
   BarChart3,
   Sparkles,
   CircleDot,
+  FileBarChart,
   Settings,
   ChevronDown,
   Menu,
@@ -65,8 +66,9 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Configurações",
+    title: "Geral",
     items: [
+      { label: "Relatório", icon: FileBarChart, path: "/relatorio" },
       { label: "Configurações", icon: Settings, path: "/config" },
     ],
   },
