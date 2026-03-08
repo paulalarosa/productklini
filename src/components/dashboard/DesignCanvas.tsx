@@ -563,6 +563,16 @@ export function DesignCanvas() {
               </button>
             )}
             <PresentationButton onClick={() => setShowPresentation(true)} />
+            <button onClick={() => setShowPrototype(true)} title="Modo Protótipo"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Play className="w-4 h-4" />
+            </button>
+            {currentDesignId && (
+              <button onClick={() => { setShowHotspots(!showHotspots); }} title="Hotspots"
+                className={`p-1.5 rounded-md transition-colors ${showHotspots ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                <MousePointer2 className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={exportPNG} title="Exportar PNG" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><Download className="w-4 h-4" /></button>
             <button onClick={saveDesign} disabled={saving} title="Salvar" className="p-1.5 rounded-md text-muted-foreground hover:text-status-develop hover:bg-status-develop/10 transition-colors disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
