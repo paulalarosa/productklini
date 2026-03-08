@@ -1282,7 +1282,14 @@ function FlutterNativeComponentsView() {
 
 // ---- Flutter Token Automation View ----
 function FlutterTokenAutomationView() {
-  const [tokens, setTokens] = useState([
+  const [tokens, setTokens] = useState<{key: string; value: string; label: string}[]>([]);
+  const [fontFamily, setFontFamily] = useState("Inter");
+  const [radiusBase, setRadiusBase] = useState(12);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  const DEFAULT_TOKENS = [
     { key: "primary", value: "#6200EE", label: "Primary" },
     { key: "secondary", value: "#03DAC6", label: "Secondary" },
     { key: "surface", value: "#131620", label: "Surface" },
@@ -1290,13 +1297,43 @@ function FlutterTokenAutomationView() {
     { key: "error", value: "#EF4444", label: "Error" },
     { key: "onPrimary", value: "#FFFFFF", label: "On Primary" },
     { key: "onSurface", value: "#E2E8F0", label: "On Surface" },
-  ]);
-  const [fontFamily, setFontFamily] = useState("Inter");
-  const [radiusBase, setRadiusBase] = useState(12);
-  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  ];
+
+  // Load tokens from DB
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { fetchDesignTokens } = await import("@/lib/api");
+        const dbTokens = await fetchDesignTokens();
+        if (dbTokens.length > 0) {
+          setTokens(dbTokens.map(t => ({ key: t.token_key, value: t.token_value, label: t.token_label })));
+        } else {
+          setTokens(DEFAULT_TOKENS);
+        }
+      } catch {
+        setTokens(DEFAULT_TOKENS);
+      }
+      setLoaded(true);
+    };
+    load();
+  }, []);
 
   const updateToken = (index: number, value: string) => {
     setTokens(prev => prev.map((t, i) => i === index ? { ...t, value } : t));
+  };
+
+  const saveTokens = async () => {
+    setSaving(true);
+    try {
+      const { upsertDesignToken } = await import("@/lib/api");
+      for (const t of tokens) {
+        await upsertDesignToken({ token_key: t.key, token_value: t.value, token_label: t.label });
+      }
+      toast.success("Tokens salvos! Histórico de mudanças atualizado automaticamente.");
+    } catch (e) {
+      toast.error("Erro ao salvar tokens");
+    }
+    setSaving(false);
   };
 
   const hexToFlutter = (hex: string) => {
@@ -1394,6 +1431,8 @@ ${tokens.map(t => `        ${t.key}: ${hexToFlutter(t.value)},`).join('\n')}
     setTimeout(() => setCopiedSection(null), 2000);
   };
 
+  if (!loaded) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+
   return (
     <div className="space-y-4">
       <div className="glass-card p-4">
@@ -1403,8 +1442,16 @@ ${tokens.map(t => `        ${t.key}: ${hexToFlutter(t.value)},`).join('\n')}
               <Zap className="w-3.5 h-3.5 text-primary" />
               Editor de Tokens → theme.dart
             </h3>
-            <p className="text-[9px] text-muted-foreground mt-0.5">Edite os valores e o código Dart é gerado em tempo real</p>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Edite os valores, salve e o histórico é gerado automaticamente</p>
           </div>
+          <button
+            onClick={saveTokens}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg gradient-primary text-primary-foreground text-[10px] font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            {saving ? "Salvando..." : "Salvar Tokens"}
+          </button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
           {tokens.map((token, i) => (
