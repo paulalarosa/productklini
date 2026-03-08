@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   BarChart3,
   Sparkles,
+  CircleDot,
   Figma,
   GitBranch,
   Settings,
