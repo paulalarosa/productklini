@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -9,6 +11,30 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const apiKey = Deno.env.get("FIRECRAWL_API_KEY");
     if (!apiKey) {
       return new Response(
@@ -58,12 +84,10 @@ Deno.serve(async (req) => {
 
     const markdown = data?.data?.markdown || data?.markdown || "";
 
-    // Detect platform from URL
     const isPlayStore = formattedUrl.includes("play.google.com");
     const isAppStore = formattedUrl.includes("apps.apple.com");
     const platform = isPlayStore ? "android" : isAppStore ? "ios" : "unknown";
 
-    // Extract reviews from markdown using heuristics
     const reviews = parseReviewsFromMarkdown(markdown, platform);
 
     return new Response(
@@ -91,10 +115,6 @@ function parseReviewsFromMarkdown(markdown: string, platform: string): ParsedRev
   const reviews: ParsedReview[] = [];
   const lines = markdown.split("\n").map((l: string) => l.trim()).filter(Boolean);
 
-  // Heuristic: look for star patterns and nearby text
-  // Play Store format often has "★★★★★" or "Rated X out of 5" patterns
-  // App Store format often has star ratings near review text
-
   let currentAuthor = "Anônimo";
   let currentStars = 0;
   let currentText = "";
@@ -102,7 +122,6 @@ function parseReviewsFromMarkdown(markdown: string, platform: string): ParsedRev
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Detect star ratings
     const starMatch = line.match(/(\d)\s*(?:star|estrela|out of 5|\/5|⭐|★)/i);
     const fullStarMatch = line.match(/(★{1,5}|⭐{1,5})/);
     const ratedMatch = line.match(/Rated\s+(\d(?:\.\d)?)\s+out of\s+5/i);
@@ -129,24 +148,21 @@ function parseReviewsFromMarkdown(markdown: string, platform: string): ParsedRev
       }
       currentStars = Math.round(parseFloat(ratedMatch[1]));
     } else if (line.length > 15 && line.length < 1000 && currentStars > 0) {
-      // Likely review text
       if (!currentText) {
         currentText = line;
       } else {
         currentText += " " + line;
       }
     } else if (line.length <= 30 && line.length > 2 && !line.startsWith("#") && !line.startsWith("[")) {
-      // Possibly an author name
       if (currentStars > 0 && !currentText) {
         currentAuthor = line;
       }
     }
   }
 
-  // Push last review
   if (currentText && currentStars > 0) {
     reviews.push({ author: currentAuthor, text: currentText.slice(0, 500), stars: currentStars, platform });
   }
 
-  return reviews.slice(0, 50); // Max 50 reviews
+  return reviews.slice(0, 50);
 }
