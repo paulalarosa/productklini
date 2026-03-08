@@ -2,35 +2,15 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard,
-  Search,
-  Users,
-  Route,
-  Palette,
-  Layers,
-  ArrowRightLeft,
-  Kanban,
-  ShieldCheck,
-  BarChart3,
-  Sparkles,
-  CircleDot,
-  FileBarChart,
-  Settings,
-  ChevronDown,
-  Menu,
-  X,
+  LayoutDashboard, Search, Users, Route, Palette, Layers, ArrowRightLeft,
+  Kanban, ShieldCheck, BarChart3, Sparkles, CircleDot, FileBarChart, Settings,
+  ChevronDown, Menu, X, Heart, Briefcase, Grid3X3, HelpCircle, Lightbulb,
+  MessageSquare, BookOpen, ClipboardList, ListChecks, PlayCircle, Accessibility,
+  ArrowUpDown, Network,
 } from "lucide-react";
 
-interface NavItem {
-  label: string;
-  icon: React.ElementType;
-  path: string;
-}
-
-interface NavGroup {
-  title: string;
-  items: NavItem[];
-}
+interface NavItem { label: string; icon: React.ElementType; path: string; }
+interface NavGroup { title: string; items: NavItem[]; }
 
 const navGroups: NavGroup[] = [
   {
@@ -41,11 +21,40 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "UX Research",
+    title: "Discovery & Research",
     items: [
       { label: "Pesquisas", icon: Search, path: "/ux/pesquisas" },
       { label: "Personas", icon: Users, path: "/ux/personas" },
+      { label: "Mapa de Empatia", icon: Heart, path: "/ux/empathy-map" },
+      { label: "Benchmark", icon: BarChart3, path: "/ux/benchmark" },
+      { label: "JTBD", icon: Briefcase, path: "/ux/jtbd" },
+      { label: "Matriz CSD", icon: Grid3X3, path: "/ux/csd" },
+      { label: "How Might We", icon: HelpCircle, path: "/ux/hmw" },
+      { label: "Afinidade", icon: Lightbulb, path: "/ux/affinity" },
       { label: "Fluxos de Jornada", icon: Route, path: "/ux/fluxos" },
+    ],
+  },
+  {
+    title: "UX Writing",
+    items: [
+      { label: "Tom de Voz", icon: MessageSquare, path: "/ux/tone" },
+      { label: "Microcopy", icon: BookOpen, path: "/ux/microcopy" },
+      { label: "Inventário Conteúdo", icon: ClipboardList, path: "/ux/content-audit" },
+    ],
+  },
+  {
+    title: "Validação & Teste",
+    items: [
+      { label: "Heurísticas Nielsen", icon: ListChecks, path: "/ux/heuristics" },
+      { label: "Teste Usabilidade", icon: PlayCircle, path: "/ux/usability-test" },
+      { label: "WCAG", icon: Accessibility, path: "/ux/wcag" },
+    ],
+  },
+  {
+    title: "Estratégia",
+    items: [
+      { label: "Priorização", icon: ArrowUpDown, path: "/strategy/prioritization" },
+      { label: "Sitemap", icon: Network, path: "/strategy/sitemap" },
     ],
   },
   {
@@ -66,7 +75,7 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Geral",
+    title: "Projeto",
     items: [
       { label: "Relatório", icon: FileBarChart, path: "/relatorio" },
       { label: "Configurações", icon: Settings, path: "/config" },
@@ -101,24 +110,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
-        {navGroups.map((group) => (
-          <div key={group.title}>
+        {navGroups.map((group, gi) => (
+          <div key={`${group.title}-${gi}`}>
             <button
-              onClick={() => toggle(group.title)}
+              onClick={() => toggle(`${group.title}-${gi}`)}
               className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
             >
               {group.title}
               <ChevronDown
-                className={`w-3 h-3 transition-transform ${collapsed[group.title] ? "-rotate-90" : ""}`}
+                className={`w-3 h-3 transition-transform ${collapsed[`${group.title}-${gi}`] ? "-rotate-90" : ""}`}
               />
             </button>
-            {!collapsed[group.title] && (
+            {!collapsed[`${group.title}-${gi}`] && (
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
                     <button
-                      key={item.label}
+                      key={item.path}
                       onClick={() => handleNav(item.path)}
                       className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                         isActive
@@ -145,7 +154,6 @@ export function DashboardSidebar() {
 
   return (
     <>
-      {/* Mobile trigger */}
       <button
         onClick={() => setMobileOpen(true)}
         className="fixed top-3 left-3 z-50 p-2 rounded-lg bg-card border border-border md:hidden"
@@ -153,22 +161,17 @@ export function DashboardSidebar() {
         <Menu className="w-5 h-5 text-foreground" />
       </button>
 
-      {/* Mobile overlay */}
       <AnimatePresence>
         {mobileOpen && (
           <>
             <motion.div
               className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
               className="fixed inset-y-0 left-0 z-50 w-[260px] bg-sidebar border-r border-sidebar-border flex flex-col md:hidden"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
               transition={{ duration: 0.25 }}
             >
               <button
@@ -183,7 +186,6 @@ export function DashboardSidebar() {
         )}
       </AnimatePresence>
 
-      {/* Desktop sidebar */}
       <aside className="hidden md:flex w-[220px] h-screen bg-sidebar border-r border-sidebar-border flex-col shrink-0">
         <SidebarContent />
       </aside>

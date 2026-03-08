@@ -16,6 +16,10 @@ import { KanbanPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { ConfigPage } from "./pages/ConfigPage";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
 import { ReportPage } from "./pages/ReportPage";
+import { EmpathyMapPage, BenchmarkPage, JTBDPage, CSDMatrixPage, HMWPage, AffinityDiagramPage } from "./pages/DiscoveryPages";
+import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages/UXWritingPages";
+import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
+import { PrioritizationMatrixPage, SitemapPage } from "./pages/StrategyPages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,7 +45,21 @@ const App = () => (
               <Route path="/ai-studio" element={<AIDesignStudioPage />} />
               <Route path="/ux/pesquisas" element={<PesquisasPage />} />
               <Route path="/ux/personas" element={<PersonasPage />} />
+              <Route path="/ux/empathy-map" element={<EmpathyMapPage />} />
+              <Route path="/ux/benchmark" element={<BenchmarkPage />} />
+              <Route path="/ux/jtbd" element={<JTBDPage />} />
+              <Route path="/ux/csd" element={<CSDMatrixPage />} />
+              <Route path="/ux/hmw" element={<HMWPage />} />
+              <Route path="/ux/affinity" element={<AffinityDiagramPage />} />
               <Route path="/ux/fluxos" element={<FluxosPage />} />
+              <Route path="/ux/tone" element={<ToneOfVoicePage />} />
+              <Route path="/ux/microcopy" element={<MicrocopyLibraryPage />} />
+              <Route path="/ux/content-audit" element={<ContentAuditPage />} />
+              <Route path="/ux/heuristics" element={<HeuristicEvalPage />} />
+              <Route path="/ux/usability-test" element={<UsabilityTestPage />} />
+              <Route path="/ux/wcag" element={<WCAGChecklistPage />} />
+              <Route path="/strategy/prioritization" element={<PrioritizationMatrixPage />} />
+              <Route path="/strategy/sitemap" element={<SitemapPage />} />
               <Route path="/ui/design-system" element={<DesignSystemPage />} />
               <Route path="/ui/telas" element={<TelasPage />} />
               <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />
