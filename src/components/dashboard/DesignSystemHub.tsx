@@ -49,6 +49,7 @@ const STATIC_NAV: { category: DSCategory; title: string; items: DSNavItem[] }[] 
       { label: "Tipografia", icon: Type, id: "typography" },
       { label: "Espaçamento", icon: Grid3X3, id: "spacing" },
       { label: "Sombras", icon: SunMedium, id: "shadows" },
+      { label: "Histórico Tokens", icon: ListFilter, id: "token-history" },
     ],
   },
   {
