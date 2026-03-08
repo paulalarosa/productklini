@@ -46,6 +46,126 @@ export type Database = {
           },
         ]
       }
+      analytics_funnel: {
+        Row: {
+          id: string
+          percent_value: number
+          project_id: string
+          recorded_at: string
+          step_name: string
+          step_order: number
+          user_count: number
+        }
+        Insert: {
+          id?: string
+          percent_value?: number
+          project_id: string
+          recorded_at?: string
+          step_name: string
+          step_order?: number
+          user_count?: number
+        }
+        Update: {
+          id?: string
+          percent_value?: number
+          project_id?: string
+          recorded_at?: string
+          step_name?: string
+          step_order?: number
+          user_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_funnel_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      analytics_snapshots: {
+        Row: {
+          crash_free_percent: number
+          dau: number
+          id: string
+          mau: number
+          period_label: string
+          project_id: string
+          recorded_at: string
+        }
+        Insert: {
+          crash_free_percent?: number
+          dau?: number
+          id?: string
+          mau?: number
+          period_label: string
+          project_id: string
+          recorded_at?: string
+        }
+        Update: {
+          crash_free_percent?: number
+          dau?: number
+          id?: string
+          mau?: number
+          period_label?: string
+          project_id?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_snapshots_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_reviews: {
+        Row: {
+          ai_tag: string
+          ai_tag_type: string
+          author: string
+          created_at: string
+          id: string
+          platform: string
+          project_id: string
+          stars: number
+          text: string
+        }
+        Insert: {
+          ai_tag?: string
+          ai_tag_type?: string
+          author?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          project_id: string
+          stars?: number
+          text?: string
+        }
+        Update: {
+          ai_tag?: string
+          ai_tag_type?: string
+          author?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          project_id?: string
+          stars?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_reviews_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canvas_designs: {
         Row: {
           canvas_height: number
@@ -118,6 +238,85 @@ export type Database = {
             columns: ["design_id"]
             isOneToOne: false
             referencedRelation: "canvas_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_token_history: {
+        Row: {
+          author: string
+          changed_at: string
+          id: string
+          new_value: string
+          old_value: string
+          project_id: string
+          reason: string
+          token_key: string
+        }
+        Insert: {
+          author?: string
+          changed_at?: string
+          id?: string
+          new_value: string
+          old_value: string
+          project_id: string
+          reason?: string
+          token_key: string
+        }
+        Update: {
+          author?: string
+          changed_at?: string
+          id?: string
+          new_value?: string
+          old_value?: string
+          project_id?: string
+          reason?: string
+          token_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_token_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_tokens: {
+        Row: {
+          category: string
+          id: string
+          project_id: string
+          token_key: string
+          token_label: string
+          token_value: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          id?: string
+          project_id: string
+          token_key: string
+          token_label?: string
+          token_value: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          project_id?: string
+          token_key?: string
+          token_label?: string
+          token_value?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_tokens_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]

@@ -1,59 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
-  TrendingUp, TrendingDown, Smartphone, Apple, Star, StarHalf,
-  Bug, Sparkles, ThumbsUp, MessageSquare, AlertTriangle, CheckCircle2,
-  ChevronDown, ExternalLink, ArrowRight, Zap, Shield,
+  TrendingUp, TrendingDown, Smartphone, Apple, Star,
+  Sparkles, CheckCircle2, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { useQuery } from "@tanstack/react-query";
+import {
+  fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
+  seedAnalyticsData, DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
+} from "@/lib/api";
 
-// ---- Mock Data ----
-const RETENTION_DATA = [
-  { day: "Sem 1", dau: 12400, mau: 38200 },
-  { day: "Sem 2", dau: 13100, mau: 39800 },
-  { day: "Sem 3", dau: 11800, mau: 40100 },
-  { day: "Sem 4", dau: 14200, mau: 41500 },
-  { day: "Sem 5", dau: 15600, mau: 43200 },
-  { day: "Sem 6", dau: 14900, mau: 44800 },
-  { day: "Sem 7", dau: 16300, mau: 46100 },
-];
-
-const FUNNEL_DATA = [
-  { step: "App Aberto", value: 100, users: 46100 },
-  { step: "Login", value: 72, users: 33192 },
-  { step: "Add Carrinho", value: 38, users: 17518 },
-  { step: "Compra", value: 12, users: 5532 },
-];
-
-const SENTIMENT_DATA = [
-  { name: "Positivas", value: 64, color: "hsl(160, 70%, 50%)" },
-  { name: "Neutras", value: 22, color: "hsl(215, 12%, 50%)" },
-  { name: "Negativas", value: 14, color: "hsl(0, 72%, 55%)" },
-];
-
-interface Review {
-  id: string;
-  stars: number;
-  text: string;
-  author: string;
-  platform: "ios" | "android";
-  date: string;
-  aiTag: string;
-  aiTagType: "bug" | "performance" | "praise" | "ux";
-}
-
-const REVIEWS: Review[] = [
-  { id: "1", stars: 5, text: "App incrível! A interface é super fluida e bonita. Parabéns ao time!", author: "Maria S.", platform: "ios", date: "2 dias atrás", aiTag: "Elogio", aiTagType: "praise" },
-  { id: "2", stars: 2, text: "Desde a última atualização o app trava na tela de checkout. Já tentei reinstalar e nada resolve.", author: "João P.", platform: "android", date: "1 dia atrás", aiTag: "Bug de UI", aiTagType: "bug" },
-  { id: "3", stars: 3, text: "Funciona bem mas demora muito pra carregar as imagens dos produtos. Podia ser mais rápido.", author: "Ana L.", platform: "android", date: "3 dias atrás", aiTag: "Performance", aiTagType: "performance" },
-  { id: "4", stars: 1, text: "Impossível completar o cadastro. O botão de 'Próximo' some quando o teclado aparece.", author: "Carlos R.", platform: "ios", date: "5 horas atrás", aiTag: "Bug de UI", aiTagType: "bug" },
-  { id: "5", stars: 4, text: "Muito bom! Só sinto falta de um modo escuro. Fora isso, 10/10.", author: "Fernanda M.", platform: "ios", date: "4 dias atrás", aiTag: "UX Sugestão", aiTagType: "ux" },
-  { id: "6", stars: 2, text: "O app consome muita bateria. Depois de 30 min de uso já drena 20%.", author: "Ricardo T.", platform: "android", date: "6 horas atrás", aiTag: "Performance", aiTagType: "performance" },
-];
+const SENTIMENT_COLORS = {
+  positive: "hsl(160, 70%, 50%)",
+  neutral: "hsl(215, 12%, 50%)",
+  negative: "hsl(0, 72%, 55%)",
+};
 
 const TAG_STYLES: Record<string, string> = {
   bug: "bg-destructive/15 text-destructive border-destructive/30",
@@ -70,17 +36,77 @@ const TOOLTIP_STYLE = {
   color: "hsl(210, 20%, 92%)",
 };
 
-type Period = "7d" | "30d" | "all";
 type Platform = "all" | "ios" | "android";
 
 export function AnalyticsHubPage() {
-  const [period, setPeriod] = useState<Period>("30d");
   const [platform, setPlatform] = useState<Platform>("all");
+  const [seeding, setSeeding] = useState(false);
 
-  const crashFreePercent = 99.8;
-  const crashFreeAngle = (crashFreePercent / 100) * 360;
+  const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
+    queryKey: ["analytics-snapshots"],
+    queryFn: fetchAnalyticsSnapshots,
+  });
+  const { data: funnel, isLoading: loadingFunnel } = useQuery({
+    queryKey: ["analytics-funnel"],
+    queryFn: fetchFunnelSteps,
+  });
+  const { data: reviews, isLoading: loadingReviews, refetch: refetchReviews } = useQuery({
+    queryKey: ["app-reviews"],
+    queryFn: fetchAppReviews,
+  });
 
-  const handleCreateCard = (review: Review, type: "ux" | "dev") => {
+  const isEmpty = !loadingSnapshots && (!snapshots || snapshots.length === 0);
+
+  const handleSeedData = async () => {
+    setSeeding(true);
+    try {
+      await seedAnalyticsData();
+      toast.success("Dados de exemplo inseridos!");
+      window.location.reload();
+    } catch (e) {
+      toast.error("Erro ao inserir dados");
+    }
+    setSeeding(false);
+  };
+
+  const latestSnapshot = snapshots?.[snapshots.length - 1];
+  const prevSnapshot = snapshots?.[snapshots.length - 2];
+  const crashFreePercent = latestSnapshot ? Number(latestSnapshot.crash_free_percent) : 99.8;
+
+  const dauChange = latestSnapshot && prevSnapshot
+    ? (((latestSnapshot.dau - prevSnapshot.dau) / prevSnapshot.dau) * 100).toFixed(1)
+    : "0";
+  const mauChange = latestSnapshot && prevSnapshot
+    ? (((latestSnapshot.mau - prevSnapshot.mau) / prevSnapshot.mau) * 100).toFixed(1)
+    : "0";
+
+  const conversionRate = funnel && funnel.length > 0
+    ? Number(funnel[funnel.length - 1].percent_value)
+    : 0;
+
+  const avgStars = useMemo(() => {
+    if (!reviews || reviews.length === 0) return 0;
+    return (reviews.reduce((s, r) => s + r.stars, 0) / reviews.length).toFixed(1);
+  }, [reviews]);
+
+  const sentimentData = useMemo(() => {
+    if (!reviews || reviews.length === 0) return [];
+    const pos = reviews.filter(r => r.stars >= 4).length;
+    const neg = reviews.filter(r => r.stars <= 2).length;
+    const neu = reviews.length - pos - neg;
+    const total = reviews.length;
+    return [
+      { name: "Positivas", value: Math.round((pos / total) * 100), color: SENTIMENT_COLORS.positive },
+      { name: "Neutras", value: Math.round((neu / total) * 100), color: SENTIMENT_COLORS.neutral },
+      { name: "Negativas", value: Math.round((neg / total) * 100), color: SENTIMENT_COLORS.negative },
+    ];
+  }, [reviews]);
+
+  const filteredReviews = platform === "all"
+    ? (reviews ?? [])
+    : (reviews ?? []).filter((r) => r.platform === platform);
+
+  const handleCreateCard = (review: DbAppReview, type: "ux" | "dev") => {
     toast.success(
       type === "dev"
         ? `Bug enviado para a fila de Dev: "${review.text.slice(0, 40)}..."`
@@ -88,9 +114,35 @@ export function AnalyticsHubPage() {
     );
   };
 
-  const filteredReviews = platform === "all"
-    ? REVIEWS
-    : REVIEWS.filter((r) => r.platform === platform);
+  // Find top AI insight
+  const topInsight = useMemo(() => {
+    if (!reviews || reviews.length === 0) return null;
+    const bugs = reviews.filter(r => r.ai_tag_type === "bug");
+    const perfIssues = reviews.filter(r => r.ai_tag_type === "performance");
+    if (bugs.length > 2) return `Detectamos ${bugs.length} reports de bugs de UI nas últimas reviews. O padrão mais comum: falhas na tela de checkout em Android.`;
+    if (perfIssues.length > 1) return `${perfIssues.length} usuários reportaram problemas de performance. Considere otimizar o carregamento de imagens e tempo de resposta da API.`;
+    return "Métricas estáveis. Continue monitorando o sentimento dos usuários para detectar tendências.";
+  }, [reviews]);
+
+  if (isEmpty) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-[60vh] gap-4">
+        <Sparkles className="w-12 h-12 text-muted-foreground/30" />
+        <h2 className="text-lg font-semibold text-foreground">Sem dados de analytics</h2>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          Insira dados de exemplo para visualizar métricas de retenção, funil de conversão e reviews de usuários.
+        </p>
+        <button
+          onClick={handleSeedData}
+          disabled={seeding}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50"
+        >
+          {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {seeding ? "Inserindo..." : "Inserir dados de exemplo"}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-3 md:p-6 space-y-6 max-w-[1400px] mx-auto">
@@ -101,21 +153,6 @@ export function AnalyticsHubPage() {
           <p className="text-sm text-muted-foreground mt-1">Métricas de uso + voz do usuário, interpretados por IA</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Period selector */}
-          <div className="flex items-center bg-muted/50 rounded-lg p-0.5 border border-border/50">
-            {(["7d", "30d", "all"] as Period[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  period === p ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {p === "7d" ? "7 dias" : p === "30d" ? "30 dias" : "Todos"}
-              </button>
-            ))}
-          </div>
-          {/* Platform selector */}
           <div className="flex items-center bg-muted/50 rounded-lg p-0.5 border border-border/50">
             {([
               { key: "all" as Platform, label: "Ambos", icon: null },
@@ -138,68 +175,63 @@ export function AnalyticsHubPage() {
       </div>
 
       {/* AI Insight Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-4 md:p-5 border-l-4 border-l-status-deliver"
-      >
-        <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-lg bg-status-deliver/15 flex items-center justify-center shrink-0">
-            <Sparkles size={18} className="text-status-deliver" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Insight IA do Dia</span>
-              <span className="text-[10px] text-muted-foreground">· Atualizado há 2h</span>
+      {topInsight && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 md:p-5 border-l-4 border-l-status-deliver">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-status-deliver/15 flex items-center justify-center shrink-0">
+              <Sparkles size={18} className="text-status-deliver" />
             </div>
-            <p className="text-sm text-foreground leading-relaxed">
-              Notamos uma <strong className="text-status-deliver">queda de 12%</strong> na conversão da tela de checkout no Android nas últimas 24h. 
-              O tempo de carregamento da API de pagamento aumentou de 800ms para 2.3s. Recomendamos investigar o endpoint <code className="text-xs bg-muted/60 px-1.5 py-0.5 rounded">/api/payment/process</code>.
-            </p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Insight IA</span>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed">{topInsight}</p>
+            </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {[
-          { label: "DAU", value: "16.3K", change: "+9.4%", up: true },
-          { label: "MAU", value: "46.1K", change: "+5.2%", up: true },
-          { label: "Conversão", value: "12%", change: "-2.1%", up: false },
-          { label: "Nota Média", value: "4.2★", change: "+0.1", up: true },
+          { label: "DAU", value: latestSnapshot ? `${(latestSnapshot.dau / 1000).toFixed(1)}K` : "—", change: `${Number(dauChange) >= 0 ? "+" : ""}${dauChange}%`, up: Number(dauChange) >= 0 },
+          { label: "MAU", value: latestSnapshot ? `${(latestSnapshot.mau / 1000).toFixed(1)}K` : "—", change: `${Number(mauChange) >= 0 ? "+" : ""}${mauChange}%`, up: Number(mauChange) >= 0 },
+          { label: "Conversão", value: `${conversionRate}%`, change: "", up: conversionRate > 10 },
+          { label: "Nota Média", value: `${avgStars}★`, change: `${(reviews?.length ?? 0)} reviews`, up: Number(avgStars) >= 3.5 },
         ].map((kpi) => (
-          <motion.div
-            key={kpi.label}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-4"
-          >
+          <motion.div key={kpi.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
             <p className="text-xl md:text-2xl font-bold text-foreground mt-1">{kpi.value}</p>
-            <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${kpi.up ? "text-status-develop" : "text-destructive"}`}>
-              {kpi.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-              {kpi.change}
-            </div>
+            {kpi.change && (
+              <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${kpi.up ? "text-status-develop" : "text-destructive"}`}>
+                {kpi.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                {kpi.change}
+              </div>
+            )}
           </motion.div>
         ))}
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Retention */}
+        {/* Retention Chart */}
         <motion.div className="glass-card p-4 md:p-5 lg:col-span-2" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Retenção de Usuários (DAU / MAU)</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={RETENTION_DATA}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 10%, 18%)" />
-              <XAxis dataKey="day" tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 10 }} />
-              <YAxis tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 10 }} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} />
-              <Legend wrapperStyle={{ fontSize: "10px" }} />
-              <Line type="monotone" dataKey="dau" name="DAU" stroke="hsl(214, 90%, 60%)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-              <Line type="monotone" dataKey="mau" name="MAU" stroke="hsl(270, 70%, 60%)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          {loadingSnapshots ? (
+            <div className="flex items-center justify-center h-[220px]"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={snapshots}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 10%, 18%)" />
+                <XAxis dataKey="period_label" tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 10 }} />
+                <YAxis tick={{ fill: "hsl(215, 12%, 50%)", fontSize: 10 }} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: "10px" }} />
+                <Line type="monotone" dataKey="dau" name="DAU" stroke="hsl(214, 90%, 60%)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="mau" name="MAU" stroke="hsl(270, 70%, 60%)" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
 
         {/* Crash-Free Gauge */}
@@ -208,13 +240,8 @@ export function AnalyticsHubPage() {
           <div className="relative w-36 h-36">
             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
               <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(228, 10%, 18%)" strokeWidth="8" />
-              <circle
-                cx="50" cy="50" r="42" fill="none"
-                stroke="hsl(160, 70%, 50%)"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={`${(crashFreePercent / 100) * 2 * Math.PI * 42} ${2 * Math.PI * 42}`}
-              />
+              <circle cx="50" cy="50" r="42" fill="none" stroke="hsl(160, 70%, 50%)" strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={`${(crashFreePercent / 100) * 2 * Math.PI * 42} ${2 * Math.PI * 42}`} />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-2xl font-bold text-status-develop">{crashFreePercent}%</span>
@@ -223,69 +250,64 @@ export function AnalyticsHubPage() {
           </div>
           <div className="flex items-center gap-1.5 mt-3 text-xs text-status-develop">
             <CheckCircle2 size={12} />
-            <span>Excelente estabilidade</span>
+            <span>{crashFreePercent >= 99.5 ? "Excelente estabilidade" : "Necessita atenção"}</span>
           </div>
         </motion.div>
       </div>
 
       {/* Funnel + Sentiment */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        {/* Conversion Funnel */}
         <motion.div className="glass-card p-4 md:p-5 lg:col-span-2" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Funil de Conversão</h3>
-          <div className="space-y-3">
-            {FUNNEL_DATA.map((step, i) => (
-              <div key={step.step} className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground w-24 shrink-0 text-right">{step.step}</span>
-                <div className="flex-1 relative h-8 bg-muted/30 rounded-lg overflow-hidden">
-                  <motion.div
-                    className="absolute inset-y-0 left-0 rounded-lg"
-                    style={{
-                      background: `linear-gradient(90deg, hsl(214, 90%, 60%), hsl(270, 70%, 60%))`,
-                    }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${step.value}%` }}
-                    transition={{ delay: 0.3 + i * 0.1, duration: 0.6 }}
-                  />
-                  <div className="absolute inset-0 flex items-center px-3 justify-between">
-                    <span className="text-xs font-semibold text-foreground z-10">{step.value}%</span>
-                    <span className="text-[10px] text-muted-foreground z-10">{step.users.toLocaleString()} usuários</span>
+          {loadingFunnel ? (
+            <div className="flex items-center justify-center h-[140px]"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+          ) : (
+            <div className="space-y-3">
+              {(funnel ?? []).map((step, i) => (
+                <div key={step.id} className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-24 shrink-0 text-right">{step.step_name}</span>
+                  <div className="flex-1 relative h-8 bg-muted/30 rounded-lg overflow-hidden">
+                    <motion.div className="absolute inset-y-0 left-0 rounded-lg"
+                      style={{ background: "linear-gradient(90deg, hsl(214, 90%, 60%), hsl(270, 70%, 60%))" }}
+                      initial={{ width: 0 }} animate={{ width: `${step.percent_value}%` }}
+                      transition={{ delay: 0.3 + i * 0.1, duration: 0.6 }} />
+                    <div className="absolute inset-0 flex items-center px-3 justify-between">
+                      <span className="text-xs font-semibold text-foreground z-10">{Number(step.percent_value)}%</span>
+                      <span className="text-[10px] text-muted-foreground z-10">{step.user_count.toLocaleString()} usuários</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {/* Sentiment Donut */}
         <motion.div className="glass-card p-4 md:p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Sentimento Geral</h3>
-          <ResponsiveContainer width="100%" height={160}>
-            <PieChart>
-              <Pie
-                data={SENTIMENT_DATA}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={65}
-                dataKey="value"
-                label={({ name, value }) => `${value}%`}
-              >
-                {SENTIMENT_DATA.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
+          {sentimentData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={sentimentData} cx="50%" cy="50%" innerRadius={45} outerRadius={65} dataKey="value"
+                    label={({ value }) => `${value}%`}>
+                    {sentimentData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex justify-center gap-4 mt-2">
+                {sentimentData.map((s) => (
+                  <div key={s.name} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                    {s.name}
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip contentStyle={TOOLTIP_STYLE} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-4 mt-2">
-            {SENTIMENT_DATA.map((s) => (
-              <div key={s.name} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                {s.name}
               </div>
-            ))}
-          </div>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-8">Sem reviews para análise</p>
+          )}
         </motion.div>
       </div>
 
@@ -295,60 +317,44 @@ export function AnalyticsHubPage() {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Analisadas por IA</h3>
           <span className="text-[10px] text-muted-foreground">{filteredReviews.length} reviews</span>
         </div>
-        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-          {filteredReviews.map((review) => (
-            <div
-              key={review.id}
-              className="p-3 md:p-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/30 transition-colors"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    {/* Stars */}
-                    <div className="flex items-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={12}
-                          className={i < review.stars ? "text-status-deliver fill-status-deliver" : "text-muted-foreground/30"}
-                        />
-                      ))}
+        {loadingReviews ? (
+          <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+        ) : (
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+            {filteredReviews.map((review) => (
+              <div key={review.id} className="p-3 md:p-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/30 transition-colors">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star key={i} size={12} className={i < review.stars ? "text-status-deliver fill-status-deliver" : "text-muted-foreground/30"} />
+                        ))}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">{review.author}</span>
+                      <span className="text-[10px] text-muted-foreground">· {new Date(review.created_at).toLocaleDateString("pt-BR")}</span>
+                      {review.platform === "ios" ? <Apple size={10} className="text-muted-foreground" /> : <Smartphone size={10} className="text-muted-foreground" />}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${TAG_STYLES[review.ai_tag_type] || ""}`}>{review.ai_tag}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">{review.author}</span>
-                    <span className="text-[10px] text-muted-foreground">· {review.date}</span>
-                    {review.platform === "ios" ? (
-                      <Apple size={10} className="text-muted-foreground" />
-                    ) : (
-                      <Smartphone size={10} className="text-muted-foreground" />
-                    )}
-                    {/* AI Tag */}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${TAG_STYLES[review.aiTagType]}`}>
-                      {review.aiTag}
-                    </span>
+                    <p className="text-sm text-foreground/90 leading-relaxed">{review.text}</p>
                   </div>
-                  <p className="text-sm text-foreground/90 leading-relaxed">{review.text}</p>
+                  {review.stars <= 3 && (
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <button onClick={() => handleCreateCard(review, "ux")}
+                        className="text-[10px] px-2.5 py-1.5 rounded-lg bg-status-discovery/10 text-status-discovery border border-status-discovery/20 hover:bg-status-discovery/20 transition-colors whitespace-nowrap">
+                        Criar Card UX
+                      </button>
+                      <button onClick={() => handleCreateCard(review, "dev")}
+                        className="text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors whitespace-nowrap">
+                        Criar Bug Dev
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {/* Action buttons for negative reviews */}
-                {review.stars <= 3 && (
-                  <div className="flex flex-col gap-1.5 shrink-0">
-                    <button
-                      onClick={() => handleCreateCard(review, "ux")}
-                      className="text-[10px] px-2.5 py-1.5 rounded-lg bg-status-discovery/10 text-status-discovery border border-status-discovery/20 hover:bg-status-discovery/20 transition-colors whitespace-nowrap"
-                    >
-                      Criar Card UX
-                    </button>
-                    <button
-                      onClick={() => handleCreateCard(review, "dev")}
-                      className="text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors whitespace-nowrap"
-                    >
-                      Criar Bug Dev
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </motion.div>
     </div>
   );
