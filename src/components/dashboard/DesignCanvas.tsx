@@ -165,10 +165,11 @@ export function DesignCanvas() {
 
   const saveDesign = async () => {
     setSaving(true);
+    const elementsJson = JSON.parse(JSON.stringify(elements));
     if (currentDesignId) {
-      await supabase.from("canvas_designs").update({ name: designName, elements: elements as unknown as Record<string, unknown>[] }).eq("id", currentDesignId);
+      await supabase.from("canvas_designs").update({ name: designName, elements: elementsJson }).eq("id", currentDesignId);
     } else {
-      const { data } = await supabase.from("canvas_designs").insert({ project_id: PROJECT_ID, name: designName, elements: elements as unknown as Record<string, unknown>[] }).select("id").single();
+      const { data } = await supabase.from("canvas_designs").insert([{ project_id: PROJECT_ID, name: designName, elements: elementsJson }]).select("id").single();
       if (data) setCurrentDesignId(data.id);
     }
     toast.success("Design salvo!");
