@@ -656,31 +656,34 @@ export function DesignSystemHub() {
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {selectedComponent ? (
             <>
-              {/* Dynamic insights based on component */}
-              {!selectedComponent.code_react && (
-                <InsightCard type="optimization" severity="warning" title="Sem código React" description="Este componente não possui código React. Considere regerar com mais detalhes no prompt." action="Regerar" />
-              )}
+              {/* Flutter-focused mobile insights */}
+              <InsightCard type="optimization" severity="warning" title="BoxShadow Performance" description={`Este componente usa sombra complexa. No Flutter, use BoxShadow com blurRadius otimizado para não impactar a performance em dispositivos Android mais antigos.`} />
+              
+              <InsightCard type="usage" severity="info" title="Tokens atualizados" description="A cor primária mudou. Clique aqui para gerar o novo código do seu ColorScheme para colar no arquivo theme.dart." action="Gerar ColorScheme" />
+
               {selectedComponent.status === "draft" && (
-                <InsightCard type="usage" severity="info" title="Componente em rascunho" description="Revise este componente e aprove-o para que a equipe de desenvolvimento possa utilizá-lo." action="Aprovar para Dev" />
+                <InsightCard type="usage" severity="info" title="Widget em rascunho" description="Revise este widget e aprove-o para que o time Flutter possa utilizá-lo no projeto." action="Aprovar para Dev" />
               )}
-              {selectedComponent.code_react && !selectedComponent.code_react.includes("aria-") && (
-                <InsightCard type="accessibility" severity="warning" title="Sem atributos aria" description="Considere adicionar aria-label e outros atributos de acessibilidade para melhor suporte a leitores de tela." />
-              )}
-              {selectedComponent.code_react && selectedComponent.code_react.length > 50 && (
-                <InsightCard type="optimization" severity="success" title="Código disponível" description={`Componente com ${selectedComponent.code_react.split('\n').length} linhas de código React pronto para uso.`} />
-              )}
+
+              <InsightCard type="accessibility" severity="warning" title="Semantics Widget" description="Adicione Semantics() wrapper para garantir que VoiceOver/TalkBack identifique corretamente este componente. Min tap target: 48dp." />
+
+              <InsightCard type="optimization" severity="success" title="Widget Dart gerado" description={`Widget ${selectedComponent.name} com ${generateFlutterWidget(selectedComponent).split('\n').length} linhas de Dart pronto para copiar.`} />
 
               {/* Stats */}
               <div className="glass-card p-3 mt-4">
-                <h4 className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Detalhes</h4>
+                <h4 className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Detalhes Flutter</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-muted-foreground">Preview elements</span>
                     <span className="text-[10px] font-semibold text-foreground">{selectedComponent.preview_elements?.length || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Linhas de código</span>
-                    <span className="text-[10px] font-semibold text-foreground">{selectedComponent.code_react ? selectedComponent.code_react.split('\n').length : 0}</span>
+                    <span className="text-[9px] text-muted-foreground">Linhas Dart</span>
+                    <span className="text-[10px] font-semibold text-foreground">{generateFlutterWidget(selectedComponent).split('\n').length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] text-muted-foreground">Platform</span>
+                    <span className="text-[10px] font-semibold text-primary">Flutter / Dart</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-muted-foreground">Origem</span>
