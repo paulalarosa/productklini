@@ -1,10 +1,12 @@
+import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
-import { Bot } from "lucide-react";
+import { Bot, LogOut } from "lucide-react";
 import { useProject, useTeamMembers } from "@/hooks/useProjectData";
 
 export function DashboardHeader({ onToggleAI }: { onToggleAI: () => void }) {
   const { data: project } = useProject();
   const { data: teamMembers } = useTeamMembers();
+  const { user, signOut } = useAuth();
 
   const name = project?.name ?? "Carregando...";
   const progress = project?.progress ?? 0;
@@ -29,8 +31,7 @@ export function DashboardHeader({ onToggleAI }: { onToggleAI: () => void }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        {/* Team avatars - hidden on mobile */}
+      <div className="flex items-center gap-2 md:gap-3">
         <div className="hidden sm:flex -space-x-2">
           {members.slice(0, 4).map((member) => (
             <div
@@ -55,6 +56,20 @@ export function DashboardHeader({ onToggleAI }: { onToggleAI: () => void }) {
           <Bot className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Mentor IA</span>
         </button>
+
+        {/* User + Logout */}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground hidden md:inline truncate max-w-[120px]">
+            {user?.email}
+          </span>
+          <button
+            onClick={signOut}
+            title="Sair"
+            className="p-1.5 rounded-md hover:bg-accent transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        </div>
       </div>
     </header>
   );
