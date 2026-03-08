@@ -53,6 +53,18 @@ export type DbUxMetric = {
   previous_score: number | null;
 };
 
+export type DbProjectDocument = {
+  id: string;
+  project_id: string;
+  doc_type: string;
+  title: string;
+  content: string;
+  metadata: Record<string, unknown>;
+  ai_generated: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 // Get or create the current user's project
 let cachedProjectId: string | null = null;
 
@@ -62,7 +74,6 @@ export async function getProjectId(): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
 
-  // Try to fetch user's existing project
   const { data: existing } = await supabase
     .from("projects")
     .select("id")
@@ -75,7 +86,6 @@ export async function getProjectId(): Promise<string> {
     return existing.id;
   }
 
-  // Create a new project for this user
   const { data: created, error } = await supabase
     .from("projects")
     .insert({ name: "Meu Projeto", user_id: user.id })
@@ -87,81 +97,72 @@ export async function getProjectId(): Promise<string> {
   return created.id;
 }
 
-// Reset cache on auth state change
 supabase.auth.onAuthStateChange(() => {
   cachedProjectId = null;
 });
 
 export async function fetchProject(): Promise<DbProject | null> {
   const projectId = await getProjectId();
-  const { data } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("id", projectId)
-    .single();
+  const { data } = await supabase.from("projects").select("*").eq("id", projectId).single();
   return data as DbProject | null;
 }
 
 export async function fetchTasks(): Promise<DbTask[]> {
   const projectId = await getProjectId();
-  const { data } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("created_at");
+  const { data } = await supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at");
   return (data as DbTask[]) ?? [];
 }
 
 export async function updateTaskStatus(taskId: string, status: string) {
-  const { error } = await supabase
-    .from("tasks")
-    .update({ status })
-    .eq("id", taskId);
+  const { error } = await supabase.from("tasks").update({ status }).eq("id", taskId);
   if (error) throw error;
 }
 
 export async function fetchTeamMembers(): Promise<DbTeamMember[]> {
   const projectId = await getProjectId();
-  const { data } = await supabase
-    .from("team_members")
-    .select("*")
-    .eq("project_id", projectId);
+  const { data } = await supabase.from("team_members").select("*").eq("project_id", projectId);
   return (data as DbTeamMember[]) ?? [];
 }
 
 export async function fetchPersonas(): Promise<DbPersona[]> {
   const projectId = await getProjectId();
-  const { data } = await supabase
-    .from("personas")
-    .select("*")
-    .eq("project_id", projectId);
+  const { data } = await supabase.from("personas").select("*").eq("project_id", projectId);
   return (data as DbPersona[]) ?? [];
 }
 
 export async function fetchUxMetrics(): Promise<DbUxMetric[]> {
   const projectId = await getProjectId();
-  const { data } = await supabase
-    .from("ux_metrics")
-    .select("*")
-    .eq("project_id", projectId);
+  const { data } = await supabase.from("ux_metrics").select("*").eq("project_id", projectId);
   return (data as DbUxMetric[]) ?? [];
+}
+
+export async function fetchDocuments(docType?: string): Promise<DbProjectDocument[]> {
+  const projectId = await getProjectId();
+  let query = supabase.from("project_documents").select("*").eq("project_id", projectId);
+  if (docType) query = query.eq("doc_type", docType);
+  const { data } = await query.order("created_at", { ascending: false });
+  return (data as DbProjectDocument[]) ?? [];
+}
+
+export async function fetchAllDocuments(): Promise<DbProjectDocument[]> {
+  const projectId = await getProjectId();
+  const { data } = await supabase
+    .from("project_documents")
+    .select("*")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false });
+  return (data as DbProjectDocument[]) ?? [];
 }
 
 export async function fetchAiMessages() {
   const projectId = await getProjectId();
-  const { data } = await supabase
-    .from("ai_messages")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("created_at");
+  const { data } = await supabase.from("ai_messages").select("*").eq("project_id", projectId).order("created_at");
   return data ?? [];
 }
 
 export async function saveAiMessage(role: string, content: string) {
   const projectId = await getProjectId();
-  const { error } = await supabase
-    .from("ai_messages")
-    .insert({ project_id: projectId, role, content });
+  const { error } = await supabase.from("ai_messages").insert({ project_id: projectId, role, content });
   if (error) throw error;
 }
 

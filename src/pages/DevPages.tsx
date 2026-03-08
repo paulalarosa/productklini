@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Kanban, Zap, ShieldCheck, BarChart3 } from "lucide-react";
+import { Kanban, ShieldCheck, BarChart3 } from "lucide-react";
 import { TeamMetrics } from "@/components/dashboard/TeamMetrics";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useTasks } from "@/hooks/useProjectData";
@@ -25,7 +25,6 @@ export function KanbanPage() {
     setDraggedTask(taskId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", taskId);
-    // Custom ghost
     const ghost = document.createElement("div");
     ghost.style.cssText = "position:absolute;top:-1000px;left:-1000px;padding:8px 12px;border-radius:8px;background:hsl(228,12%,13%);border:1px solid hsl(252,80%,65%);color:hsl(210,20%,92%);font-size:11px;font-family:Inter;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
     const task = allTasks.find(t => t.id === taskId);
@@ -53,7 +52,6 @@ export function KanbanPage() {
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    // Only reset if leaving the column entirely
     const relatedTarget = e.relatedTarget as HTMLElement | null;
     if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
       setDragOverCol(null);
@@ -155,26 +153,12 @@ export function KanbanPage() {
   );
 }
 
-export function SprintsPage() {
-  return (
-    <ModulePage title="Sprints" subtitle="Planejamento de sprints" icon={<Zap className="w-4 h-4 text-primary-foreground" />}>
-      <div className="glass-card p-5">
-        <div className="text-center py-12">
-          <Zap className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Planejamento de sprints será configurado aqui.</p>
-        </div>
-      </div>
-    </ModulePage>
-  );
-}
-
 export function QAPage() {
   const { data: tasks } = useTasks();
   const blockedTasks = (tasks ?? []).filter((t) => t.status === "blocked" || t.status === "review");
 
   return (
     <ModulePage title="QA" subtitle="Qualidade e testes" icon={<ShieldCheck className="w-4 h-4 text-primary-foreground" />}>
-
       <div className="glass-card p-5">
         <h3 className="text-sm font-semibold text-foreground mb-4">Tarefas em Revisão / Bloqueadas</h3>
         <div className="space-y-2">

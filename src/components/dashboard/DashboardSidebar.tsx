@@ -10,13 +10,10 @@ import {
   Layers,
   ArrowRightLeft,
   Kanban,
-  Zap,
   ShieldCheck,
   BarChart3,
   Sparkles,
   CircleDot,
-  Figma,
-  GitBranch,
   Settings,
   ChevronDown,
   Menu,
@@ -63,17 +60,14 @@ const navGroups: NavGroup[] = [
     title: "Desenvolvimento",
     items: [
       { label: "Kanban", icon: Kanban, path: "/dev/kanban" },
-      { label: "Sprints", icon: Zap, path: "/dev/sprints" },
       { label: "QA", icon: ShieldCheck, path: "/dev/qa" },
       { label: "Métricas", icon: BarChart3, path: "/dev/metricas" },
     ],
   },
   {
-    title: "Integrações",
+    title: "Configurações",
     items: [
-      { label: "Figma", icon: Figma, path: "/integracoes/figma" },
-      { label: "GitHub", icon: GitBranch, path: "/integracoes/github" },
-      { label: "Configurações", icon: Settings, path: "/integracoes/config" },
+      { label: "Configurações", icon: Settings, path: "/config" },
     ],
   },
 ];

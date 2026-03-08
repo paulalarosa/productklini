@@ -1,43 +1,47 @@
 import { useState } from "react";
-import { Search, Users, Route, Plus, Trash2, Pencil, Check, X, User } from "lucide-react";
+import { Search, Users, Route, Plus, Trash2, Pencil, Check, X, User, FileText, Lightbulb, Map } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
-import { usePersonas, useTasks } from "@/hooks/useProjectData";
+import { DocumentManager } from "@/components/dashboard/DocumentManager";
+import { usePersonas, useTasks, useDocuments } from "@/hooks/useProjectData";
 import { supabase } from "@/integrations/supabase/client";
 import { getProjectId } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export function PesquisasPage() {
-  const { data: tasks } = useTasks();
-  const uxTasks = (tasks ?? []).filter((t) => t.module === "ux");
+  const { data: researchDocs } = useDocuments("research_plan");
+  const { data: insightDocs } = useDocuments("insights_summary");
 
   return (
-    <ModulePage title="Pesquisas" subtitle="Repositório de pesquisas UX" icon={<Search className="w-4 h-4 text-primary-foreground" />}>
-      <div className="glass-card p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Tarefas de Pesquisa</h3>
-        {uxTasks.length === 0 ? (
-          <div className="text-center py-8">
-            <Search className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Nenhuma tarefa de pesquisa ainda</p>
-            <p className="text-xs text-muted-foreground mt-1">Crie tarefas com módulo "UX" na Visão Geral para vê-las aqui.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {uxTasks.map((t) => (
-              <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                <div>
-                  <p className="text-xs font-medium text-foreground">{t.title}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.assignee || "Sem responsável"} · {t.phase}</p>
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                  t.status === "done" ? "bg-status-develop/10 text-status-develop" :
-                  t.status === "blocked" ? "bg-destructive/10 text-status-urgent" :
-                  "bg-status-discovery/10 text-status-discovery"
-                }`}>{t.status}</span>
-              </div>
-            ))}
-          </div>
-        )}
+    <ModulePage title="Pesquisas" subtitle="Repositório de pesquisas e insights UX" icon={<Search className="w-4 h-4 text-primary-foreground" />}>
+      <div className="space-y-6">
+        {/* Research Plans */}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary" /> Planos de Pesquisa
+          </h3>
+          <DocumentManager
+            documents={researchDocs ?? []}
+            docType="research_plan"
+            docTypeLabel="Plano de Pesquisa"
+            emptyIcon={<Search className="w-10 h-10 text-muted-foreground/30 mx-auto" />}
+            emptyMessage="Nenhum plano de pesquisa ainda"
+          />
+        </div>
+
+        {/* Insights */}
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-status-deliver" /> Síntese de Insights
+          </h3>
+          <DocumentManager
+            documents={insightDocs ?? []}
+            docType="insights_summary"
+            docTypeLabel="Síntese de Insights"
+            emptyIcon={<Lightbulb className="w-10 h-10 text-muted-foreground/30 mx-auto" />}
+            emptyMessage="Nenhum insight documentado"
+          />
+        </div>
       </div>
     </ModulePage>
   );
@@ -184,15 +188,17 @@ export function PersonasPage() {
 }
 
 export function FluxosPage() {
+  const { data: journeyDocs } = useDocuments("journey_map");
+
   return (
     <ModulePage title="Fluxos de Jornada" subtitle="Mapas de jornada do usuário" icon={<Route className="w-4 h-4 text-primary-foreground" />}>
-      <div className="glass-card p-5">
-        <div className="text-center py-12">
-          <Route className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Os mapas de jornada do projeto serão exibidos aqui.</p>
-          <p className="text-xs text-muted-foreground mt-1">Use o AI Design Studio no modo UX Pilot para gerar fluxos automaticamente.</p>
-        </div>
-      </div>
+      <DocumentManager
+        documents={journeyDocs ?? []}
+        docType="journey_map"
+        docTypeLabel="Mapa de Jornada"
+        emptyIcon={<Map className="w-10 h-10 text-muted-foreground/30 mx-auto" />}
+        emptyMessage="Nenhum mapa de jornada criado"
+      />
     </ModulePage>
   );
 }
