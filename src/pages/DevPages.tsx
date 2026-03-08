@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { Kanban, Zap, ShieldCheck } from "lucide-react";
+import { Kanban, Zap, ShieldCheck, BarChart3 } from "lucide-react";
+import { TeamMetrics } from "@/components/dashboard/TeamMetrics";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useTasks } from "@/hooks/useProjectData";
 import { supabase } from "@/integrations/supabase/client";
