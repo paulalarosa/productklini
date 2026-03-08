@@ -393,11 +393,80 @@ export function AnalyticsHubPage() {
         </motion.div>
       </div>
 
+      {/* Import Panel */}
+      <AnimatePresence>
+        {showImport && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="glass-card p-4 md:p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Importar Reviews</h3>
+                <button onClick={() => setShowImport(false)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+              </div>
+
+              {/* Scrape from Store */}
+              <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Globe size={14} className="text-primary" />
+                  <span className="text-sm font-medium text-foreground">Extrair da Play Store / App Store</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Cole a URL da página do app na loja para extrair reviews automaticamente via Firecrawl.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={storeUrl}
+                    onChange={e => setStoreUrl(e.target.value)}
+                    placeholder="https://play.google.com/store/apps/details?id=..."
+                    className="flex-1 px-3 py-2 text-sm rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    onClick={handleScrapeStore}
+                    disabled={scraping || !storeUrl.trim()}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 shrink-0"
+                  >
+                    {scraping ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                    {scraping ? "Extraindo..." : "Extrair"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Manual Import */}
+              <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileUp size={14} className="text-primary" />
+                  <span className="text-sm font-medium text-foreground">Importar CSV / JSON</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formato esperado: colunas <code className="text-[10px] bg-muted px-1 rounded">stars, text, author, platform</code> (CSV) ou array de objetos (JSON).
+                </p>
+                <input ref={fileInputRef} type="file" accept=".csv,.json" onChange={handleFileImport} className="hidden" />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importing}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 border border-border/50 disabled:opacity-50"
+                >
+                  {importing ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
+                  {importing ? "Importando..." : "Escolher arquivo"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Reviews Feed */}
       <motion.div className="glass-card p-4 md:p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Analisadas por IA</h3>
-          <span className="text-[10px] text-muted-foreground">{filteredReviews.length} reviews</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(!showImport)}
+              className="flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+            >
+              <Download size={10} />
+              Importar Reviews
+            </button>
+            <span className="text-[10px] text-muted-foreground">{filteredReviews.length} reviews</span>
+          </div>
         </div>
         {loadingReviews ? (
           <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
