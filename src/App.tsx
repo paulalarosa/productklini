@@ -15,6 +15,7 @@ import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
 import { KanbanPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { ConfigPage } from "./pages/ConfigPage";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
+import { ReportPage } from "./pages/ReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
