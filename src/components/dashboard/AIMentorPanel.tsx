@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X, Send, Sparkles, AlertTriangle, CheckCircle2, ChevronRight, RefreshCw } from "lucide-react";
 import { useAIChat } from "@/hooks/useAIChat";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useProject, usePersonas, useUxMetrics } from "@/hooks/useProjectData";
 import ReactMarkdown from "react-markdown";
 
@@ -153,6 +154,7 @@ export function AIMentorPanel({
   onClose: () => void;
   projectContext?: Record<string, unknown>;
 }) {
+  const queryClient = useQueryClient();
   const { messages, isLoading, send } = useAIChat(projectContext);
   const { data: tasks } = useTasks();
   const { data: project } = useProject();
@@ -160,6 +162,18 @@ export function AIMentorPanel({
   const { data: metrics } = useUxMetrics();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevLoadingRef = useRef(isLoading);
+
+  // Refresh all data when AI finishes responding (may have created items via tools)
+  useEffect(() => {
+    if (prevLoadingRef.current && !isLoading) {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["personas"] });
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["ux-metrics"] });
+    }
+    prevLoadingRef.current = isLoading;
+  }, [isLoading, queryClient]);
 
   const suggestions = useMemo(
     () => generateDynamicSuggestions(tasks, project, personas, metrics),
