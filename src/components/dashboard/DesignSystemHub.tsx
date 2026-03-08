@@ -1279,3 +1279,177 @@ function FlutterNativeComponentsView() {
     </div>
   );
 }
+
+// ---- Flutter Token Automation View ----
+function FlutterTokenAutomationView() {
+  const [tokens, setTokens] = useState([
+    { key: "primary", value: "#6200EE", label: "Primary" },
+    { key: "secondary", value: "#03DAC6", label: "Secondary" },
+    { key: "surface", value: "#131620", label: "Surface" },
+    { key: "background", value: "#0F1117", label: "Background" },
+    { key: "error", value: "#EF4444", label: "Error" },
+    { key: "onPrimary", value: "#FFFFFF", label: "On Primary" },
+    { key: "onSurface", value: "#E2E8F0", label: "On Surface" },
+  ]);
+  const [fontFamily, setFontFamily] = useState("Inter");
+  const [radiusBase, setRadiusBase] = useState(12);
+  const [copiedSection, setCopiedSection] = useState<string | null>(null);
+
+  const updateToken = (index: number, value: string) => {
+    setTokens(prev => prev.map((t, i) => i === index ? { ...t, value } : t));
+  };
+
+  const hexToFlutter = (hex: string) => {
+    const clean = hex.replace("#", "");
+    return `Color(0xFF${clean.toUpperCase()})`;
+  };
+
+  const generatedJson = JSON.stringify({
+    colors: Object.fromEntries(tokens.map(t => [t.key, { value: t.value }])),
+    typography: { fontFamily },
+    spacing: { borderRadius: radiusBase },
+  }, null, 2);
+
+  const generatedDart = `// ═══════════════════════════════════════════
+// Arquivo gerado automaticamente pelo Dashboard
+// NÃO EDITE MANUALMENTE — Regenere no DS Hub
+// ═══════════════════════════════════════════
+
+import 'package:flutter/material.dart';
+
+class AppTheme {
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: '${fontFamily}',
+      colorScheme: ColorScheme.light(
+${tokens.map(t => `        ${t.key}: ${hexToFlutter(t.value)},`).join('\n')}
+      ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1.0),
+        headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5),
+        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(${radiusBase}.0),
+          ),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(${radiusBase}.0),
+          side: BorderSide(color: Colors.white.withOpacity(0.06)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(${radiusBase}.0)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: '${fontFamily}',
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.dark(
+${tokens.map(t => `        ${t.key}: ${hexToFlutter(t.value)},`).join('\n')}
+      ),
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -1.0),
+        headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+        titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        bodyMedium: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5),
+        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(${radiusBase}.0),
+          ),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(${radiusBase}.0),
+        ),
+      ),
+    );
+  }
+}`;
+
+  const copySection = (section: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedSection(section);
+    toast.success(`${section} copiado!`);
+    setTimeout(() => setCopiedSection(null), 2000);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              Editor de Tokens → theme.dart
+            </h3>
+            <p className="text-[9px] text-muted-foreground mt-0.5">Edite os valores e o código Dart é gerado em tempo real</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          {tokens.map((token, i) => (
+            <div key={token.key} className="flex items-center gap-2 p-2.5 rounded-lg bg-secondary/50">
+              <input type="color" value={token.value} onChange={(e) => updateToken(i, e.target.value)} className="w-8 h-8 rounded cursor-pointer border border-border bg-transparent" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-foreground">{token.label}</p>
+                <input type="text" value={token.value} onChange={(e) => updateToken(i, e.target.value)} className="text-[9px] font-mono text-muted-foreground bg-transparent outline-none w-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-4 p-3 rounded-lg bg-secondary/30">
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-medium text-muted-foreground">Font Family:</label>
+            <input type="text" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)} className="bg-secondary rounded px-2 py-1 text-xs text-foreground outline-none border border-border/50 w-24" />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-medium text-muted-foreground">Border Radius:</label>
+            <input type="number" value={radiusBase} onChange={(e) => setRadiusBase(Number(e.target.value))} className="bg-secondary rounded px-2 py-1 text-xs text-foreground outline-none border border-border/50 w-16" />
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-card overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">JSON (Design Tokens)</h4>
+          <button onClick={() => copySection("JSON", generatedJson)} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80">
+            {copiedSection === "JSON" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            Copiar
+          </button>
+        </div>
+        <pre className="text-[10px] font-mono text-foreground/80 p-4 overflow-x-auto max-h-[200px] bg-background/50">{generatedJson}</pre>
+      </div>
+
+      <div className="glass-card overflow-hidden">
+        <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">theme.dart (Gerado)</h4>
+          <button onClick={() => copySection("Dart", generatedDart)} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80">
+            {copiedSection === "Dart" ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            Copiar theme.dart
+          </button>
+        </div>
+        <pre className="text-[10px] font-mono text-foreground/80 p-4 overflow-x-auto max-h-[400px] bg-background/50">{generatedDart}</pre>
+      </div>
+    </div>
+  );
+}
