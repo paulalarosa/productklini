@@ -280,7 +280,7 @@ function generateDesignSpecs(comp: DSComponent): string {
 export function DesignSystemHub() {
   const [activeItem, setActiveItem] = useState("colors");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({ components: true, foundations: true });
-  const [codeTab, setCodeTab] = useState<"preview" | "flutter" | "theme" | "specs">("preview");
+  const [codeTab, setCodeTab] = useState<"preview" | "react" | "vue" | "html" | "flutter" | "theme" | "specs">("preview");
   const [copied, setCopied] = useState(false);
   const [showGenModal, setShowGenModal] = useState(false);
   const [genPrompt, setGenPrompt] = useState("");
@@ -333,7 +333,15 @@ export function DesignSystemHub() {
 
   const copyCode = () => {
     if (!selectedComponent) return;
-    const code = codeTab === "flutter" ? generateFlutterWidget(selectedComponent) : codeTab === "theme" ? generateThemeData(selectedComponent) : codeTab === "specs" ? generateDesignSpecs(selectedComponent) : "";
+    const codeMap: Record<string, string> = {
+      react: selectedComponent.code_react || "",
+      vue: selectedComponent.code_vue || "",
+      html: selectedComponent.code_html || "",
+      flutter: generateFlutterWidget(selectedComponent),
+      theme: generateThemeData(selectedComponent),
+      specs: generateDesignSpecs(selectedComponent),
+    };
+    const code = codeMap[codeTab] || "";
     if (!code) { toast.error("Sem código disponível"); return; }
     navigator.clipboard.writeText(code);
     setCopied(true);
@@ -410,8 +418,9 @@ export function DesignSystemHub() {
       title: `Componentes (${components.length})`,
       items: componentNavItems.length > 0 ? componentNavItems : [{ label: "Nenhum ainda", icon: Box, id: "empty-comp" }],
     },
-    STATIC_NAV[1], // patterns
-    STATIC_NAV[2], // ai-analysis
+    STATIC_NAV[1], // flutter-core
+    STATIC_NAV[2], // patterns
+    STATIC_NAV[3], // ai-analysis
   ];
 
   const isComponentView = activeItem.startsWith("comp-");
@@ -521,17 +530,20 @@ export function DesignSystemHub() {
             <>
               {/* Preview / Code Tabs */}
               <div className="glass-card overflow-hidden">
-                <div className="flex border-b border-border">
+                <div className="flex flex-wrap border-b border-border">
                   {([
                     { key: "preview", label: "Preview", icon: Eye },
+                    { key: "react", label: "React", icon: FileCode },
+                    { key: "vue", label: "Vue", icon: FileCode },
+                    { key: "html", label: "HTML/Tailwind", icon: Code2 },
                     { key: "specs", label: "Design Specs", icon: FileCode },
-                    { key: "flutter", label: "Flutter Widget (Dart)", icon: Code2 },
-                    { key: "theme", label: "ThemeData Config", icon: Palette },
+                    { key: "flutter", label: "Flutter (Dart)", icon: Code2 },
+                    { key: "theme", label: "ThemeData", icon: Palette },
                   ] as const).map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() => setCodeTab(tab.key)}
-                      className={`flex items-center gap-1.5 px-4 py-2.5 text-[10px] font-medium transition-colors border-b-2 ${
+                      className={`flex items-center gap-1.5 px-3 py-2.5 text-[10px] font-medium transition-colors border-b-2 ${
                         codeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -540,14 +552,16 @@ export function DesignSystemHub() {
                     </button>
                   ))}
                   {codeTab !== "preview" && (
-                    <div className="ml-auto mr-3 flex items-center gap-1.5">
+                    <div className="ml-auto mr-3 flex items-center gap-1.5 py-2">
                       <button onClick={copyCode} className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
                         {copied ? <Check className="w-3 h-3 text-status-develop" /> : <Copy className="w-3 h-3" />}
-                        {copied ? "Copiado!" : "Copiar Widget"}
+                        {copied ? "Copiado!" : "Copiar"}
                       </button>
-                      <button onClick={exportPubspec} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors">
-                        <FileCode className="w-3 h-3" /> Exportar pubspec
-                      </button>
+                      {(codeTab === "flutter" || codeTab === "theme") && (
+                        <button onClick={exportPubspec} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors">
+                          <FileCode className="w-3 h-3" /> pubspec
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -577,7 +591,10 @@ export function DesignSystemHub() {
                   ) : (
                     <pre className="text-xs text-foreground/90 font-mono leading-relaxed overflow-x-auto max-h-[400px]">
                       <code>
-                        {codeTab === "flutter" ? generateFlutterWidget(selectedComponent) :
+                        {codeTab === "react" ? (selectedComponent.code_react || "// Sem código React disponível") :
+                         codeTab === "vue" ? (selectedComponent.code_vue || "// Sem código Vue disponível") :
+                         codeTab === "html" ? (selectedComponent.code_html || "<!-- Sem código HTML disponível -->") :
+                         codeTab === "flutter" ? generateFlutterWidget(selectedComponent) :
                          codeTab === "theme" ? generateThemeData(selectedComponent) :
                          generateDesignSpecs(selectedComponent)}
                       </code>
@@ -656,34 +673,39 @@ export function DesignSystemHub() {
         <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
           {selectedComponent ? (
             <>
-              {/* Flutter-focused mobile insights */}
-              <InsightCard type="optimization" severity="warning" title="BoxShadow Performance" description={`Este componente usa sombra complexa. No Flutter, use BoxShadow com blurRadius otimizado para não impactar a performance em dispositivos Android mais antigos.`} />
-              
-              <InsightCard type="usage" severity="info" title="Tokens atualizados" description="A cor primária mudou. Clique aqui para gerar o novo código do seu ColorScheme para colar no arquivo theme.dart." action="Gerar ColorScheme" />
-
+              {/* Web insights */}
+              {!selectedComponent.code_react && (
+                <InsightCard type="optimization" severity="warning" title="Sem código React" description="Este componente não possui código React. Considere regerar com mais detalhes no prompt." action="Regerar" />
+              )}
               {selectedComponent.status === "draft" && (
-                <InsightCard type="usage" severity="info" title="Widget em rascunho" description="Revise este widget e aprove-o para que o time Flutter possa utilizá-lo no projeto." action="Aprovar para Dev" />
+                <InsightCard type="usage" severity="info" title="Componente em rascunho" description="Revise este componente e aprove-o para que a equipe possa utilizá-lo." action="Aprovar para Dev" />
+              )}
+              {selectedComponent.code_react && !selectedComponent.code_react.includes("aria-") && (
+                <InsightCard type="accessibility" severity="warning" title="Sem atributos aria" description="Considere adicionar aria-label e outros atributos de acessibilidade para leitores de tela." />
               )}
 
-              <InsightCard type="accessibility" severity="warning" title="Semantics Widget" description="Adicione Semantics() wrapper para garantir que VoiceOver/TalkBack identifique corretamente este componente. Min tap target: 48dp." />
+              {/* Flutter-focused mobile insights */}
+              <InsightCard type="optimization" severity="warning" title="Flutter: BoxShadow Performance" description="Este componente usa sombra complexa. No Flutter, use BoxShadow com blurRadius otimizado para não impactar a performance em dispositivos Android mais antigos." />
+              <InsightCard type="usage" severity="info" title="Flutter: Tokens atualizados" description="A cor primária mudou. Gere o novo código do ColorScheme para colar no arquivo theme.dart." action="Gerar ColorScheme" />
+              <InsightCard type="accessibility" severity="warning" title="Flutter: Semantics Widget" description="Adicione Semantics() wrapper para VoiceOver/TalkBack. Min tap target: 48dp." />
 
-              <InsightCard type="optimization" severity="success" title="Widget Dart gerado" description={`Widget ${selectedComponent.name} com ${generateFlutterWidget(selectedComponent).split('\n').length} linhas de Dart pronto para copiar.`} />
+              <InsightCard type="optimization" severity="success" title="Código disponível" description={`React: ${selectedComponent.code_react ? selectedComponent.code_react.split('\n').length : 0} linhas | Dart: ${generateFlutterWidget(selectedComponent).split('\n').length} linhas`} />
 
               {/* Stats */}
               <div className="glass-card p-3 mt-4">
-                <h4 className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Detalhes Flutter</h4>
+                <h4 className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Detalhes</h4>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-muted-foreground">Preview elements</span>
                     <span className="text-[10px] font-semibold text-foreground">{selectedComponent.preview_elements?.length || 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Linhas Dart</span>
-                    <span className="text-[10px] font-semibold text-foreground">{generateFlutterWidget(selectedComponent).split('\n').length}</span>
+                    <span className="text-[9px] text-muted-foreground">Linhas React</span>
+                    <span className="text-[10px] font-semibold text-foreground">{selectedComponent.code_react ? selectedComponent.code_react.split('\n').length : 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-muted-foreground">Platform</span>
-                    <span className="text-[10px] font-semibold text-primary">Flutter / Dart</span>
+                    <span className="text-[9px] text-muted-foreground">Linhas Dart</span>
+                    <span className="text-[10px] font-semibold text-foreground">{generateFlutterWidget(selectedComponent).split('\n').length}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] text-muted-foreground">Origem</span>
