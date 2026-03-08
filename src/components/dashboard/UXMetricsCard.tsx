@@ -4,9 +4,9 @@ import { uxMetrics } from "@/data/mockData";
 
 export function UXMetricsCard() {
   const metrics = [
-    { ...uxMetrics.sus, format: (v: number) => v.toString() },
-    { ...uxMetrics.nps, format: (v: number) => `+${v}` },
-    { ...uxMetrics.taskSuccess, format: (v: number) => `${v}%` },
+    { ...uxMetrics.sus, format: (v: number) => v.toString(), inverted: false },
+    { ...uxMetrics.nps, format: (v: number) => `+${v}`, inverted: false },
+    { ...uxMetrics.taskSuccess, format: (v: number) => `${v}%`, inverted: false },
     { ...uxMetrics.timeOnTask, format: (v: number) => `${v}min`, inverted: true },
   ];
 
