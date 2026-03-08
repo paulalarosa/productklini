@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,20 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { prompt, mode, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -43,7 +58,6 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
               data: {
                 type: "object",
                 properties: {
-                  // Persona fields
                   name: { type: "string" },
                   age: { type: "number" },
                   role: { type: "string" },
@@ -51,7 +65,6 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
                   goals: { type: "array", items: { type: "string" } },
                   pain_points: { type: "array", items: { type: "string" } },
                   behaviors: { type: "array", items: { type: "string" } },
-                  // Journey map fields
                   stages: {
                     type: "array",
                     items: {
@@ -68,7 +81,6 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
                       additionalProperties: false,
                     },
                   },
-                  // User flow fields
                   steps: {
                     type: "array",
                     items: {
@@ -83,7 +95,6 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
                       additionalProperties: false,
                     },
                   },
-                  // Sitemap fields
                   pages: {
                     type: "array",
                     items: {
@@ -205,8 +216,8 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
       });
     }
 
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    const data2 = await response.json();
+    const toolCall = data2.choices?.[0]?.message?.tool_calls?.[0];
 
     if (toolCall?.function?.arguments) {
       const args = JSON.parse(toolCall.function.arguments);
@@ -215,8 +226,7 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
       });
     }
 
-    // Fallback to content
-    const content = data.choices?.[0]?.message?.content;
+    const content = data2.choices?.[0]?.message?.content;
     if (content) {
       return new Response(JSON.stringify({ mode, result: { raw: content } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
