@@ -23,7 +23,7 @@ const priorities = ["low", "medium", "high", "urgent"];
 const modules = ["ux", "ui", "dev"];
 const phases = ["discovery", "define", "develop", "deliver"];
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+
 
 function TaskRow({ task, index, onUpdate, onDelete }: { task: DbTask; index: number; onUpdate: () => void; onDelete: (id: string) => void }) {
   const [editing, setEditing] = useState(false);
