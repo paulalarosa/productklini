@@ -3,12 +3,13 @@ import {
   Square, Circle, Type, MousePointer, Trash2, Minus, Download, Undo2, Redo2,
   Layers, Sparkles, Loader2, Save, FolderOpen, Plus, Smartphone, Monitor,
   Image, ToggleLeft, Menu as MenuIcon, CreditCard, Layout, History, Maximize2,
-  BookTemplate, ZoomIn, ZoomOut, Maximize, Map,
+  BookTemplate, ZoomIn, ZoomOut, Maximize, Map, Play, MousePointer2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WireframeTemplatePanel } from "./WireframeTemplates";
 import { PresentationMode, PresentationButton } from "./PresentationMode";
+import { PrototypePlayer, HotspotEditor } from "./PrototypePlayer";
 import { AnimatePresence } from "framer-motion";
 
 // ---- Types ----
@@ -198,6 +199,8 @@ export function DesignCanvas() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
+  const [showPrototype, setShowPrototype] = useState(false);
+  const [showHotspots, setShowHotspots] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -560,6 +563,16 @@ export function DesignCanvas() {
               </button>
             )}
             <PresentationButton onClick={() => setShowPresentation(true)} />
+            <button onClick={() => setShowPrototype(true)} title="Modo Protótipo"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Play className="w-4 h-4" />
+            </button>
+            {currentDesignId && (
+              <button onClick={() => { setShowHotspots(!showHotspots); }} title="Hotspots"
+                className={`p-1.5 rounded-md transition-colors ${showHotspots ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                <MousePointer2 className="w-4 h-4" />
+              </button>
+            )}
             <button onClick={exportPNG} title="Exportar PNG" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><Download className="w-4 h-4" /></button>
             <button onClick={saveDesign} disabled={saving} title="Salvar" className="p-1.5 rounded-md text-muted-foreground hover:text-status-develop hover:bg-status-develop/10 transition-colors disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -727,6 +740,20 @@ export function DesignCanvas() {
               )}
             </div>
           )}
+          {/* Hotspot Editor Panel */}
+          {showHotspots && currentDesignId && (
+            <div className="w-56 glass-card p-3 flex flex-col gap-2 shrink-0 overflow-y-auto">
+              <HotspotEditor
+                designId={currentDesignId}
+                designs={designs}
+                canvasWidth={screenPreset.w}
+                canvasHeight={screenPreset.h}
+                zoom={zoom}
+                panX={panX}
+                panY={panY}
+              />
+            </div>
+          )}
         </div>
 
         {/* Properties bar */}
@@ -750,6 +777,7 @@ export function DesignCanvas() {
 
       <AnimatePresence>
         {showPresentation && <PresentationMode onClose={() => setShowPresentation(false)} />}
+        {showPrototype && <PrototypePlayer onClose={() => setShowPrototype(false)} />}
       </AnimatePresence>
     </>
   );

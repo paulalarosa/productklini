@@ -277,6 +277,60 @@ export type Database = {
         }
         Relationships: []
       }
+      prototype_hotspots: {
+        Row: {
+          created_at: string
+          height: number
+          id: string
+          label: string
+          source_design_id: string
+          target_design_id: string
+          transition: string
+          width: number
+          x: number
+          y: number
+        }
+        Insert: {
+          created_at?: string
+          height?: number
+          id?: string
+          label?: string
+          source_design_id: string
+          target_design_id: string
+          transition?: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          created_at?: string
+          height?: number
+          id?: string
+          label?: string
+          source_design_id?: string
+          target_design_id?: string
+          transition?: string
+          width?: number
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prototype_hotspots_source_design_id_fkey"
+            columns: ["source_design_id"]
+            isOneToOne: false
+            referencedRelation: "canvas_designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prototype_hotspots_target_design_id_fkey"
+            columns: ["target_design_id"]
+            isOneToOne: false
+            referencedRelation: "canvas_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee: string | null
