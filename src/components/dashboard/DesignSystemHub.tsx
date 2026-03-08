@@ -8,6 +8,7 @@ import {
   Trash2, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,7 +37,7 @@ interface DSComponent {
   created_at: string;
 }
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 
 // ---- Static Navigation ----
 const STATIC_NAV: { category: DSCategory; title: string; items: DSNavItem[] }[] = [
@@ -119,10 +120,11 @@ export function DesignSystemHub() {
   // Load components from DB
   const loadComponents = useCallback(async () => {
     setLoadingComponents(true);
+    const projectId = await getProjectId();
     const { data, error } = await supabase
       .from("ds_components" as any)
       .select("*")
-      .eq("project_id", PROJECT_ID)
+      .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     if (data) {
       setComponents(data as unknown as DSComponent[]);
@@ -169,12 +171,10 @@ export function DesignSystemHub() {
     if (!genPrompt.trim()) return;
     setGenLoading(true);
     try {
+      const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers,
         body: JSON.stringify({ prompt: genPrompt, mode: "ui-make" }),
       });
 
@@ -189,8 +189,9 @@ export function DesignSystemHub() {
       const result = data.result;
 
       // Save to DB
+      const projectId = await getProjectId();
       const { error } = await supabase.from("ds_components" as any).insert([{
-        project_id: PROJECT_ID,
+        project_id: projectId,
         name: result.component_name || "Componente",
         description: result.description || genPrompt,
         category: "components",

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { WireframeTemplatePanel } from "./WireframeTemplates";
 import { PresentationMode, PresentationButton } from "./PresentationMode";
 import { PrototypePlayer, HotspotEditor } from "./PrototypePlayer";
@@ -91,7 +92,7 @@ const SCREEN_PRESETS = [
   { label: "Desktop", icon: Monitor, w: 1440, h: 900 },
 ];
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
@@ -219,7 +220,8 @@ export function DesignCanvas() {
   useEffect(() => { loadDesigns(); }, []);
 
   const loadDesigns = async () => {
-    const { data } = await supabase.from("canvas_designs").select("id, name, elements").eq("project_id", PROJECT_ID).order("updated_at", { ascending: false });
+    const projectId = await getProjectId();
+    const { data } = await supabase.from("canvas_designs").select("id, name, elements").eq("project_id", projectId).order("updated_at", { ascending: false });
     if (data) setDesigns(data.map(d => ({ ...d, elements: (d.elements as unknown as CanvasElement[]) ?? [] })));
   };
 
@@ -243,7 +245,8 @@ export function DesignCanvas() {
       await supabase.from("canvas_designs").update({ name: designName, elements: elementsJson }).eq("id", currentDesignId);
       await saveVersion(currentDesignId);
     } else {
-      const { data } = await supabase.from("canvas_designs").insert([{ project_id: PROJECT_ID, name: designName, elements: elementsJson }]).select("id").single();
+      const projectId = await getProjectId();
+      const { data } = await supabase.from("canvas_designs").insert([{ project_id: projectId, name: designName, elements: elementsJson }]).select("id").single();
       if (data) { setCurrentDesignId(data.id); await saveVersion(data.id); }
     }
     toast.success("Design salvo!");
@@ -407,9 +410,10 @@ export function DesignCanvas() {
     if (!aiPrompt.trim()) return;
     setAiLoading(true);
     try {
+      const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-wireframe`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+        headers,
         body: JSON.stringify({ prompt: aiPrompt, screenType: screenPreset.label, existingElements: elements.length > 0 ? elements : undefined }),
       });
       if (!resp.ok) { const err = await resp.json().catch(() => ({})); toast.error(err.error || `Erro ${resp.status}`); setAiLoading(false); return; }

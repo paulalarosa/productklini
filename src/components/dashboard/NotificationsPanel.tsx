@@ -3,8 +3,7 @@ import { Bell, X, Check, CheckCheck, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 
 interface Notification {
   id: string;
@@ -27,10 +26,11 @@ export function NotificationsPanel() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const fetchNotifications = async () => {
+    const projectId = await getProjectId();
     const { data } = await supabase
       .from("notifications")
       .select("*")
-      .eq("project_id", PROJECT_ID)
+      .eq("project_id", projectId)
       .order("created_at", { ascending: false })
       .limit(50);
     if (data) setNotifications(data as Notification[]);
@@ -57,7 +57,8 @@ export function NotificationsPanel() {
   const markAllRead = async () => {
     const ids = notifications.filter((n) => !n.is_read).map((n) => n.id);
     if (ids.length === 0) return;
-    await supabase.from("notifications").update({ is_read: true }).eq("project_id", PROJECT_ID).eq("is_read", false);
+    const projectId = await getProjectId();
+    await supabase.from("notifications").update({ is_read: true }).eq("project_id", projectId).eq("is_read", false);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 

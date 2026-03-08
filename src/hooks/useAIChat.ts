@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { fetchAiMessages, saveAiMessage } from "@/lib/api";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -46,12 +47,10 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
       };
 
       try {
+        const headers = await getAuthHeaders();
         const resp = await fetch(CHAT_URL, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers,
           body: JSON.stringify({
             messages: updatedMessages,
             projectContext,

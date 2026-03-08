@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Play, MousePointer2, Maximize2, List } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 
 interface CanvasDesign {
   id: string;
@@ -49,10 +48,11 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
   }, []);
 
   const loadData = async () => {
+    const projectId = await getProjectId();
     const { data: designs } = await supabase
       .from("canvas_designs")
       .select("*")
-      .eq("project_id", PROJECT_ID)
+      .eq("project_id", projectId)
       .order("created_at");
 
     if (designs && designs.length > 0) {

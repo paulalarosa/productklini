@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import type { DbTask } from "@/lib/api";
+import { getProjectId, type DbTask } from "@/lib/api";
 
 const statusLabels: Record<string, string> = {
   todo: "A Fazer", in_progress: "Em Andamento", review: "Em Revisão", done: "Concluído", blocked: "Bloqueado",
@@ -23,7 +23,7 @@ const priorities = ["low", "medium", "high", "urgent"];
 const modules = ["ux", "ui", "dev"];
 const phases = ["discovery", "define", "develop", "deliver"];
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+
 
 function TaskRow({ task, index, onUpdate, onDelete }: { task: DbTask; index: number; onUpdate: () => void; onDelete: (id: string) => void }) {
   const [editing, setEditing] = useState(false);
@@ -90,8 +90,9 @@ function AddTaskForm({ onAdded }: { onAdded: () => void }) {
   const handleAdd = async () => {
     if (!title.trim()) return;
     setLoading(true);
+    const projectId = await getProjectId();
     const { error } = await supabase.from("tasks").insert({
-      project_id: PROJECT_ID, title, module, phase, priority, status: "todo", days_in_phase: 0, estimated_days: 3,
+      project_id: projectId, title, module, phase, priority, status: "todo", days_in_phase: 0, estimated_days: 3,
     });
     if (error) { toast.error("Erro ao criar tarefa"); setLoading(false); return; }
     setTitle(""); setOpen(false); setLoading(false);

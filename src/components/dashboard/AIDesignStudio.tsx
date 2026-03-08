@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthHeaders } from "@/lib/authHeaders";
 
 // ---- Types ----
 type StudioMode = "ux-pilot" | "ui-make";
@@ -20,7 +21,7 @@ interface Iteration {
   savedToDS?: boolean;
 }
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 
 // ---- Loading Messages ----
 const UX_LOADING_MSGS = [
@@ -71,8 +72,9 @@ const flowNodeColors: Record<string, string> = {
 
 // ---- Save to DS Hub ----
 async function saveComponentToDS(result: any, prompt: string) {
+  const projectId = await getProjectId();
   const { error } = await supabase.from("ds_components" as any).insert([{
-    project_id: PROJECT_ID,
+    project_id: projectId,
     name: result.component_name || "Componente sem nome",
     description: result.description || prompt,
     category: "components",
@@ -121,12 +123,10 @@ export function AIDesignStudio() {
     }, 1800);
 
     try {
+      const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers,
         body: JSON.stringify({ prompt: text, mode }),
       });
 

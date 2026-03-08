@@ -254,6 +254,7 @@ export type Database = {
           phase_progress: Json
           progress: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -264,6 +265,7 @@ export type Database = {
           phase_progress?: Json
           progress?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -274,6 +276,7 @@ export type Database = {
           phase_progress?: Json
           progress?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -462,7 +465,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      user_owns_design: { Args: { _design_id: string }; Returns: boolean }
+      user_owns_project: { Args: { _project_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
