@@ -49,6 +49,7 @@ const STATIC_NAV: { category: DSCategory; title: string; items: DSNavItem[] }[] 
       { label: "Tipografia", icon: Type, id: "typography" },
       { label: "Espaçamento", icon: Grid3X3, id: "spacing" },
       { label: "Sombras", icon: SunMedium, id: "shadows" },
+      { label: "Histórico Tokens", icon: ListFilter, id: "token-history" },
     ],
   },
   {
@@ -436,6 +437,8 @@ export function DesignSystemHub() {
             <SpacingView />
           ) : activeItem === "shadows" ? (
             <ShadowsView />
+          ) : activeItem === "token-history" ? (
+            <TokenHistoryView />
           ) : (
             <div className="glass-card p-12 text-center">
               <Box className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
@@ -694,6 +697,57 @@ function WCAGView() {
         O relatório de acessibilidade será gerado automaticamente quando houver componentes no Design System. 
         Gere componentes via AI Design Studio ou pelo botão "Gerar com IA" acima.
       </p>
+    </div>
+  );
+}
+
+// ---- Token History View ----
+function TokenHistoryView() {
+  const [history] = useState([
+    { token: "--primary", oldValue: "252 80% 60%", newValue: "252 80% 65%", date: "2026-03-06", author: "IA", reason: "Melhor contraste AA" },
+    { token: "--background", oldValue: "228 14% 10%", newValue: "228 14% 8%", date: "2026-03-05", author: "Designer", reason: "Mais profundidade" },
+    { token: "--status-discovery", oldValue: "214 80% 55%", newValue: "214 90% 60%", date: "2026-03-04", author: "IA", reason: "Maior saturação para destaque" },
+  ]);
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card p-4">
+        <h3 className="text-xs font-semibold text-foreground mb-1">Histórico de Tokens</h3>
+        <p className="text-[10px] text-muted-foreground mb-4">Rastreie alterações nos Design Tokens. Cada mudança gera um registro para governança.</p>
+
+        <div className="space-y-3">
+          {history.map((h, i) => (
+            <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-border/50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono font-semibold text-primary">{h.token}</span>
+                <span className="text-[9px] text-muted-foreground">{h.date}</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: `hsl(${h.oldValue})` }} />
+                  <span className="text-[9px] font-mono text-muted-foreground line-through">{h.oldValue}</span>
+                </div>
+                <span className="text-[9px] text-muted-foreground">→</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: `hsl(${h.newValue})` }} />
+                  <span className="text-[9px] font-mono text-foreground">{h.newValue}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] text-muted-foreground">{h.reason}</span>
+                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${
+                  h.author === "IA" ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
+                }`}>{h.author}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 p-3 rounded-lg border border-dashed border-border text-center">
+          <p className="text-[10px] text-muted-foreground">Quando tokens forem alterados, o histórico será registrado automaticamente aqui.</p>
+          <p className="text-[9px] text-muted-foreground/60 mt-1">Futuro: Alertas de mudança + Pull Request automático</p>
+        </div>
+      </div>
     </div>
   );
 }

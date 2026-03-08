@@ -79,6 +79,9 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Design System", icon: Palette, path: "/ui/design-system" },
       { label: "DS Hub", icon: CircleDot, path: "/ui/ds-hub" },
+      { label: "Verificador Visual", icon: Palette, path: "/ui/visual-checker" },
+      { label: "Motion Gallery", icon: Sparkles, path: "/ui/motion-gallery" },
+      { label: "Assets SVG", icon: Grid3X3, path: "/ui/svg-manager" },
       { label: "Telas", icon: Layers, path: "/ui/telas" },
       { label: "Handoff", icon: ArrowRightLeft, path: "/ui/handoff" },
     ],

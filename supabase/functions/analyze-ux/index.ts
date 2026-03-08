@@ -28,7 +28,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, content, project_id } = await req.json();
+    const body = await req.json();
+    const action = body.action || body.type;
+    const content = body.content;
+    const project_id = body.project_id;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
       return new Response(JSON.stringify({ error: "API key não configurada" }), {
@@ -131,6 +134,68 @@ Contexto do projeto: ${projectContext}
 Formate em Markdown com tabelas e emojis de status (✅ ⚠️ ❌).`,
     };
 
+    // Handle visual-check with structured output (tool calling)
+    if (action === "visual-check") {
+      const colors = JSON.parse(content).colors;
+      const visualPrompt = `Você é um Visual Designer e especialista em teoria das cores. Analise a paleta: ${colors.join(", ")}
+
+Avalie:
+1. Tipo de harmonia cromática (complementar, análoga, triádica, etc.)
+2. Score de harmonia (0-10)
+3. Mood/clima que a paleta transmite
+4. Alinhamento com marca (se parece profissional, confiável, etc.)
+5. Problemas visuais encontrados
+6. Sugestões de melhoria
+
+Contexto: ${projectContext}`;
+
+      const visRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [{ role: "system", content: visualPrompt }, { role: "user", content: `Paleta: ${colors.join(", ")}` }],
+          tools: [{
+            type: "function",
+            function: {
+              name: "visual_analysis",
+              description: "Return visual analysis of color palette",
+              parameters: {
+                type: "object",
+                properties: {
+                  harmony_score: { type: "number" },
+                  harmony_type: { type: "string" },
+                  mood: { type: "string" },
+                  brand_alignment: { type: "string" },
+                  issues: { type: "array", items: { type: "string" } },
+                  suggestions: { type: "array", items: { type: "string" } },
+                },
+                required: ["harmony_score", "harmony_type", "mood", "brand_alignment", "issues", "suggestions"],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "visual_analysis" } },
+        }),
+      });
+
+      if (!visRes.ok) {
+        const s = visRes.status;
+        if (s === 429) return new Response(JSON.stringify({ error: "Rate limit excedido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (s === 402) return new Response(JSON.stringify({ error: "Créditos insuficientes." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "Erro na análise visual" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const visData = await visRes.json();
+      const tc = visData.choices?.[0]?.message?.tool_calls?.[0];
+      if (tc?.function?.arguments) {
+        return new Response(JSON.stringify({ result: JSON.parse(tc.function.arguments) }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: "Resposta inesperada" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const systemPrompt = prompts[action];
     if (!systemPrompt) {
       return new Response(JSON.stringify({ error: "Ação inválida" }), {
@@ -138,7 +203,7 @@ Formate em Markdown com tabelas e emojis de status (✅ ⚠️ ❌).`,
       });
     }
 
-    const aiResponse = await fetch("https://ai.lovable.dev/chat/completions", {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
