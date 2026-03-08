@@ -1,12 +1,18 @@
-import { Settings } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Plus, Trash2, Check, X, Sliders } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useProject, useTeamMembers } from "@/hooks/useProjectData";
-import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getProjectId } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, Trash2, Check, X } from "lucide-react";
+
+const phases = [
+  { key: "discovery", label: "Descobrir", color: "bg-status-discovery" },
+  { key: "define", label: "Definir", color: "bg-status-define" },
+  { key: "develop", label: "Desenvolver", color: "bg-status-develop" },
+  { key: "deliver", label: "Entregar", color: "bg-status-deliver" },
+];
 
 export function ConfigPage() {
   const { data: project } = useProject();
@@ -18,6 +24,26 @@ export function ConfigPage() {
   const [memberName, setMemberName] = useState("");
   const [memberRole, setMemberRole] = useState("");
 
+  // Phase & progress state
+  const [currentPhase, setCurrentPhase] = useState("discovery");
+  const [phaseProgress, setPhaseProgress] = useState<Record<string, number>>({
+    discovery: 0, define: 0, develop: 0, deliver: 0,
+  });
+  const [progressDirty, setProgressDirty] = useState(false);
+
+  useEffect(() => {
+    if (project) {
+      setCurrentPhase(project.current_phase);
+      const pp = project.phase_progress as Record<string, number>;
+      setPhaseProgress({
+        discovery: pp?.discovery ?? 0,
+        define: pp?.define ?? 0,
+        develop: pp?.develop ?? 0,
+        deliver: pp?.deliver ?? 0,
+      });
+    }
+  }, [project]);
+
   const saveDesc = async () => {
     if (!project) return;
     const { error } = await supabase.from("projects").update({ description: desc.trim() || null }).eq("id", project.id);
@@ -25,6 +51,32 @@ export function ConfigPage() {
     queryClient.invalidateQueries({ queryKey: ["project"] });
     setEditDesc(false);
     toast.success("Descrição atualizada");
+  };
+
+  const savePhaseAndProgress = async () => {
+    if (!project) return;
+    const totalProgress = Math.round(
+      (phaseProgress.discovery + phaseProgress.define + phaseProgress.develop + phaseProgress.deliver) / 4
+    );
+    const { error } = await supabase.from("projects").update({
+      current_phase: currentPhase,
+      phase_progress: phaseProgress,
+      progress: totalProgress,
+    }).eq("id", project.id);
+    if (error) { toast.error("Erro ao salvar"); return; }
+    queryClient.invalidateQueries({ queryKey: ["project"] });
+    setProgressDirty(false);
+    toast.success("Fase e progresso atualizados");
+  };
+
+  const handlePhaseChange = (key: string) => {
+    setCurrentPhase(key);
+    setProgressDirty(true);
+  };
+
+  const handleProgressChange = (key: string, value: number) => {
+    setPhaseProgress(prev => ({ ...prev, [key]: value }));
+    setProgressDirty(true);
   };
 
   const addMember = async () => {
@@ -78,9 +130,80 @@ export function ConfigPage() {
                 </p>
               )}
             </div>
-            <div>
-              <label className="text-xs text-muted-foreground">Fase Atual</label>
-              <p className="text-sm text-foreground font-medium capitalize">{project?.current_phase ?? "—"}</p>
+          </div>
+        </div>
+
+        {/* Phase & Progress */}
+        <div className="glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-primary" /> Fase & Progresso do Double Diamond
+            </h3>
+            {progressDirty && (
+              <button onClick={savePhaseAndProgress}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">
+                <Check className="w-3 h-3" /> Salvar
+              </button>
+            )}
+          </div>
+
+          {/* Phase selector */}
+          <div className="mb-5">
+            <label className="text-xs text-muted-foreground mb-2 block">Fase Atual</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {phases.map(p => (
+                <button key={p.key} onClick={() => handlePhaseChange(p.key)}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    currentPhase === p.key
+                      ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                      : "border-border hover:border-primary/50"
+                  }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-2.5 h-2.5 rounded-full ${p.color}`} />
+                    <span className="text-xs font-medium text-foreground">{p.label}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">{phaseProgress[p.key]}%</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Progress sliders */}
+          <div className="space-y-4">
+            <label className="text-xs text-muted-foreground block">Progresso por Fase</label>
+            {phases.map(p => (
+              <div key={p.key} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${p.color}`} />
+                    <span className="text-xs font-medium text-foreground">{p.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground font-mono w-10 text-right">{phaseProgress[p.key]}%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range" min={0} max={100} step={5}
+                    value={phaseProgress[p.key]}
+                    onChange={e => handleProgressChange(p.key, parseInt(e.target.value))}
+                    className="flex-1 h-1.5 rounded-full appearance-none bg-secondary cursor-pointer accent-primary
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-card
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-card"
+                  />
+                </div>
+                {/* Visual progress bar */}
+                <div className="h-1 rounded-full bg-secondary overflow-hidden">
+                  <div className={`h-full rounded-full ${p.color} transition-all duration-200`} style={{ width: `${phaseProgress[p.key]}%` }} />
+                </div>
+              </div>
+            ))}
+
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">Progresso Geral</span>
+                <span className="text-sm font-bold text-primary">
+                  {Math.round((phaseProgress.discovery + phaseProgress.define + phaseProgress.develop + phaseProgress.deliver) / 4)}%
+                </span>
+              </div>
             </div>
           </div>
         </div>
