@@ -220,7 +220,8 @@ export function DesignCanvas() {
   useEffect(() => { loadDesigns(); }, []);
 
   const loadDesigns = async () => {
-    const { data } = await supabase.from("canvas_designs").select("id, name, elements").eq("project_id", PROJECT_ID).order("updated_at", { ascending: false });
+    const projectId = await getProjectId();
+    const { data } = await supabase.from("canvas_designs").select("id, name, elements").eq("project_id", projectId).order("updated_at", { ascending: false });
     if (data) setDesigns(data.map(d => ({ ...d, elements: (d.elements as unknown as CanvasElement[]) ?? [] })));
   };
 
