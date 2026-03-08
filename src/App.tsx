@@ -11,7 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { PesquisasPage, PersonasPage, FluxosPage } from "./pages/UXPages";
 import { DesignSystemPage, TelasPage, HandoffPage } from "./pages/UIPages";
-import { KanbanPage, SprintsPage, QAPage } from "./pages/DevPages";
+import { KanbanPage, SprintsPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { FigmaPage, GitHubPage, ConfigPage } from "./pages/IntegrationPages";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +44,7 @@ const App = () => (
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/sprints" element={<SprintsPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
+              <Route path="/dev/metricas" element={<TeamMetricsPage />} />
               <Route path="/integracoes/figma" element={<FigmaPage />} />
               <Route path="/integracoes/github" element={<GitHubPage />} />
               <Route path="/integracoes/config" element={<ConfigPage />} />

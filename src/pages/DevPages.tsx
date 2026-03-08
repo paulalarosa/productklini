@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { Kanban, Zap, ShieldCheck } from "lucide-react";
+import { Kanban, Zap, ShieldCheck, BarChart3 } from "lucide-react";
+import { TeamMetrics } from "@/components/dashboard/TeamMetrics";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useTasks } from "@/hooks/useProjectData";
 import { supabase } from "@/integrations/supabase/client";
@@ -173,6 +174,7 @@ export function QAPage() {
 
   return (
     <ModulePage title="QA" subtitle="Qualidade e testes" icon={<ShieldCheck className="w-4 h-4 text-primary-foreground" />}>
+
       <div className="glass-card p-5">
         <h3 className="text-sm font-semibold text-foreground mb-4">Tarefas em Revisão / Bloqueadas</h3>
         <div className="space-y-2">
@@ -192,6 +194,14 @@ export function QAPage() {
           )}
         </div>
       </div>
+    </ModulePage>
+  );
+}
+
+export function TeamMetricsPage() {
+  return (
+    <ModulePage title="Métricas do Time" subtitle="Velocity, burndown e carga de trabalho" icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}>
+      <TeamMetrics />
     </ModulePage>
   );
 }

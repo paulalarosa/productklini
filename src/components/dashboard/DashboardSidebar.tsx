@@ -12,6 +12,7 @@ import {
   Kanban,
   Zap,
   ShieldCheck,
+  BarChart3,
   Figma,
   GitBranch,
   Settings,
@@ -58,6 +59,7 @@ const navGroups: NavGroup[] = [
       { label: "Kanban", icon: Kanban, path: "/dev/kanban" },
       { label: "Sprints", icon: Zap, path: "/dev/sprints" },
       { label: "QA", icon: ShieldCheck, path: "/dev/qa" },
+      { label: "Métricas", icon: BarChart3, path: "/dev/metricas" },
     ],
   },
   {
