@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
+import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
 import { Outlet } from "react-router-dom";
 import { useProject, useTasks } from "@/hooks/useProjectData";
 
 export function DashboardLayout() {
   const [aiOpen, setAiOpen] = useState(false);
-  const { data: project } = useProject();
+  const [showSetup, setShowSetup] = useState(false);
+  const { data: project, isLoading } = useProject();
   const { data: tasks } = useTasks();
+
+  // Show setup wizard if project exists but has default name (just created)
+  useEffect(() => {
+    if (!isLoading && project && project.name === "Meu Projeto" && !project.description) {
+      setShowSetup(true);
+    }
+  }, [project, isLoading]);
 
   const projectContext = {
     project: project ?? {},
@@ -48,6 +57,10 @@ export function DashboardLayout() {
         onClose={() => setAiOpen(false)}
         projectContext={projectContext}
       />
+
+      {showSetup && (
+        <ProjectSetupWizard onComplete={() => setShowSetup(false)} />
+      )}
     </div>
   );
 }
