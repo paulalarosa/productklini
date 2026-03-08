@@ -25,6 +25,7 @@ export type DbProject = {
   phase_progress: Record<string, number>;
   created_at: string;
   updated_at: string;
+  user_id: string | null;
 };
 
 export type DbTeamMember = {
@@ -52,22 +53,61 @@ export type DbUxMetric = {
   previous_score: number | null;
 };
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+// Get or create the current user's project
+let cachedProjectId: string | null = null;
+
+export async function getProjectId(): Promise<string> {
+  if (cachedProjectId) return cachedProjectId;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // Try to fetch user's existing project
+  const { data: existing } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("user_id", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) {
+    cachedProjectId = existing.id;
+    return existing.id;
+  }
+
+  // Create a new project for this user
+  const { data: created, error } = await supabase
+    .from("projects")
+    .insert({ name: "Meu Projeto", user_id: user.id })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  cachedProjectId = created.id;
+  return created.id;
+}
+
+// Reset cache on auth state change
+supabase.auth.onAuthStateChange(() => {
+  cachedProjectId = null;
+});
 
 export async function fetchProject(): Promise<DbProject | null> {
+  const projectId = await getProjectId();
   const { data } = await supabase
     .from("projects")
     .select("*")
-    .eq("id", PROJECT_ID)
+    .eq("id", projectId)
     .single();
   return data as DbProject | null;
 }
 
 export async function fetchTasks(): Promise<DbTask[]> {
+  const projectId = await getProjectId();
   const { data } = await supabase
     .from("tasks")
     .select("*")
-    .eq("project_id", PROJECT_ID)
+    .eq("project_id", projectId)
     .order("created_at");
   return (data as DbTask[]) ?? [];
 }
@@ -81,43 +121,48 @@ export async function updateTaskStatus(taskId: string, status: string) {
 }
 
 export async function fetchTeamMembers(): Promise<DbTeamMember[]> {
+  const projectId = await getProjectId();
   const { data } = await supabase
     .from("team_members")
     .select("*")
-    .eq("project_id", PROJECT_ID);
+    .eq("project_id", projectId);
   return (data as DbTeamMember[]) ?? [];
 }
 
 export async function fetchPersonas(): Promise<DbPersona[]> {
+  const projectId = await getProjectId();
   const { data } = await supabase
     .from("personas")
     .select("*")
-    .eq("project_id", PROJECT_ID);
+    .eq("project_id", projectId);
   return (data as DbPersona[]) ?? [];
 }
 
 export async function fetchUxMetrics(): Promise<DbUxMetric[]> {
+  const projectId = await getProjectId();
   const { data } = await supabase
     .from("ux_metrics")
     .select("*")
-    .eq("project_id", PROJECT_ID);
+    .eq("project_id", projectId);
   return (data as DbUxMetric[]) ?? [];
 }
 
 export async function fetchAiMessages() {
+  const projectId = await getProjectId();
   const { data } = await supabase
     .from("ai_messages")
     .select("*")
-    .eq("project_id", PROJECT_ID)
+    .eq("project_id", projectId)
     .order("created_at");
   return data ?? [];
 }
 
 export async function saveAiMessage(role: string, content: string) {
+  const projectId = await getProjectId();
   const { error } = await supabase
     .from("ai_messages")
-    .insert({ project_id: PROJECT_ID, role, content });
+    .insert({ project_id: projectId, role, content });
   if (error) throw error;
 }
 
-export { PROJECT_ID };
+export { };
