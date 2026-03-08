@@ -27,6 +27,9 @@ import { WCAGAuditorPage } from "./pages/WCAGAuditorPage";
 import { ComponentStatesPage, TaskFlowsPage } from "./pages/InteractionDesignPages";
 import { VisualSitemapPage } from "./pages/VisualSitemapPage";
 import { CardSortingPage } from "./pages/CardSortingPage";
+import { VisualCheckerPage } from "./pages/VisualCheckerPage";
+import { MotionGalleryPage } from "./pages/MotionGalleryPage";
+import { SVGManagerPage } from "./pages/SVGManagerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
