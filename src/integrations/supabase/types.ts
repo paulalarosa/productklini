@@ -122,6 +122,57 @@ export type Database = {
           },
         ]
       }
+      ds_components: {
+        Row: {
+          category: string
+          code_html: string
+          code_react: string
+          code_vue: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          preview_elements: Json
+          project_id: string
+          source: string
+          specs: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code_html?: string
+          code_react?: string
+          code_vue?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          preview_elements?: Json
+          project_id: string
+          source?: string
+          specs?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code_html?: string
+          code_react?: string
+          code_vue?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          preview_elements?: Json
+          project_id?: string
+          source?: string
+          specs?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string

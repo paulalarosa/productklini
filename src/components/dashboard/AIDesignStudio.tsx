@@ -2,10 +2,11 @@ import { useState, useCallback } from "react";
 import {
   Sparkles, Send, History, Wand2, Users, Route, CreditCard, LayoutDashboard,
   Loader2, Code2, Save, Pencil, FileDown, ChevronRight, Compass, Blocks,
-  Map, UserCircle, GitBranch, ArrowRight,
+  Map, UserCircle, GitBranch, ArrowRight, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 // ---- Types ----
 type StudioMode = "ux-pilot" | "ui-make";
@@ -16,7 +17,10 @@ interface Iteration {
   prompt: string;
   result: any;
   timestamp: Date;
+  savedToDS?: boolean;
 }
+
+const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
 
 // ---- Loading Messages ----
 const UX_LOADING_MSGS = [
@@ -65,6 +69,27 @@ const flowNodeColors: Record<string, string> = {
   screen: "bg-status-define text-status-define",
 };
 
+// ---- Save to DS Hub ----
+async function saveComponentToDS(result: any, prompt: string) {
+  const { error } = await supabase.from("ds_components" as any).insert([{
+    project_id: PROJECT_ID,
+    name: result.component_name || "Componente sem nome",
+    description: result.description || prompt,
+    category: "components",
+    code_react: result.code || "",
+    code_vue: "",
+    code_html: "",
+    preview_elements: result.preview_elements || [],
+    specs: {},
+    status: "draft",
+    source: "ai-studio",
+  }]);
+  if (error) {
+    console.error("Error saving to DS:", error);
+    throw error;
+  }
+}
+
 // ---- Main Component ----
 export function AIDesignStudio() {
   const [mode, setMode] = useState<StudioMode>("ux-pilot");
@@ -75,9 +100,12 @@ export function AIDesignStudio() {
   const [iterations, setIterations] = useState<Iteration[]>([]);
   const [showCode, setShowCode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [savingToDS, setSavingToDS] = useState(false);
 
   const chips = mode === "ux-pilot" ? UX_CHIPS : UI_CHIPS;
   const loadingMsgs = mode === "ux-pilot" ? UX_LOADING_MSGS : UI_LOADING_MSGS;
+
+  const currentIterationSaved = iterations.length > 0 && iterations[0]?.savedToDS;
 
   const generate = useCallback(async (inputPrompt?: string) => {
     const text = inputPrompt || prompt;
@@ -88,7 +116,6 @@ export function AIDesignStudio() {
     setLoadingStep(0);
     setShowCode(false);
 
-    // Animate loading steps
     const interval = setInterval(() => {
       setLoadingStep((prev) => (prev + 1) % loadingMsgs.length);
     }, 1800);
@@ -121,10 +148,23 @@ export function AIDesignStudio() {
         prompt: text,
         result: data.result,
         timestamp: new Date(),
+        savedToDS: false,
       };
-      setIterations((prev) => [iteration, ...prev]);
 
-      toast.success("Gerado com sucesso!");
+      // Auto-save UI Make components to DS Hub
+      if (mode === "ui-make" && data.result?.component_name) {
+        try {
+          await saveComponentToDS(data.result, text);
+          iteration.savedToDS = true;
+          toast.success("Componente gerado e salvo no Design System!");
+        } catch {
+          toast.success("Componente gerado! (Falha ao salvar no DS Hub)");
+        }
+      } else {
+        toast.success("Gerado com sucesso!");
+      }
+
+      setIterations((prev) => [iteration, ...prev]);
     } catch {
       clearInterval(interval);
       toast.error("Erro ao gerar artefato");
@@ -132,6 +172,19 @@ export function AIDesignStudio() {
 
     setIsLoading(false);
   }, [prompt, mode, isLoading, loadingMsgs.length]);
+
+  const manualSaveToDS = useCallback(async () => {
+    if (!result || savingToDS) return;
+    setSavingToDS(true);
+    try {
+      await saveComponentToDS(result, prompt);
+      setIterations(prev => prev.map((it, i) => i === 0 ? { ...it, savedToDS: true } : it));
+      toast.success("Salvo no Design System Hub!");
+    } catch {
+      toast.error("Erro ao salvar no DS Hub");
+    }
+    setSavingToDS(false);
+  }, [result, prompt, savingToDS]);
 
   const restoreIteration = (iter: Iteration) => {
     setMode(iter.mode);
@@ -181,7 +234,7 @@ export function AIDesignStudio() {
           <p className="text-[11px] text-muted-foreground">
             {mode === "ux-pilot"
               ? "Gere personas, mapas de jornada, fluxos de usuário e conceitos de wireframe com IA."
-              : "Gere componentes de UI com código React + Tailwind pronto para usar."}
+              : "Gere componentes de UI com código React + Tailwind. Componentes são salvos automaticamente no Design System Hub."}
           </p>
         </div>
 
@@ -261,6 +314,9 @@ export function AIDesignStudio() {
                         <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${iter.mode === "ux-pilot" ? "bg-status-discovery/20 text-status-discovery" : "bg-status-define/20 text-status-define"}`}>
                           {iter.mode === "ux-pilot" ? "UX" : "UI"}
                         </span>
+                        {iter.savedToDS && (
+                          <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-status-develop/20 text-status-develop">DS</span>
+                        )}
                         <span className="text-[10px] text-muted-foreground">
                           {iter.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                         </span>
@@ -288,6 +344,11 @@ export function AIDesignStudio() {
               <span className="text-[9px] text-muted-foreground px-2 py-0.5 rounded-full bg-secondary">
                 {mode === "ux-pilot" ? result.artifact_type : "component"}
               </span>
+              {mode === "ui-make" && currentIterationSaved && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-status-develop/20 text-status-develop flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> No DS Hub
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1.5">
               {mode === "ui-make" && result.code && (
@@ -303,17 +364,15 @@ export function AIDesignStudio() {
                 <FileDown className="w-3 h-3" />
                 Exportar
               </button>
-              {mode === "ui-make" && (
-                <>
-                  <button className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                    <Save className="w-3 h-3" />
-                    Salvar no Design System
-                  </button>
-                  <button className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-secondary text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                    <Pencil className="w-3 h-3" />
-                    Editar no Canvas
-                  </button>
-                </>
+              {mode === "ui-make" && !currentIterationSaved && (
+                <button
+                  onClick={manualSaveToDS}
+                  disabled={savingToDS}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md gradient-primary text-primary-foreground text-[10px] hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {savingToDS ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                  Salvar no Design System
+                </button>
               )}
             </div>
           </div>
@@ -355,7 +414,6 @@ export function AIDesignStudio() {
                     </div>
                   </div>
 
-                  {/* Skeleton */}
                   {[1, 2, 3].map((i) => (
                     <motion.div
                       key={i}
