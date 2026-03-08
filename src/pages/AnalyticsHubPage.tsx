@@ -48,6 +48,7 @@ export function AnalyticsHubPage() {
   const [storeUrl, setStoreUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
