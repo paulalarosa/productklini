@@ -3,7 +3,7 @@ import {
   Square, Circle, Type, MousePointer, Trash2, Minus, Download, Undo2, Redo2,
   Layers, Sparkles, Loader2, Save, FolderOpen, Plus, Smartphone, Monitor,
   Image, ToggleLeft, Menu as MenuIcon, CreditCard, Layout, History, Maximize2,
-  BookTemplate,
+  BookTemplate, ZoomIn, ZoomOut, Maximize, Map,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -33,20 +33,8 @@ interface CanvasElement {
   name?: string;
 }
 
-interface CanvasDesign {
-  id: string;
-  name: string;
-  elements: CanvasElement[];
-}
-
-interface CanvasVersion {
-  id: string;
-  version_number: number;
-  name: string;
-  elements: CanvasElement[];
-  created_at: string;
-}
-
+interface CanvasDesign { id: string; name: string; elements: CanvasElement[]; }
+interface CanvasVersion { id: string; version_number: number; name: string; elements: CanvasElement[]; created_at: string; }
 type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
 // ---- Constants ----
@@ -103,6 +91,9 @@ const SCREEN_PRESETS = [
 ];
 
 const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+const MIN_ZOOM = 0.1;
+const MAX_ZOOM = 5;
+const ZOOM_STEP = 0.1;
 
 // ---- Undo/Redo Hook ----
 function useHistory<T>(initial: T) {
@@ -142,6 +133,57 @@ function useHistory<T>(initial: T) {
   return { value: present, set, undo, redo, canUndo: past.length > 0, canRedo: future.length > 0 };
 }
 
+// ---- Minimap ----
+function Minimap({ elements, canvasW, canvasH, zoom, panX, panY, viewportW, viewportH, onNavigate }: {
+  elements: CanvasElement[]; canvasW: number; canvasH: number;
+  zoom: number; panX: number; panY: number;
+  viewportW: number; viewportH: number;
+  onNavigate: (x: number, y: number) => void;
+}) {
+  const mmW = 160;
+  const mmH = (canvasH / canvasW) * mmW;
+  const scale = mmW / canvasW;
+
+  const vpW = (viewportW / zoom) * scale;
+  const vpH = (viewportH / zoom) * scale;
+  const vpX = (-panX / zoom) * scale;
+  const vpY = (-panY / zoom) * scale;
+
+  const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const canvasX = mx / scale;
+    const canvasY = my / scale;
+    onNavigate(
+      -(canvasX - viewportW / (2 * zoom)) * zoom,
+      -(canvasY - viewportH / (2 * zoom)) * zoom
+    );
+  };
+
+  return (
+    <div className="absolute bottom-3 right-3 glass-card rounded-lg overflow-hidden border border-border/50 shadow-lg z-20">
+      <div className="px-2 py-1 border-b border-border/50 flex items-center gap-1">
+        <Map className="w-2.5 h-2.5 text-muted-foreground" />
+        <span className="text-[8px] text-muted-foreground font-semibold">MINIMAP</span>
+      </div>
+      <svg width={mmW} height={mmH} onClick={handleClick} className="cursor-crosshair" style={{ background: "hsl(228, 14%, 8%)" }}>
+        {elements.filter(el => el.visible !== false).map((el) => (
+          <g key={el.id}>
+            {el.type === "rect" && <rect x={el.x * scale} y={el.y * scale} width={el.width * scale} height={el.height * scale} fill={el.fill} opacity={0.7} rx={1} />}
+            {el.type === "circle" && <ellipse cx={(el.x + el.width / 2) * scale} cy={(el.y + el.height / 2) * scale} rx={(el.width / 2) * scale} ry={(el.height / 2) * scale} fill={el.fill} opacity={0.7} />}
+            {el.type === "text" && <rect x={el.x * scale} y={el.y * scale} width={Math.max(el.width, 20) * scale} height={(el.fontSize || 16) * scale} fill={el.fill} opacity={0.5} rx={0.5} />}
+            {el.type === "line" && <line x1={el.x * scale} y1={el.y * scale} x2={(el.x + el.width) * scale} y2={(el.y + el.height) * scale} stroke={el.fill} strokeWidth={1} opacity={0.7} />}
+          </g>
+        ))}
+        {/* Viewport indicator */}
+        <rect x={Math.max(0, vpX)} y={Math.max(0, vpY)} width={Math.min(vpW, mmW)} height={Math.min(vpH, mmH)}
+          fill="hsl(252, 80%, 65%)" fillOpacity={0.1} stroke="hsl(252, 80%, 65%)" strokeWidth={1.5} rx={1} />
+      </svg>
+    </div>
+  );
+}
+
 // ---- Component ----
 export function DesignCanvas() {
   const { value: elements, set: setElements, undo, redo, canUndo, canRedo } = useHistory<CanvasElement[]>([]);
@@ -150,11 +192,13 @@ export function DesignCanvas() {
   const [selectedColor, setSelectedColor] = useState(PALETTE[5]);
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [resizing, setResizing] = useState<{ id: string; handle: ResizeHandle; startX: number; startY: number; startEl: CanvasElement } | null>(null);
+  const [panning, setPanning] = useState<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null);
   const [showLayers, setShowLayers] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
+  const [showMinimap, setShowMinimap] = useState(true);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [screenPreset, setScreenPreset] = useState(SCREEN_PRESETS[0]);
@@ -163,7 +207,11 @@ export function DesignCanvas() {
   const [designName, setDesignName] = useState("Sem título");
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<CanvasVersion[]>([]);
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
   const canvasRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { loadDesigns(); }, []);
 
@@ -179,19 +227,11 @@ export function DesignCanvas() {
 
   const saveVersion = async (designId: string) => {
     const nextNum = versions.length > 0 ? versions[0].version_number + 1 : 1;
-    await supabase.from("canvas_versions").insert([{
-      design_id: designId,
-      version_number: nextNum,
-      name: `v${nextNum} - ${designName}`,
-      elements: JSON.parse(JSON.stringify(elements)),
-    }]);
+    await supabase.from("canvas_versions").insert([{ design_id: designId, version_number: nextNum, name: `v${nextNum} - ${designName}`, elements: JSON.parse(JSON.stringify(elements)) }]);
     loadVersions(designId);
   };
 
-  const restoreVersion = (v: CanvasVersion) => {
-    setElements(v.elements);
-    toast.success(`Restaurado: ${v.name}`);
-  };
+  const restoreVersion = (v: CanvasVersion) => { setElements(v.elements); toast.success(`Restaurado: ${v.name}`); };
 
   const saveDesign = async () => {
     setSaving(true);
@@ -201,45 +241,73 @@ export function DesignCanvas() {
       await saveVersion(currentDesignId);
     } else {
       const { data } = await supabase.from("canvas_designs").insert([{ project_id: PROJECT_ID, name: designName, elements: elementsJson }]).select("id").single();
-      if (data) {
-        setCurrentDesignId(data.id);
-        await saveVersion(data.id);
-      }
+      if (data) { setCurrentDesignId(data.id); await saveVersion(data.id); }
     }
     toast.success("Design salvo!");
     setSaving(false);
     loadDesigns();
   };
 
-  const loadDesign = (d: CanvasDesign) => {
-    setCurrentDesignId(d.id);
-    setDesignName(d.name);
-    setElements(d.elements);
-    setSelectedId(null);
-    loadVersions(d.id);
-  };
+  const loadDesign = (d: CanvasDesign) => { setCurrentDesignId(d.id); setDesignName(d.name); setElements(d.elements); setSelectedId(null); loadVersions(d.id); };
+  const newDesign = () => { setCurrentDesignId(null); setDesignName("Sem título"); setElements([]); setSelectedId(null); setVersions([]); };
 
-  const newDesign = () => {
-    setCurrentDesignId(null);
-    setDesignName("Sem título");
-    setElements([]);
-    setSelectedId(null);
-    setVersions([]);
-  };
+  // Zoom helpers
+  const zoomIn = useCallback(() => setZoom(z => Math.min(MAX_ZOOM, z + ZOOM_STEP)), []);
+  const zoomOut = useCallback(() => setZoom(z => Math.max(MIN_ZOOM, z - ZOOM_STEP)), []);
+  const zoomFit = useCallback(() => {
+    if (!containerRef.current) return;
+    const cw = containerRef.current.clientWidth;
+    const ch = containerRef.current.clientHeight;
+    const fitZoom = Math.min(cw / screenPreset.w, ch / screenPreset.h) * 0.9;
+    setZoom(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fitZoom)));
+    setPanX((cw - screenPreset.w * fitZoom) / 2);
+    setPanY((ch - screenPreset.h * fitZoom) / 2);
+  }, [screenPreset]);
 
+  const zoomPercent = Math.round(zoom * 100);
+
+  // Convert screen coords to canvas coords accounting for zoom+pan
   const getCanvasPoint = useCallback((e: React.MouseEvent) => {
-    const svg = canvasRef.current;
-    if (!svg) return { x: 0, y: 0 };
-    const rect = svg.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }, []);
+    const container = containerRef.current;
+    if (!container) return { x: 0, y: 0 };
+    const rect = container.getBoundingClientRect();
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
+    return {
+      x: (screenX - panX) / zoom,
+      y: (screenY - panY) / zoom,
+    };
+  }, [zoom, panX, panY]);
+
+  // Wheel zoom
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    if (e.ctrlKey || e.metaKey) {
+      // Zoom towards cursor
+      const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+      const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
+      const scale = newZoom / zoom;
+      setPanX(mx - (mx - panX) * scale);
+      setPanY(my - (my - panY) * scale);
+      setZoom(newZoom);
+    } else {
+      // Pan
+      setPanX(px => px - e.deltaX);
+      setPanY(py => py - e.deltaY);
+    }
+  }, [zoom, panX, panY]);
 
   const handleCanvasClick = useCallback((e: React.MouseEvent) => {
     if (selectedTool === "select") { setSelectedId(null); return; }
     const pt = getCanvasPoint(e);
     const newEl: CanvasElement = {
-      id: Date.now().toString(),
-      type: selectedTool,
+      id: Date.now().toString(), type: selectedTool,
       x: pt.x - 40, y: pt.y - 25,
       width: selectedTool === "circle" ? 60 : selectedTool === "line" ? 150 : 120,
       height: selectedTool === "circle" ? 60 : selectedTool === "line" ? 3 : 70,
@@ -269,7 +337,20 @@ export function DesignCanvas() {
     setResizing({ id, handle, startX: pt.x, startY: pt.y, startEl: { ...el } });
   };
 
+  // Middle-click or space+drag to pan
+  const handleContainerMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 1) { // middle click
+      e.preventDefault();
+      setPanning({ startX: e.clientX, startY: e.clientY, startPanX: panX, startPanY: panY });
+    }
+  }, [panX, panY]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (panning) {
+      setPanX(panning.startPanX + (e.clientX - panning.startX));
+      setPanY(panning.startPanY + (e.clientY - panning.startY));
+      return;
+    }
     const pt = getCanvasPoint(e);
     if (dragging) {
       setElements((prev) => prev.map((el) =>
@@ -289,9 +370,9 @@ export function DesignCanvas() {
         return u;
       }));
     }
-  }, [dragging, resizing, getCanvasPoint, setElements]);
+  }, [panning, dragging, resizing, getCanvasPoint, setElements]);
 
-  const handleMouseUp = () => { setDragging(null); setResizing(null); };
+  const handleMouseUp = () => { setDragging(null); setResizing(null); setPanning(null); };
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
@@ -313,9 +394,7 @@ export function DesignCanvas() {
   };
 
   const applyTemplate = (templateElements: Omit<CanvasElement, "id">[]) => {
-    const newEls: CanvasElement[] = templateElements.map((el, i) => ({
-      ...el, id: `tmpl-${Date.now()}-${i}`,
-    }));
+    const newEls: CanvasElement[] = templateElements.map((el, i) => ({ ...el, id: `tmpl-${Date.now()}-${i}` }));
     setElements(newEls);
     setShowTemplates(false);
     toast.success("Template aplicado!");
@@ -327,18 +406,10 @@ export function DesignCanvas() {
     try {
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-wireframe`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({ prompt: aiPrompt, screenType: screenPreset.label, existingElements: elements.length > 0 ? elements : undefined }),
       });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
-        toast.error(err.error || `Erro ${resp.status}`);
-        setAiLoading(false);
-        return;
-      }
+      if (!resp.ok) { const err = await resp.json().catch(() => ({})); toast.error(err.error || `Erro ${resp.status}`); setAiLoading(false); return; }
       const data = await resp.json();
       if (data.elements) {
         const newEls: CanvasElement[] = data.elements.map((el: Partial<CanvasElement>, i: number) => ({
@@ -351,48 +422,49 @@ export function DesignCanvas() {
         toast.success(`${newEls.length} elementos gerados!`);
         if (data.description) toast.info(data.description);
       }
-    } catch {
-      toast.error("Erro ao gerar wireframe");
-    }
+    } catch { toast.error("Erro ao gerar wireframe"); }
     setAiLoading(false);
   };
 
   const exportPNG = () => {
     const svg = canvasRef.current;
     if (!svg) return;
-    const svgData = new XMLSerializer().serializeToString(svg);
+    // Clone SVG without transform for clean export
+    const clone = svg.cloneNode(true) as SVGSVGElement;
+    clone.removeAttribute("style");
+    clone.setAttribute("width", String(screenPreset.w));
+    clone.setAttribute("height", String(screenPreset.h));
+    clone.setAttribute("viewBox", `0 0 ${screenPreset.w} ${screenPreset.h}`);
+    const g = clone.querySelector("g[data-canvas-content]");
+    if (g) g.removeAttribute("transform");
+    const svgData = new XMLSerializer().serializeToString(clone);
     const canvas = document.createElement("canvas");
-    canvas.width = screenPreset.w;
-    canvas.height = screenPreset.h;
+    canvas.width = screenPreset.w; canvas.height = screenPreset.h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const img = new window.Image();
-    img.onload = () => {
-      ctx.fillStyle = "#1a1a2e";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      const a = document.createElement("a");
-      a.download = `${designName}.png`;
-      a.href = canvas.toDataURL("image/png");
-      a.click();
-    };
+    img.onload = () => { ctx.fillStyle = "#1a1a2e"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); const a = document.createElement("a"); a.download = `${designName}.png`; a.href = canvas.toDataURL("image/png"); a.click(); };
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
       if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "0") { e.preventDefault(); zoomFit(); }
       if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
       if (e.key === "v") setSelectedTool("select");
       if (e.key === "r") setSelectedTool("rect");
       if (e.key === "o") setSelectedTool("circle");
       if (e.key === "t") setSelectedTool("text");
       if (e.key === "l") setSelectedTool("line");
+      if (e.key === "=" || e.key === "+") { e.preventDefault(); zoomIn(); }
+      if (e.key === "-") { e.preventDefault(); zoomOut(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [undo, redo, deleteSelected]);
+  }, [undo, redo, deleteSelected, zoomIn, zoomOut, zoomFit]);
 
   const selectedEl = elements.find((e) => e.id === selectedId);
 
@@ -444,15 +516,17 @@ export function DesignCanvas() {
           </div>
 
           <div className="flex items-center gap-0.5 bg-secondary rounded-lg p-1">
-            <button onClick={undo} disabled={!canUndo} title="Desfazer (Ctrl+Z)" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 transition-colors">
-              <Undo2 className="w-4 h-4" />
-            </button>
-            <button onClick={redo} disabled={!canRedo} title="Refazer (Ctrl+Shift+Z)" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 transition-colors">
-              <Redo2 className="w-4 h-4" />
-            </button>
-            <button onClick={deleteSelected} disabled={!selectedId} title="Excluir" className="p-1.5 rounded-md text-muted-foreground hover:text-status-urgent hover:bg-destructive/10 disabled:opacity-30 transition-colors">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <button onClick={undo} disabled={!canUndo} title="Desfazer (Ctrl+Z)" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 transition-colors"><Undo2 className="w-4 h-4" /></button>
+            <button onClick={redo} disabled={!canRedo} title="Refazer" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 transition-colors"><Redo2 className="w-4 h-4" /></button>
+            <button onClick={deleteSelected} disabled={!selectedId} title="Excluir" className="p-1.5 rounded-md text-muted-foreground hover:text-status-urgent hover:bg-destructive/10 disabled:opacity-30 transition-colors"><Trash2 className="w-4 h-4" /></button>
+          </div>
+
+          {/* Zoom controls */}
+          <div className="flex items-center gap-0.5 bg-secondary rounded-lg p-1">
+            <button onClick={zoomOut} title="Zoom Out (-)" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><ZoomOut className="w-4 h-4" /></button>
+            <span className="text-[10px] text-muted-foreground font-mono w-10 text-center select-none">{zoomPercent}%</span>
+            <button onClick={zoomIn} title="Zoom In (+)" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><ZoomIn className="w-4 h-4" /></button>
+            <button onClick={zoomFit} title="Fit to Screen (Ctrl+0)" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><Maximize className="w-4 h-4" /></button>
           </div>
 
           <div className="flex items-center gap-0.5 bg-secondary rounded-lg p-1">
@@ -465,6 +539,10 @@ export function DesignCanvas() {
           </div>
 
           <div className="flex items-center gap-1 ml-auto">
+            <button onClick={() => setShowMinimap(!showMinimap)} title="Minimap"
+              className={`p-1.5 rounded-md transition-colors ${showMinimap ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+              <Map className="w-4 h-4" />
+            </button>
             <button onClick={() => { setShowTemplates(!showTemplates); setShowAI(false); }} title="Templates"
               className={`p-1.5 rounded-md transition-colors ${showTemplates ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <BookTemplate className="w-4 h-4" />
@@ -476,15 +554,13 @@ export function DesignCanvas() {
               <Sparkles className="w-4 h-4" />
             </button>
             {currentDesignId && (
-              <button onClick={() => { setShowVersions(!showVersions); if (!showVersions && currentDesignId) loadVersions(currentDesignId); }} title="Histórico de versões"
+              <button onClick={() => { setShowVersions(!showVersions); if (!showVersions && currentDesignId) loadVersions(currentDesignId); }} title="Versões"
                 className={`p-1.5 rounded-md transition-colors ${showVersions ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
                 <History className="w-4 h-4" />
               </button>
             )}
             <PresentationButton onClick={() => setShowPresentation(true)} />
-            <button onClick={exportPNG} title="Exportar PNG" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-              <Download className="w-4 h-4" />
-            </button>
+            <button onClick={exportPNG} title="Exportar PNG" className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><Download className="w-4 h-4" /></button>
             <button onClick={saveDesign} disabled={saving} title="Salvar" className="p-1.5 rounded-md text-muted-foreground hover:text-status-develop hover:bg-status-develop/10 transition-colors disabled:opacity-50">
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             </button>
@@ -523,7 +599,7 @@ export function DesignCanvas() {
               <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-primary" /> AI Wireframe Generator
               </h4>
-              <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Descreva a tela que quer criar... Ex: 'Tela de login com email, senha, botão de entrar e opção de cadastro'" rows={4}
+              <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Descreva a tela que quer criar..." rows={4}
                 className="bg-secondary rounded-lg px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground outline-none resize-none" />
               <button onClick={generateWireframe} disabled={aiLoading || !aiPrompt.trim()}
                 className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50 transition-opacity">
@@ -531,60 +607,88 @@ export function DesignCanvas() {
                 {aiLoading ? "Gerando..." : "Gerar Wireframe"}
               </button>
               <div className="text-[10px] text-muted-foreground space-y-1">
-                <p className="font-semibold">Exemplos de prompts:</p>
-                {["Tela de login com email e senha", "Feed de notícias tipo Instagram", "Dashboard de analytics", "Tela de checkout e-commerce", "Tela de chat com lista de mensagens"].map((ex) => (
-                  <button key={ex} onClick={() => setAiPrompt(ex)} className="block w-full text-left hover:text-foreground transition-colors p-1 rounded hover:bg-accent/50">
-                    → {ex}
-                  </button>
+                <p className="font-semibold">Exemplos:</p>
+                {["Tela de login com email e senha", "Feed tipo Instagram", "Dashboard analytics", "Checkout e-commerce", "Chat com mensagens"].map((ex) => (
+                  <button key={ex} onClick={() => setAiPrompt(ex)} className="block w-full text-left hover:text-foreground transition-colors p-1 rounded hover:bg-accent/50">→ {ex}</button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Canvas */}
-          <div className="flex-1 glass-card overflow-auto rounded-lg">
-            <svg ref={canvasRef} width={screenPreset.w} height={screenPreset.h}
-              style={{ cursor: selectedTool !== "select" ? "crosshair" : dragging ? "grabbing" : "default", background: "hsl(228, 14%, 10%)", minWidth: screenPreset.w, minHeight: screenPreset.h }}
-              onClick={handleCanvasClick} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+          {/* Canvas with zoom/pan */}
+          <div
+            ref={containerRef}
+            className="flex-1 glass-card overflow-hidden rounded-lg relative"
+            onWheel={handleWheel}
+            onMouseDown={handleContainerMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            style={{ cursor: panning ? "grabbing" : selectedTool !== "select" ? "crosshair" : dragging ? "grabbing" : "default" }}
+          >
+            <svg
+              ref={canvasRef}
+              width="100%"
+              height="100%"
+              style={{ background: "hsl(228, 14%, 10%)" }}
+              onClick={handleCanvasClick}
+            >
               <defs>
-                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="hsl(228, 10%, 14%)" strokeWidth="0.5" />
+                <pattern id="grid" width={20 * zoom} height={20 * zoom} patternUnits="userSpaceOnUse"
+                  x={panX % (20 * zoom)} y={panY % (20 * zoom)}>
+                  <path d={`M ${20 * zoom} 0 L 0 0 0 ${20 * zoom}`} fill="none" stroke="hsl(228, 10%, 14%)" strokeWidth="0.5" />
                 </pattern>
               </defs>
-              <rect width={screenPreset.w} height={screenPreset.h} fill="url(#grid)" />
-              {screenPreset.label === "iPhone" && (
-                <rect x={0} y={0} width={375} height={812} fill="none" stroke="hsl(228, 10%, 25%)" strokeWidth={1} strokeDasharray="8 4" rx={20} />
-              )}
-              {elements.filter(el => el.visible !== false).map((el) => {
-                const isSelected = el.id === selectedId;
-                return (
-                  <g key={el.id} onMouseDown={(e) => handleElementMouseDown(e, el.id)} style={{ cursor: selectedTool === "select" && !el.locked ? "move" : "default" }} opacity={el.locked ? 0.5 : 1}>
-                    {el.type === "rect" && <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rx={4} stroke={el.stroke} strokeWidth={el.strokeWidth} />}
-                    {el.type === "circle" && <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2} fill={el.fill} />}
-                    {el.type === "text" && <text x={el.x} y={el.y + (el.fontSize || 16)} fill={el.fill} fontSize={el.fontSize || 16} fontFamily="Inter, sans-serif" fontWeight={500}>{el.text}</text>}
-                    {el.type === "line" && <line x1={el.x} y1={el.y} x2={el.x + el.width} y2={el.y + el.height} stroke={el.fill} strokeWidth={3} strokeLinecap="round" />}
-                    {isSelected && (
-                      <>
-                        <rect x={el.x - 1} y={el.y - 1} width={el.width + 2} height={el.height + 2} fill="none" stroke="hsl(252, 80%, 65%)" strokeWidth={1.5} strokeDasharray="4 2" rx={2} />
-                        {getHandles(el).map(({ handle, cx, cy }) => (
-                          <rect key={handle} x={cx - 4} y={cy - 4} width={8} height={8} fill="hsl(252, 80%, 65%)" rx={1}
-                            style={{ cursor: handleCursors[handle] }}
-                            onMouseDown={(e) => handleResizeMouseDown(e, el.id, handle)} />
-                        ))}
-                      </>
-                    )}
-                  </g>
-                );
-              })}
+              <rect width="100%" height="100%" fill="url(#grid)" />
+
+              <g transform={`translate(${panX}, ${panY}) scale(${zoom})`} data-canvas-content>
+                {screenPreset.label === "iPhone" && (
+                  <rect x={0} y={0} width={375} height={812} fill="none" stroke="hsl(228, 10%, 25%)" strokeWidth={1} strokeDasharray="8 4" rx={20} />
+                )}
+                {elements.filter(el => el.visible !== false).map((el) => {
+                  const isSelected = el.id === selectedId;
+                  return (
+                    <g key={el.id} onMouseDown={(e) => handleElementMouseDown(e, el.id)} style={{ cursor: selectedTool === "select" && !el.locked ? "move" : "default" }} opacity={el.locked ? 0.5 : 1}>
+                      {el.type === "rect" && <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rx={4} stroke={el.stroke} strokeWidth={el.strokeWidth} />}
+                      {el.type === "circle" && <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2} fill={el.fill} />}
+                      {el.type === "text" && <text x={el.x} y={el.y + (el.fontSize || 16)} fill={el.fill} fontSize={el.fontSize || 16} fontFamily="Inter, sans-serif" fontWeight={500}>{el.text}</text>}
+                      {el.type === "line" && <line x1={el.x} y1={el.y} x2={el.x + el.width} y2={el.y + el.height} stroke={el.fill} strokeWidth={3} strokeLinecap="round" />}
+                      {isSelected && (
+                        <>
+                          <rect x={el.x - 1} y={el.y - 1} width={el.width + 2} height={el.height + 2} fill="none" stroke="hsl(252, 80%, 65%)" strokeWidth={1.5 / zoom} strokeDasharray="4 2" rx={2} />
+                          {getHandles(el).map(({ handle, cx, cy }) => (
+                            <rect key={handle} x={cx - 4 / zoom} y={cy - 4 / zoom} width={8 / zoom} height={8 / zoom} fill="hsl(252, 80%, 65%)" rx={1}
+                              style={{ cursor: handleCursors[handle] }}
+                              onMouseDown={(e) => handleResizeMouseDown(e, el.id, handle)} />
+                          ))}
+                        </>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
             </svg>
+
+            {/* Minimap */}
+            {showMinimap && (
+              <Minimap
+                elements={elements}
+                canvasW={screenPreset.w}
+                canvasH={screenPreset.h}
+                zoom={zoom}
+                panX={panX}
+                panY={panY}
+                viewportW={containerRef.current?.clientWidth || 800}
+                viewportH={containerRef.current?.clientHeight || 600}
+                onNavigate={(x, y) => { setPanX(x); setPanY(y); }}
+              />
+            )}
           </div>
 
           {/* Layers Panel */}
           {showLayers && (
             <div className="w-52 glass-card p-3 flex flex-col gap-2 shrink-0 overflow-y-auto">
-              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5" /> Layers ({elements.length})
-              </h4>
+              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Layers className="w-3.5 h-3.5" /> Layers ({elements.length})</h4>
               <div className="space-y-0.5">
                 {[...elements].reverse().map((el) => (
                   <div key={el.id}
@@ -605,16 +709,13 @@ export function DesignCanvas() {
           {/* Version History Panel */}
           {showVersions && (
             <div className="w-52 glass-card p-3 flex flex-col gap-2 shrink-0 overflow-y-auto">
-              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5" /> Versões
-              </h4>
+              <h4 className="text-xs font-semibold text-foreground flex items-center gap-1.5"><History className="w-3.5 h-3.5" /> Versões</h4>
               {versions.length === 0 ? (
-                <p className="text-[10px] text-muted-foreground text-center py-4">Salve o design para criar versões</p>
+                <p className="text-[10px] text-muted-foreground text-center py-4">Salve para criar versões</p>
               ) : (
                 <div className="space-y-1">
                   {versions.map((v) => (
-                    <button key={v.id} onClick={() => restoreVersion(v)}
-                      className="w-full text-left p-2 rounded-md bg-secondary/50 hover:bg-accent/50 transition-colors">
+                    <button key={v.id} onClick={() => restoreVersion(v)} className="w-full text-left p-2 rounded-md bg-secondary/50 hover:bg-accent/50 transition-colors">
                       <p className="text-[10px] font-medium text-foreground">{v.name}</p>
                       <p className="text-[9px] text-muted-foreground">
                         {new Date(v.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -642,11 +743,11 @@ export function DesignCanvas() {
                 <input type="number" value={selectedEl.fontSize || 16} onChange={(e) => updateSelected({ fontSize: Number(e.target.value) })} className="w-10 bg-accent rounded px-1 py-0.5 text-foreground outline-none" title="Font size" />
               </>
             )}
+            <span className="ml-auto text-[9px] text-muted-foreground/50">Zoom: {zoomPercent}%</span>
           </div>
         )}
       </div>
 
-      {/* Presentation Mode */}
       <AnimatePresence>
         {showPresentation && <PresentationMode onClose={() => setShowPresentation(false)} />}
       </AnimatePresence>
