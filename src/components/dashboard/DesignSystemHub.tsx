@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 // ---- Types ----
-type DSCategory = "foundations" | "components" | "patterns" | "ai-analysis";
+type DSCategory = "foundations" | "components" | "patterns" | "ai-analysis" | "flutter-core";
 
 interface DSNavItem {
   label: string;
