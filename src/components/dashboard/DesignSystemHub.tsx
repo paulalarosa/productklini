@@ -333,7 +333,15 @@ export function DesignSystemHub() {
 
   const copyCode = () => {
     if (!selectedComponent) return;
-    const code = codeTab === "flutter" ? generateFlutterWidget(selectedComponent) : codeTab === "theme" ? generateThemeData(selectedComponent) : codeTab === "specs" ? generateDesignSpecs(selectedComponent) : "";
+    const codeMap: Record<string, string> = {
+      react: selectedComponent.code_react || "",
+      vue: selectedComponent.code_vue || "",
+      html: selectedComponent.code_html || "",
+      flutter: generateFlutterWidget(selectedComponent),
+      theme: generateThemeData(selectedComponent),
+      specs: generateDesignSpecs(selectedComponent),
+    };
+    const code = codeMap[codeTab] || "";
     if (!code) { toast.error("Sem código disponível"); return; }
     navigator.clipboard.writeText(code);
     setCopied(true);
