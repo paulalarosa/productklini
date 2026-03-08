@@ -30,6 +30,7 @@ import { CardSortingPage } from "./pages/CardSortingPage";
 import { VisualCheckerPage } from "./pages/VisualCheckerPage";
 import { MotionGalleryPage } from "./pages/MotionGalleryPage";
 import { SVGManagerPage } from "./pages/SVGManagerPage";
+import { AnalyticsHubPage } from "./pages/AnalyticsHubPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,7 @@ const App = () => (
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
+              <Route path="/analytics" element={<AnalyticsHubPage />} />
               <Route path="/relatorio" element={<ReportPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
