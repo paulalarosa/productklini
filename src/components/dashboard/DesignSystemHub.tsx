@@ -120,10 +120,11 @@ export function DesignSystemHub() {
   // Load components from DB
   const loadComponents = useCallback(async () => {
     setLoadingComponents(true);
+    const projectId = await getProjectId();
     const { data, error } = await supabase
       .from("ds_components" as any)
       .select("*")
-      .eq("project_id", PROJECT_ID)
+      .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     if (data) {
       setComponents(data as unknown as DSComponent[]);
