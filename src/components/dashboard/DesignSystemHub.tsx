@@ -945,3 +945,312 @@ function TokenHistoryView() {
     </div>
   );
 }
+
+// ---- Flutter Core Views ----
+
+function FlutterTextThemeView() {
+  const [copied, setCopied] = useState(false);
+  const code = `// TextTheme — Cole no theme.dart
+import 'package:flutter/material.dart';
+
+const appTextTheme = TextTheme(
+  displayLarge: TextStyle(
+    fontSize: 32,
+    fontWeight: FontWeight.w800,
+    letterSpacing: -1.0,
+    height: 1.2,
+  ),
+  headlineMedium: TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+    height: 1.3,
+  ),
+  titleLarge: TextStyle(
+    fontSize: 20,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  ),
+  titleMedium: TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+  ),
+  bodyLarge: TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w400,
+    height: 1.6,
+  ),
+  bodyMedium: TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+  ),
+  bodySmall: TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w400,
+    height: 1.5,
+    color: Color(0xFF94A3B8), // muted
+  ),
+  labelLarge: TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+  ),
+  labelSmall: TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 1.2,
+  ),
+);`;
+  
+  const copyAll = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const scales = [
+    { name: "displayLarge", size: "32sp", weight: "w800", sample: "Headline" },
+    { name: "headlineMedium", size: "24sp", weight: "w700", sample: "Subtítulo" },
+    { name: "titleLarge", size: "20sp", weight: "w600", sample: "Section Title" },
+    { name: "titleMedium", size: "16sp", weight: "w600", sample: "Card Title" },
+    { name: "bodyLarge", size: "16sp", weight: "w400", sample: "Texto principal do corpo" },
+    { name: "bodyMedium", size: "14sp", weight: "w400", sample: "Texto secundário menor" },
+    { name: "bodySmall", size: "12sp", weight: "w400", sample: "Captions e hints" },
+    { name: "labelLarge", size: "14sp", weight: "w600", sample: "BUTTON LABEL" },
+    { name: "labelSmall", size: "10sp", weight: "w700", sample: "OVERLINE" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-semibold text-foreground">Flutter TextTheme</h3>
+          <button onClick={copyAll} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80">
+            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            {copied ? "Copiado!" : "Copiar Dart"}
+          </button>
+        </div>
+        <div className="space-y-3">
+          {scales.map((s) => (
+            <div key={s.name} className="p-3 rounded-lg bg-secondary/30 flex items-center justify-between">
+              <div>
+                <p className="text-foreground" style={{ fontSize: `${parseInt(s.size)}px`, fontWeight: s.weight === "w800" ? 800 : s.weight === "w700" ? 700 : s.weight === "w600" ? 600 : 400 }}>
+                  {s.sample}
+                </p>
+                <p className="text-[9px] font-mono text-muted-foreground mt-1">{s.name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-muted-foreground">{s.size}</p>
+                <p className="text-[9px] text-muted-foreground/60">{s.weight}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="glass-card p-4">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Código Dart</h4>
+        <pre className="text-[10px] font-mono text-foreground/80 bg-background/80 rounded p-3 overflow-x-auto max-h-[300px]">{code}</pre>
+      </div>
+    </div>
+  );
+}
+
+function FlutterColorSchemeView() {
+  const [copied, setCopied] = useState(false);
+  const code = `// ColorScheme — Cole no theme.dart
+import 'package:flutter/material.dart';
+
+final appColorScheme = ColorScheme(
+  brightness: Brightness.dark,
+  primary: Color(0xFF818CF8),       // Indigo 400
+  onPrimary: Color(0xFFFFFFFF),
+  primaryContainer: Color(0xFF3730A3),
+  onPrimaryContainer: Color(0xFFE0E7FF),
+  secondary: Color(0xFF1E2130),
+  onSecondary: Color(0xFFE2E8F0),
+  secondaryContainer: Color(0xFF2A2D3E),
+  onSecondaryContainer: Color(0xFFCBD5E1),
+  surface: Color(0xFF131620),
+  onSurface: Color(0xFFE2E8F0),
+  surfaceContainerHighest: Color(0xFF1E2130),
+  error: Color(0xFFEF4444),
+  onError: Color(0xFFFFFFFF),
+  outline: Color(0xFF334155),
+  shadow: Color(0xFF000000),
+);
+
+// Status colors (extensão)
+class AppColors {
+  static const discovery = Color(0xFF3B82F6);
+  static const define    = Color(0xFF8B5CF6);
+  static const develop   = Color(0xFF10B981);
+  static const deliver   = Color(0xFFF59E0B);
+}`;
+
+  const colors = [
+    { name: "primary", hex: "#818CF8", dart: "Color(0xFF818CF8)" },
+    { name: "onPrimary", hex: "#FFFFFF", dart: "Color(0xFFFFFFFF)" },
+    { name: "secondary", hex: "#1E2130", dart: "Color(0xFF1E2130)" },
+    { name: "surface", hex: "#131620", dart: "Color(0xFF131620)" },
+    { name: "onSurface", hex: "#E2E8F0", dart: "Color(0xFFE2E8F0)" },
+    { name: "error", hex: "#EF4444", dart: "Color(0xFFEF4444)" },
+    { name: "outline", hex: "#334155", dart: "Color(0xFF334155)" },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="glass-card p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xs font-semibold text-foreground">Flutter ColorScheme</h3>
+          <button onClick={() => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80">
+            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            {copied ? "Copiado!" : "Copiar Dart"}
+          </button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {colors.map((c) => (
+            <div key={c.name} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
+              <div className="w-10 h-10 rounded-lg border border-border shrink-0" style={{ backgroundColor: c.hex }} />
+              <div>
+                <p className="text-[10px] font-semibold text-foreground">{c.name}</p>
+                <p className="text-[9px] font-mono text-muted-foreground">{c.hex}</p>
+                <p className="text-[8px] font-mono text-muted-foreground/60">{c.dart}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="glass-card p-4">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Código Dart</h4>
+        <pre className="text-[10px] font-mono text-foreground/80 bg-background/80 rounded p-3 overflow-x-auto max-h-[300px]">{code}</pre>
+      </div>
+    </div>
+  );
+}
+
+function FlutterNativeComponentsView() {
+  const widgets = [
+    {
+      name: "AppButton",
+      description: "Botão primário com gradient, ripple e loading state",
+      code: `class AppButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+
+  const AppButton({super.key, required this.label, this.onPressed, this.isLoading = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withOpacity(0.8),
+        ]),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: isLoading ? null : onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            child: isLoading
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white)),
+          ),
+        ),
+      ),
+    );
+  }
+}`,
+    },
+    {
+      name: "AppCard",
+      description: "Card com borda sutil e padding consistente",
+      code: `class AppCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsets? padding;
+
+  const AppCard({super.key, required this.child, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding ?? const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.15)),
+      ),
+      child: child,
+    );
+  }
+}`,
+    },
+    {
+      name: "AppTextField",
+      description: "Input com estilo consistente e validação",
+      code: `class AppTextField extends StatelessWidget {
+  final String label;
+  final String? hint;
+  final TextEditingController? controller;
+  final String? Function(String?)? validator;
+
+  const AppTextField({super.key, required this.label, this.hint, this.controller, this.validator});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      validator: validator,
+      style: Theme.of(context).textTheme.bodyMedium,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+    );
+  }
+}`,
+    },
+  ];
+
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  return (
+    <div className="space-y-4">
+      {widgets.map((w, i) => (
+        <div key={w.name} className="glass-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+            <div>
+              <h4 className="text-xs font-semibold text-foreground">{w.name}</h4>
+              <p className="text-[9px] text-muted-foreground">{w.description}</p>
+            </div>
+            <button
+              onClick={() => { navigator.clipboard.writeText(w.code); setCopiedIdx(i); toast.success("Widget copiado!"); setTimeout(() => setCopiedIdx(null), 2000); }}
+              className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80"
+            >
+              {copiedIdx === i ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              {copiedIdx === i ? "Copiado!" : "Copiar Widget"}
+            </button>
+          </div>
+          <pre className="text-[10px] font-mono text-foreground/80 p-4 overflow-x-auto max-h-[250px] bg-background/50">{w.code}</pre>
+        </div>
+      ))}
+    </div>
+  );
+}
