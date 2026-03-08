@@ -37,7 +37,7 @@ interface DSComponent {
   created_at: string;
 }
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 
 // ---- Static Navigation ----
 const STATIC_NAV: { category: DSCategory; title: string; items: DSNavItem[] }[] = [
