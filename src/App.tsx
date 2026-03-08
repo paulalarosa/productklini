@@ -21,6 +21,12 @@ import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages
 import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
 import { PrioritizationMatrixPage, SitemapPage } from "./pages/StrategyPages";
 import { ShareViewPage } from "./pages/ShareViewPage";
+import { InterviewTranscriberPage } from "./pages/InterviewPage";
+import { MicrocopyValidatorPage } from "./pages/MicrocopyValidatorPage";
+import { WCAGAuditorPage } from "./pages/WCAGAuditorPage";
+import { ComponentStatesPage, TaskFlowsPage } from "./pages/InteractionDesignPages";
+import { VisualSitemapPage } from "./pages/VisualSitemapPage";
+import { CardSortingPage } from "./pages/CardSortingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +52,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/ai-studio" element={<AIDesignStudioPage />} />
               <Route path="/ux/pesquisas" element={<PesquisasPage />} />
+              <Route path="/ux/interviews" element={<InterviewTranscriberPage />} />
               <Route path="/ux/personas" element={<PersonasPage />} />
               <Route path="/ux/empathy-map" element={<EmpathyMapPage />} />
               <Route path="/ux/benchmark" element={<BenchmarkPage />} />
@@ -56,10 +63,16 @@ const App = () => (
               <Route path="/ux/fluxos" element={<FluxosPage />} />
               <Route path="/ux/tone" element={<ToneOfVoicePage />} />
               <Route path="/ux/microcopy" element={<MicrocopyLibraryPage />} />
+              <Route path="/ux/microcopy-validator" element={<MicrocopyValidatorPage />} />
               <Route path="/ux/content-audit" element={<ContentAuditPage />} />
               <Route path="/ux/heuristics" element={<HeuristicEvalPage />} />
               <Route path="/ux/usability-test" element={<UsabilityTestPage />} />
               <Route path="/ux/wcag" element={<WCAGChecklistPage />} />
+              <Route path="/ux/wcag-auditor" element={<WCAGAuditorPage />} />
+              <Route path="/ia/sitemap-visual" element={<VisualSitemapPage />} />
+              <Route path="/ia/card-sorting" element={<CardSortingPage />} />
+              <Route path="/ixd/states" element={<ComponentStatesPage />} />
+              <Route path="/ixd/task-flows" element={<TaskFlowsPage />} />
               <Route path="/strategy/prioritization" element={<PrioritizationMatrixPage />} />
               <Route path="/strategy/sitemap" element={<SitemapPage />} />
               <Route path="/ui/design-system" element={<DesignSystemPage />} />

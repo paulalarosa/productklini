@@ -6,7 +6,7 @@ import {
   Kanban, ShieldCheck, BarChart3, Sparkles, CircleDot, FileBarChart, Settings,
   ChevronDown, Menu, X, Heart, Briefcase, Grid3X3, HelpCircle, Lightbulb,
   MessageSquare, BookOpen, ClipboardList, ListChecks, PlayCircle, Accessibility,
-  ArrowUpDown, Network,
+  ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid,
 } from "lucide-react";
 
 interface NavItem { label: string; icon: React.ElementType; path: string; }
@@ -24,6 +24,7 @@ const navGroups: NavGroup[] = [
     title: "Discovery & Research",
     items: [
       { label: "Pesquisas", icon: Search, path: "/ux/pesquisas" },
+      { label: "Entrevistas", icon: Mic, path: "/ux/interviews" },
       { label: "Personas", icon: Users, path: "/ux/personas" },
       { label: "Mapa de Empatia", icon: Heart, path: "/ux/empathy-map" },
       { label: "Benchmark", icon: BarChart3, path: "/ux/benchmark" },
@@ -35,11 +36,27 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    title: "Arq. Informação",
+    items: [
+      { label: "Sitemap Visual", icon: Network, path: "/ia/sitemap-visual" },
+      { label: "Sitemap (Doc)", icon: Network, path: "/strategy/sitemap" },
+      { label: "Card Sorting", icon: LayoutGrid, path: "/ia/card-sorting" },
+    ],
+  },
+  {
     title: "UX Writing",
     items: [
       { label: "Tom de Voz", icon: MessageSquare, path: "/ux/tone" },
       { label: "Microcopy", icon: BookOpen, path: "/ux/microcopy" },
+      { label: "Validador Microcopy", icon: Type, path: "/ux/microcopy-validator" },
       { label: "Inventário Conteúdo", icon: ClipboardList, path: "/ux/content-audit" },
+    ],
+  },
+  {
+    title: "Interaction Design",
+    items: [
+      { label: "Estados Componentes", icon: Columns, path: "/ixd/states" },
+      { label: "Task Flows", icon: GitBranch, path: "/ixd/task-flows" },
     ],
   },
   {
@@ -47,14 +64,14 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Heurísticas Nielsen", icon: ListChecks, path: "/ux/heuristics" },
       { label: "Teste Usabilidade", icon: PlayCircle, path: "/ux/usability-test" },
-      { label: "WCAG", icon: Accessibility, path: "/ux/wcag" },
+      { label: "WCAG Checklist", icon: Accessibility, path: "/ux/wcag" },
+      { label: "Auditor WCAG (IA)", icon: Shield, path: "/ux/wcag-auditor" },
     ],
   },
   {
     title: "Estratégia",
     items: [
       { label: "Priorização", icon: ArrowUpDown, path: "/strategy/prioritization" },
-      { label: "Sitemap", icon: Network, path: "/strategy/sitemap" },
     ],
   },
   {
