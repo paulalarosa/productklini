@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2, FileText,
 } from "lucide-react";
+import jsPDF from "jspdf";
 import { toast } from "sonner";
 import {
   LineChart, Line, PieChart, Pie, Cell,
@@ -159,6 +160,85 @@ export function AnalyticsHubPage() {
 
     return { total, sorted, topIssues, praiseCount, negativeCount, positiveCount, recommendations };
   }, [reviews]);
+
+  const handleExportPDF = () => {
+    if (!aiInsightsSummary) {
+      toast.error("Sem dados para exportar");
+      return;
+    }
+    const doc = new jsPDF();
+    const margin = 20;
+    let y = margin;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Relatório de Insights — Analytics & Feedback", margin, y);
+    y += 10;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(120);
+    doc.text(`Gerado em ${new Date().toLocaleString("pt-BR")} • ${aiInsightsSummary.total} reviews analisadas`, margin, y);
+    y += 14;
+
+    // KPIs
+    doc.setTextColor(40);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumo de KPIs", margin, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const kpis = [
+      `DAU: ${latestSnapshot ? `${(latestSnapshot.dau / 1000).toFixed(1)}K` : "—"}`,
+      `MAU: ${latestSnapshot ? `${(latestSnapshot.mau / 1000).toFixed(1)}K` : "—"}`,
+      `Conversão: ${conversionRate}%`,
+      `Nota Média: ${avgStars}★ (${reviews?.length ?? 0} reviews)`,
+      `Crash-Free: ${crashFreePercent}%`,
+    ];
+    kpis.forEach((k) => { doc.text(`• ${k}`, margin + 4, y); y += 6; });
+    y += 6;
+
+    // Tag Distribution
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Distribuição por Categoria (IA)", margin, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    aiInsightsSummary.sorted.forEach(([type, items]) => {
+      const label = TAG_LABELS[type] || type;
+      doc.text(`• ${label}: ${items.length} reviews (${Math.round((items.length / aiInsightsSummary.total) * 100)}%)`, margin + 4, y);
+      y += 6;
+    });
+    y += 6;
+
+    // Sentiment
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Sentimento", margin, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Positivas (4-5★): ${aiInsightsSummary.positiveCount}`, margin + 4, y); y += 6;
+    doc.text(`Negativas (1-2★): ${aiInsightsSummary.negativeCount}`, margin + 4, y); y += 10;
+
+    // Recommendations
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Recomendações da IA", margin, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    aiInsightsSummary.recommendations.forEach((rec, i) => {
+      const lines = doc.splitTextToSize(`${i + 1}. ${rec}`, 170);
+      doc.text(lines, margin + 4, y);
+      y += lines.length * 5 + 3;
+    });
+
+    doc.save("insights-analytics-report.pdf");
+    toast.success("PDF exportado com sucesso!");
+  };
 
   const handleCreateCard = (review: DbAppReview, type: "ux" | "dev") => {
     toast.success(
@@ -350,6 +430,13 @@ export function AnalyticsHubPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Painel de Insights IA</span>
                 <span className="text-[10px] text-muted-foreground">({aiInsightsSummary.total} reviews analisadas)</span>
+                <button
+                  onClick={handleExportPDF}
+                  className="ml-auto flex items-center gap-1 text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+                >
+                  <FileText size={10} />
+                  Exportar PDF
+                </button>
               </div>
 
               {/* Tag distribution */}
