@@ -284,15 +284,10 @@ export function AnalyticsHubPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Find top AI insight
-  const topInsight = useMemo(() => {
-    if (!reviews || reviews.length === 0) return null;
-    const bugs = reviews.filter(r => r.ai_tag_type === "bug");
-    const perfIssues = reviews.filter(r => r.ai_tag_type === "performance");
-    if (bugs.length > 2) return `Detectamos ${bugs.length} reports de bugs de UI nas últimas reviews. O padrão mais comum: falhas na tela de checkout em Android.`;
-    if (perfIssues.length > 1) return `${perfIssues.length} usuários reportaram problemas de performance. Considere otimizar o carregamento de imagens e tempo de resposta da API.`;
-    return "Métricas estáveis. Continue monitorando o sentimento dos usuários para detectar tendências.";
-  }, [reviews]);
+  const TAG_LABELS: Record<string, string> = {
+    bug: "🐛 Bug", performance: "⚡ Performance", praise: "👏 Elogio", ux: "🎯 UX",
+    crash: "💥 Crash", feature: "✨ Feature", security: "🔒 Segurança", accessibility: "♿ Acessibilidade",
+  };
 
   if (isEmpty) {
     return (
