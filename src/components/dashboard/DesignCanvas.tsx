@@ -3,12 +3,13 @@ import {
   Square, Circle, Type, MousePointer, Trash2, Minus, Download, Undo2, Redo2,
   Layers, Sparkles, Loader2, Save, FolderOpen, Plus, Smartphone, Monitor,
   Image, ToggleLeft, Menu as MenuIcon, CreditCard, Layout, History, Maximize2,
-  BookTemplate, ZoomIn, ZoomOut, Maximize, Map,
+  BookTemplate, ZoomIn, ZoomOut, Maximize, Map, Play, MousePointer2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { WireframeTemplatePanel } from "./WireframeTemplates";
 import { PresentationMode, PresentationButton } from "./PresentationMode";
+import { PrototypePlayer, HotspotEditor } from "./PrototypePlayer";
 import { AnimatePresence } from "framer-motion";
 
 // ---- Types ----
