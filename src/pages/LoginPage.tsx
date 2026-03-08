@@ -195,4 +195,6 @@ const LoginPage = forwardRef<HTMLDivElement>(function LoginPage(_props, _ref) {
       </motion.div>
     </div>
   );
-}
+});
+
+export default LoginPage;
