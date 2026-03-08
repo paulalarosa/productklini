@@ -13,6 +13,7 @@ import { PesquisasPage, PersonasPage, FluxosPage } from "./pages/UXPages";
 import { DesignSystemPage, TelasPage, HandoffPage } from "./pages/UIPages";
 import { KanbanPage, SprintsPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { FigmaPage, GitHubPage, ConfigPage } from "./pages/IntegrationPages";
+import { AIDesignStudioPage } from "./pages/AIStudioPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
