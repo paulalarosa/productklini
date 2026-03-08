@@ -28,6 +28,10 @@ const TAG_STYLES: Record<string, string> = {
   performance: "bg-status-deliver/15 text-status-deliver border-status-deliver/30",
   praise: "bg-status-develop/15 text-status-develop border-status-develop/30",
   ux: "bg-status-discovery/15 text-status-discovery border-status-discovery/30",
+  crash: "bg-destructive/15 text-destructive border-destructive/30",
+  feature: "bg-primary/15 text-primary border-primary/30",
+  security: "bg-destructive/15 text-destructive border-destructive/30",
+  accessibility: "bg-status-define/15 text-status-define border-status-define/30",
 };
 
 const TOOLTIP_STYLE = {
