@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { PesquisasPage, PersonasPage, FluxosPage } from "./pages/UXPages";
 import { DesignSystemPage, TelasPage, HandoffPage } from "./pages/UIPages";
+import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
 import { KanbanPage, SprintsPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { FigmaPage, GitHubPage, ConfigPage } from "./pages/IntegrationPages";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
