@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2, FileText,
 } from "lucide-react";
+import jsPDF from "jspdf";
 import { toast } from "sonner";
 import {
   LineChart, Line, PieChart, Pie, Cell,
