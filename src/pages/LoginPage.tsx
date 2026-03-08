@@ -8,14 +8,17 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
+
+  if (authLoading) return null;
+  if (user) return <Navigate to="/" replace />;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
