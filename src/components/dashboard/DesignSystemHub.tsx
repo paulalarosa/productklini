@@ -922,50 +922,63 @@ function WCAGView() {
 
 // ---- Token History View ----
 function TokenHistoryView() {
-  const [history] = useState([
-    { token: "--primary", oldValue: "252 80% 60%", newValue: "252 80% 65%", date: "2026-03-06", author: "IA", reason: "Melhor contraste AA" },
-    { token: "--background", oldValue: "228 14% 10%", newValue: "228 14% 8%", date: "2026-03-05", author: "Designer", reason: "Mais profundidade" },
-    { token: "--status-discovery", oldValue: "214 80% 55%", newValue: "214 90% 60%", date: "2026-03-04", author: "IA", reason: "Maior saturação para destaque" },
-  ]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const { fetchTokenHistory } = await import("@/lib/api");
+        const data = await fetchTokenHistory();
+        setHistory(data);
+      } catch { /* ignore */ }
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
 
   return (
     <div className="space-y-4">
       <div className="glass-card p-4">
         <h3 className="text-xs font-semibold text-foreground mb-1">Histórico de Tokens</h3>
-        <p className="text-[10px] text-muted-foreground mb-4">Rastreie alterações nos Design Tokens. Cada mudança gera um registro para governança.</p>
+        <p className="text-[10px] text-muted-foreground mb-4">Rastreie alterações nos Design Tokens. Cada mudança gera um registro automático.</p>
 
-        <div className="space-y-3">
-          {history.map((h, i) => (
-            <div key={i} className="p-3 rounded-lg bg-secondary/30 border border-border/50">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-mono font-semibold text-primary">{h.token}</span>
-                <span className="text-[9px] text-muted-foreground">{h.date}</span>
-              </div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: `hsl(${h.oldValue})` }} />
-                  <span className="text-[9px] font-mono text-muted-foreground line-through">{h.oldValue}</span>
+        {history.length === 0 ? (
+          <div className="p-6 text-center border border-dashed border-border rounded-lg">
+            <p className="text-[10px] text-muted-foreground">Nenhuma alteração registrada ainda.</p>
+            <p className="text-[9px] text-muted-foreground/60 mt-1">Edite tokens em "Token → theme.dart" e clique Salvar para gerar histórico.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {history.map((h) => (
+              <div key={h.id} className="p-3 rounded-lg bg-secondary/30 border border-border/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-mono font-semibold text-primary">{h.token_key}</span>
+                  <span className="text-[9px] text-muted-foreground">{new Date(h.changed_at).toLocaleDateString("pt-BR")}</span>
                 </div>
-                <span className="text-[9px] text-muted-foreground">→</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: `hsl(${h.newValue})` }} />
-                  <span className="text-[9px] font-mono text-foreground">{h.newValue}</span>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: h.old_value }} />
+                    <span className="text-[9px] font-mono text-muted-foreground line-through">{h.old_value}</span>
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">→</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: h.new_value }} />
+                    <span className="text-[9px] font-mono text-foreground">{h.new_value}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">{h.reason}</span>
+                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${
+                    h.author === "IA" ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
+                  }`}>{h.author}</span>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] text-muted-foreground">{h.reason}</span>
-                <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${
-                  h.author === "IA" ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"
-                }`}>{h.author}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 p-3 rounded-lg border border-dashed border-border text-center">
-          <p className="text-[10px] text-muted-foreground">Quando tokens forem alterados, o histórico será registrado automaticamente aqui.</p>
-          <p className="text-[9px] text-muted-foreground/60 mt-1">Futuro: Alertas de mudança + Pull Request automático</p>
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
