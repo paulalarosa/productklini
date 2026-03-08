@@ -286,6 +286,7 @@ export type Database = {
       design_tokens: {
         Row: {
           category: string
+          flutter_variable: string
           id: string
           project_id: string
           token_key: string
@@ -295,6 +296,7 @@ export type Database = {
         }
         Insert: {
           category?: string
+          flutter_variable?: string
           id?: string
           project_id: string
           token_key: string
@@ -304,6 +306,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          flutter_variable?: string
           id?: string
           project_id?: string
           token_key?: string
@@ -371,6 +374,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      mcp_sync_logs: {
+        Row: {
+          ai_insights: Json
+          component_id: string
+          id: string
+          synced_at: string
+        }
+        Insert: {
+          ai_insights?: Json
+          component_id: string
+          id?: string
+          synced_at?: string
+        }
+        Update: {
+          ai_insights?: Json
+          component_id?: string
+          id?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mcp_sync_logs_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "ui_components"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -492,6 +524,7 @@ export type Database = {
           created_at: string
           current_phase: string
           description: string | null
+          figma_file_url: string | null
           id: string
           name: string
           phase_progress: Json
@@ -503,6 +536,7 @@ export type Database = {
           created_at?: string
           current_phase?: string
           description?: string | null
+          figma_file_url?: string | null
           id?: string
           name: string
           phase_progress?: Json
@@ -514,6 +548,7 @@ export type Database = {
           created_at?: string
           current_phase?: string
           description?: string | null
+          figma_file_url?: string | null
           id?: string
           name?: string
           phase_progress?: Json
@@ -709,6 +744,50 @@ export type Database = {
           },
         ]
       }
+      ui_components: {
+        Row: {
+          component_name: string
+          created_at: string
+          dart_code: string
+          figma_node_id: string
+          id: string
+          project_id: string
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          component_name: string
+          created_at?: string
+          dart_code?: string
+          figma_node_id?: string
+          id?: string
+          project_id: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          component_name?: string
+          created_at?: string
+          dart_code?: string
+          figma_node_id?: string
+          id?: string
+          project_id?: string
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ui_components_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ux_metrics: {
         Row: {
           id: string
@@ -796,6 +875,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      user_owns_component: { Args: { _component_id: string }; Returns: boolean }
       user_owns_design: { Args: { _design_id: string }; Returns: boolean }
       user_owns_project: { Args: { _project_id: string }; Returns: boolean }
     }
