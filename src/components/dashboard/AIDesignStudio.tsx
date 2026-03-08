@@ -21,7 +21,7 @@ interface Iteration {
   savedToDS?: boolean;
 }
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 
 // ---- Loading Messages ----
 const UX_LOADING_MSGS = [
