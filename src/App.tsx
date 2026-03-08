@@ -35,6 +35,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/share/:token" element={<ShareViewPage />} />
             <Route
               element={
                 <ProtectedRoute>
