@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
   seedAnalyticsData, insertAppReviews, scrapeStoreReviews,
+  analyzeReviewsWithAI, updateReviewTags,
   DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
 } from "@/lib/api";
 
