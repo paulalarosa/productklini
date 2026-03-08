@@ -12,6 +12,7 @@ import {
   Kanban,
   Zap,
   ShieldCheck,
+  BarChart3,
   Figma,
   GitBranch,
   Settings,

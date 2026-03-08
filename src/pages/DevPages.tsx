@@ -197,3 +197,11 @@ export function QAPage() {
     </ModulePage>
   );
 }
+
+export function TeamMetricsPage() {
+  return (
+    <ModulePage title="Métricas do Time" subtitle="Velocity, burndown e carga de trabalho" icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}>
+      <TeamMetrics />
+    </ModulePage>
+  );
+}
