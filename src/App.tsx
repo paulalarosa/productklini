@@ -92,6 +92,7 @@ const App = () => (
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
               <Route path="/analytics" element={<AnalyticsHubPage />} />
               <Route path="/relatorio" element={<ReportPage />} />
+              <Route path="/git-sync" element={<GitSyncHubPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />

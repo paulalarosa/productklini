@@ -98,6 +98,7 @@ const navGroups: NavGroup[] = [
       { label: "Kanban", icon: Kanban, path: "/dev/kanban" },
       { label: "QA", icon: ShieldCheck, path: "/dev/qa" },
       { label: "Métricas", icon: BarChart3, path: "/dev/metricas" },
+      { label: "Git Sync Hub", icon: GitBranch, path: "/git-sync" },
     ],
   },
   {
