@@ -591,7 +591,10 @@ export function DesignSystemHub() {
                   ) : (
                     <pre className="text-xs text-foreground/90 font-mono leading-relaxed overflow-x-auto max-h-[400px]">
                       <code>
-                        {codeTab === "flutter" ? generateFlutterWidget(selectedComponent) :
+                        {codeTab === "react" ? (selectedComponent.code_react || "// Sem código React disponível") :
+                         codeTab === "vue" ? (selectedComponent.code_vue || "// Sem código Vue disponível") :
+                         codeTab === "html" ? (selectedComponent.code_html || "<!-- Sem código HTML disponível -->") :
+                         codeTab === "flutter" ? generateFlutterWidget(selectedComponent) :
                          codeTab === "theme" ? generateThemeData(selectedComponent) :
                          generateDesignSpecs(selectedComponent)}
                       </code>
