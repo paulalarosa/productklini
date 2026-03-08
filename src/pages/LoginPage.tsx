@@ -1,21 +1,28 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Layers, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
+  const { user, loading: authLoading } = useAuth();
+
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
+
+  if (authLoading) return null;
+  if (user) return <Navigate to="/" replace />;
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       if (forgotPassword) {
@@ -41,7 +48,7 @@ export default function LoginPage() {
       toast.error(err instanceof Error ? err.message : "Erro na autenticação");
     }
 
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const handleGoogleLogin = async () => {
@@ -142,10 +149,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={submitting}
               className="w-full py-2.5 rounded-lg gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              {loading
+              {submitting
                 ? "Carregando..."
                 : forgotPassword
                 ? "Enviar link"
