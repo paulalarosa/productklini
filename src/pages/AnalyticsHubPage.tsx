@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
