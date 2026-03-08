@@ -87,6 +87,71 @@ export type Database = {
           },
         ]
       }
+      canvas_versions: {
+        Row: {
+          created_at: string
+          design_id: string
+          elements: Json
+          id: string
+          name: string
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          elements?: Json
+          id?: string
+          name?: string
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          elements?: Json
+          id?: string
+          name?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvas_versions_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "canvas_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          project_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          project_id: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          project_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       personas: {
         Row: {
           created_at: string
