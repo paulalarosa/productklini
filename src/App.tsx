@@ -43,6 +43,7 @@ const App = () => (
               <Route path="/ux/fluxos" element={<FluxosPage />} />
               <Route path="/ui/design-system" element={<DesignSystemPage />} />
               <Route path="/ui/telas" element={<TelasPage />} />
+              <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />
               <Route path="/ui/handoff" element={<HandoffPage />} />
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/sprints" element={<SprintsPage />} />
