@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.analyze-ux]
 verify_jwt = false
+
+[functions.scrape-store-reviews]
+verify_jwt = false

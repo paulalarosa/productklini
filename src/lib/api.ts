@@ -204,6 +204,22 @@ export async function insertAppReview(review: Omit<DbAppReview, "id" | "project_
   if (error) throw error;
 }
 
+export async function insertAppReviews(reviews: Omit<DbAppReview, "id" | "project_id" | "created_at">[]) {
+  const projectId = await getProjectId();
+  const rows = reviews.map(r => ({ ...r, project_id: projectId }));
+  const { error } = await supabase.from("app_reviews" as any).insert(rows);
+  if (error) throw error;
+}
+
+export async function scrapeStoreReviews(url: string): Promise<{ reviews: Array<{ author: string; text: string; stars: number; platform: string }>; platform: string }> {
+  const { data, error } = await supabase.functions.invoke("scrape-store-reviews", {
+    body: { url },
+  });
+  if (error) throw new Error(error.message);
+  if (!data?.success) throw new Error(data?.error || "Falha ao extrair reviews");
+  return { reviews: data.reviews, platform: data.platform };
+}
+
 // ---- Design Tokens ----
 export type DbDesignToken = {
   id: string; project_id: string; token_key: string; token_value: string;

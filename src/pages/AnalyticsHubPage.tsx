@@ -1,18 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
-  seedAnalyticsData, DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
+  seedAnalyticsData, insertAppReviews, scrapeStoreReviews,
+  DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
 } from "@/lib/api";
 
 const SENTIMENT_COLORS = {
@@ -39,8 +40,14 @@ const TOOLTIP_STYLE = {
 type Platform = "all" | "ios" | "android";
 
 export function AnalyticsHubPage() {
+  const queryClient = useQueryClient();
   const [platform, setPlatform] = useState<Platform>("all");
   const [seeding, setSeeding] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [storeUrl, setStoreUrl] = useState("");
+  const [scraping, setScraping] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
     queryKey: ["analytics-snapshots"],
@@ -112,6 +119,81 @@ export function AnalyticsHubPage() {
         ? `Bug enviado para a fila de Dev: "${review.text.slice(0, 40)}..."`
         : `Card de UX criado: "${review.text.slice(0, 40)}..."`
     );
+  };
+
+  const handleScrapeStore = async () => {
+    if (!storeUrl.trim()) return;
+    setScraping(true);
+    try {
+      const result = await scrapeStoreReviews(storeUrl);
+      if (result.reviews.length === 0) {
+        toast.warning("Nenhuma review encontrada na página. Tente outra URL.");
+        setScraping(false);
+        return;
+      }
+      const reviewsToInsert = result.reviews.map(r => ({
+        stars: r.stars,
+        text: r.text,
+        author: r.author,
+        platform: r.platform,
+        ai_tag: r.stars >= 4 ? "Elogio" : r.stars <= 2 ? "Problema" : "Feedback",
+        ai_tag_type: r.stars >= 4 ? "praise" : r.stars <= 2 ? "bug" : "ux",
+      }));
+      await insertAppReviews(reviewsToInsert);
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${result.reviews.length} reviews importadas da ${result.platform === "ios" ? "App Store" : "Play Store"}!`);
+      setStoreUrl("");
+      setShowImport(false);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao extrair reviews");
+    }
+    setScraping(false);
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      let parsed: any[];
+      if (file.name.endsWith(".json")) {
+        parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) parsed = [parsed];
+      } else {
+        // CSV parsing
+        const lines = text.split("\n").filter(l => l.trim());
+        const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+        parsed = lines.slice(1).map(line => {
+          const values = line.split(",");
+          const obj: Record<string, string> = {};
+          headers.forEach((h, i) => obj[h] = (values[i] || "").trim());
+          return obj;
+        });
+      }
+      const reviewsToInsert = parsed.map((r: any) => ({
+        stars: parseInt(r.stars || r.rating || "3") || 3,
+        text: r.text || r.review || r.content || "",
+        author: r.author || r.user || r.name || "Anônimo",
+        platform: (r.platform || "android").toLowerCase(),
+        ai_tag: r.ai_tag || r.tag || "Feedback",
+        ai_tag_type: r.ai_tag_type || r.tag_type || "ux",
+      })).filter((r: any) => r.text.length > 0);
+
+      if (reviewsToInsert.length === 0) {
+        toast.warning("Nenhuma review válida encontrada no arquivo.");
+        setImporting(false);
+        return;
+      }
+      await insertAppReviews(reviewsToInsert);
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${reviewsToInsert.length} reviews importadas do arquivo!`);
+      setShowImport(false);
+    } catch (e: any) {
+      toast.error("Erro ao processar arquivo. Verifique o formato.");
+    }
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   // Find top AI insight
@@ -311,11 +393,80 @@ export function AnalyticsHubPage() {
         </motion.div>
       </div>
 
+      {/* Import Panel */}
+      <AnimatePresence>
+        {showImport && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="glass-card p-4 md:p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Importar Reviews</h3>
+                <button onClick={() => setShowImport(false)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
+              </div>
+
+              {/* Scrape from Store */}
+              <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Globe size={14} className="text-primary" />
+                  <span className="text-sm font-medium text-foreground">Extrair da Play Store / App Store</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Cole a URL da página do app na loja para extrair reviews automaticamente via Firecrawl.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={storeUrl}
+                    onChange={e => setStoreUrl(e.target.value)}
+                    placeholder="https://play.google.com/store/apps/details?id=..."
+                    className="flex-1 px-3 py-2 text-sm rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    onClick={handleScrapeStore}
+                    disabled={scraping || !storeUrl.trim()}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50 shrink-0"
+                  >
+                    {scraping ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                    {scraping ? "Extraindo..." : "Extrair"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Manual Import */}
+              <div className="p-4 rounded-xl border border-border/50 bg-muted/20 space-y-3">
+                <div className="flex items-center gap-2">
+                  <FileUp size={14} className="text-primary" />
+                  <span className="text-sm font-medium text-foreground">Importar CSV / JSON</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Formato esperado: colunas <code className="text-[10px] bg-muted px-1 rounded">stars, text, author, platform</code> (CSV) ou array de objetos (JSON).
+                </p>
+                <input ref={fileInputRef} type="file" accept=".csv,.json" onChange={handleFileImport} className="hidden" />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importing}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 border border-border/50 disabled:opacity-50"
+                >
+                  {importing ? <Loader2 size={14} className="animate-spin" /> : <FileUp size={14} />}
+                  {importing ? "Importando..." : "Escolher arquivo"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Reviews Feed */}
       <motion.div className="glass-card p-4 md:p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Analisadas por IA</h3>
-          <span className="text-[10px] text-muted-foreground">{filteredReviews.length} reviews</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowImport(!showImport)}
+              className="flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
+            >
+              <Download size={10} />
+              Importar Reviews
+            </button>
+            <span className="text-[10px] text-muted-foreground">{filteredReviews.length} reviews</span>
+          </div>
         </div>
         {loadingReviews ? (
           <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
