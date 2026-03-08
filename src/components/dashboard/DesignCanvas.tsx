@@ -199,6 +199,8 @@ export function DesignCanvas() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
+  const [showPrototype, setShowPrototype] = useState(false);
+  const [showHotspots, setShowHotspots] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
