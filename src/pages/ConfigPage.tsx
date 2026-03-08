@@ -66,6 +66,7 @@ export function ConfigPage() {
   const { data: project } = useProject();
   const { data: members } = useTeamMembers();
   const queryClient = useQueryClient();
+  const { dbStatus, aiStatus, mcpStatus } = useSystemHealth();
   const [editDesc, setEditDesc] = useState(false);
   const [desc, setDesc] = useState("");
   const [addingMember, setAddingMember] = useState(false);
