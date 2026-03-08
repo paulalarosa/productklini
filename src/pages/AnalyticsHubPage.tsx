@@ -123,6 +123,35 @@ export function AnalyticsHubPage() {
     );
   };
 
+  const runAIAnalysis = async (reviewsToAnalyze: DbAppReview[]) => {
+    if (reviewsToAnalyze.length === 0) return;
+    setAnalyzing(true);
+    try {
+      const input = reviewsToAnalyze.map(r => ({ id: r.id, text: r.text, stars: r.stars }));
+      const results = await analyzeReviewsWithAI(input);
+      // Update each review in DB
+      for (const r of results) {
+        await updateReviewTags(r.id, r.ai_tag, r.ai_tag_type);
+      }
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${results.length} reviews analisadas por IA!`);
+    } catch (e: any) {
+      if (e.message?.includes("429") || e.message?.includes("Rate limit")) {
+        toast.error("Limite de requisições excedido. Tente novamente em alguns segundos.");
+      } else if (e.message?.includes("402") || e.message?.includes("Créditos")) {
+        toast.error("Créditos insuficientes para IA. Adicione créditos no workspace.");
+      } else {
+        toast.error(e.message || "Erro na análise de IA");
+      }
+    }
+    setAnalyzing(false);
+  };
+
+  const handleReanalyzeAll = async () => {
+    if (!reviews || reviews.length === 0) return;
+    await runAIAnalysis(reviews);
+  };
+
   const handleScrapeStore = async () => {
     if (!storeUrl.trim()) return;
     setScraping(true);
@@ -138,14 +167,20 @@ export function AnalyticsHubPage() {
         text: r.text,
         author: r.author,
         platform: r.platform,
-        ai_tag: r.stars >= 4 ? "Elogio" : r.stars <= 2 ? "Problema" : "Feedback",
-        ai_tag_type: r.stars >= 4 ? "praise" : r.stars <= 2 ? "bug" : "ux",
+        ai_tag: "Pendente",
+        ai_tag_type: "ux",
       }));
       await insertAppReviews(reviewsToInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
-      toast.success(`${result.reviews.length} reviews importadas da ${result.platform === "ios" ? "App Store" : "Play Store"}!`);
+      toast.success(`${result.reviews.length} reviews importadas! Analisando com IA...`);
       setStoreUrl("");
       setShowImport(false);
+      // Auto-analyze after import - refetch to get IDs
+      const freshReviews = await fetchAppReviews();
+      const pendingReviews = freshReviews.filter(r => r.ai_tag === "Pendente");
+      if (pendingReviews.length > 0) {
+        await runAIAnalysis(pendingReviews);
+      }
     } catch (e: any) {
       toast.error(e.message || "Erro ao extrair reviews");
     }
