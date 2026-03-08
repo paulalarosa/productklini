@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
   seedAnalyticsData, insertAppReviews, scrapeStoreReviews,
+  analyzeReviewsWithAI, updateReviewTags,
   DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
 } from "@/lib/api";
 
@@ -27,6 +28,10 @@ const TAG_STYLES: Record<string, string> = {
   performance: "bg-status-deliver/15 text-status-deliver border-status-deliver/30",
   praise: "bg-status-develop/15 text-status-develop border-status-develop/30",
   ux: "bg-status-discovery/15 text-status-discovery border-status-discovery/30",
+  crash: "bg-destructive/15 text-destructive border-destructive/30",
+  feature: "bg-primary/15 text-primary border-primary/30",
+  security: "bg-destructive/15 text-destructive border-destructive/30",
+  accessibility: "bg-status-define/15 text-status-define border-status-define/30",
 };
 
 const TOOLTIP_STYLE = {
@@ -47,6 +52,7 @@ export function AnalyticsHubPage() {
   const [storeUrl, setStoreUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
@@ -121,6 +127,35 @@ export function AnalyticsHubPage() {
     );
   };
 
+  const runAIAnalysis = async (reviewsToAnalyze: DbAppReview[]) => {
+    if (reviewsToAnalyze.length === 0) return;
+    setAnalyzing(true);
+    try {
+      const input = reviewsToAnalyze.map(r => ({ id: r.id, text: r.text, stars: r.stars }));
+      const results = await analyzeReviewsWithAI(input);
+      // Update each review in DB
+      for (const r of results) {
+        await updateReviewTags(r.id, r.ai_tag, r.ai_tag_type);
+      }
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${results.length} reviews analisadas por IA!`);
+    } catch (e: any) {
+      if (e.message?.includes("429") || e.message?.includes("Rate limit")) {
+        toast.error("Limite de requisições excedido. Tente novamente em alguns segundos.");
+      } else if (e.message?.includes("402") || e.message?.includes("Créditos")) {
+        toast.error("Créditos insuficientes para IA. Adicione créditos no workspace.");
+      } else {
+        toast.error(e.message || "Erro na análise de IA");
+      }
+    }
+    setAnalyzing(false);
+  };
+
+  const handleReanalyzeAll = async () => {
+    if (!reviews || reviews.length === 0) return;
+    await runAIAnalysis(reviews);
+  };
+
   const handleScrapeStore = async () => {
     if (!storeUrl.trim()) return;
     setScraping(true);
@@ -136,14 +171,20 @@ export function AnalyticsHubPage() {
         text: r.text,
         author: r.author,
         platform: r.platform,
-        ai_tag: r.stars >= 4 ? "Elogio" : r.stars <= 2 ? "Problema" : "Feedback",
-        ai_tag_type: r.stars >= 4 ? "praise" : r.stars <= 2 ? "bug" : "ux",
+        ai_tag: "Pendente",
+        ai_tag_type: "ux",
       }));
       await insertAppReviews(reviewsToInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
-      toast.success(`${result.reviews.length} reviews importadas da ${result.platform === "ios" ? "App Store" : "Play Store"}!`);
+      toast.success(`${result.reviews.length} reviews importadas! Analisando com IA...`);
       setStoreUrl("");
       setShowImport(false);
+      // Auto-analyze after import - refetch to get IDs
+      const freshReviews = await fetchAppReviews();
+      const pendingReviews = freshReviews.filter(r => r.ai_tag === "Pendente");
+      if (pendingReviews.length > 0) {
+        await runAIAnalysis(pendingReviews);
+      }
     } catch (e: any) {
       toast.error(e.message || "Erro ao extrair reviews");
     }
@@ -176,8 +217,8 @@ export function AnalyticsHubPage() {
         text: r.text || r.review || r.content || "",
         author: r.author || r.user || r.name || "Anônimo",
         platform: (r.platform || "android").toLowerCase(),
-        ai_tag: r.ai_tag || r.tag || "Feedback",
-        ai_tag_type: r.ai_tag_type || r.tag_type || "ux",
+        ai_tag: "Pendente",
+        ai_tag_type: "ux",
       })).filter((r: any) => r.text.length > 0);
 
       if (reviewsToInsert.length === 0) {
@@ -187,8 +228,14 @@ export function AnalyticsHubPage() {
       }
       await insertAppReviews(reviewsToInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
-      toast.success(`${reviewsToInsert.length} reviews importadas do arquivo!`);
+      toast.success(`${reviewsToInsert.length} reviews importadas! Analisando com IA...`);
       setShowImport(false);
+      // Auto-analyze
+      const freshReviews = await fetchAppReviews();
+      const pendingReviews = freshReviews.filter(r => r.ai_tag === "Pendente");
+      if (pendingReviews.length > 0) {
+        await runAIAnalysis(pendingReviews);
+      }
     } catch (e: any) {
       toast.error("Erro ao processar arquivo. Verifique o formato.");
     }
@@ -458,6 +505,14 @@ export function AnalyticsHubPage() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Analisadas por IA</h3>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleReanalyzeAll}
+              disabled={analyzing || !reviews || reviews.length === 0}
+              className="flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg bg-status-deliver/10 text-status-deliver border border-status-deliver/20 hover:bg-status-deliver/20 transition-colors disabled:opacity-50"
+            >
+              {analyzing ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />}
+              {analyzing ? "Analisando..." : "Re-analisar com IA"}
+            </button>
             <button
               onClick={() => setShowImport(!showImport)}
               className="flex items-center gap-1.5 text-[10px] px-2.5 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"

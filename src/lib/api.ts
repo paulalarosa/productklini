@@ -220,6 +220,36 @@ export async function scrapeStoreReviews(url: string): Promise<{ reviews: Array<
   return { reviews: data.reviews, platform: data.platform };
 }
 
+export type AIReviewTag = {
+  id: string;
+  ai_tag: string;
+  ai_tag_type: string;
+  sentiment: string;
+};
+
+export async function analyzeReviewsWithAI(reviews: { id: string; text: string; stars: number }[]): Promise<AIReviewTag[]> {
+  // Process in batches of 20
+  const batchSize = 20;
+  const allResults: AIReviewTag[] = [];
+
+  for (let i = 0; i < reviews.length; i += batchSize) {
+    const batch = reviews.slice(i, i + batchSize);
+    const { data, error } = await supabase.functions.invoke("analyze-reviews", {
+      body: { reviews: batch },
+    });
+    if (error) throw new Error(error.message);
+    if (!data?.success) throw new Error(data?.error || "Falha na análise de IA");
+    allResults.push(...(data.results as AIReviewTag[]));
+  }
+
+  return allResults;
+}
+
+export async function updateReviewTags(reviewId: string, ai_tag: string, ai_tag_type: string) {
+  const { error } = await supabase.from("app_reviews" as any).update({ ai_tag, ai_tag_type }).eq("id", reviewId);
+  if (error) throw error;
+}
+
 // ---- Design Tokens ----
 export type DbDesignToken = {
   id: string; project_id: string; token_key: string; token_value: string;
