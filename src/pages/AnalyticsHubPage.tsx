@@ -1,18 +1,19 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
-  seedAnalyticsData, DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
+  seedAnalyticsData, insertAppReviews, scrapeStoreReviews,
+  DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
 } from "@/lib/api";
 
 const SENTIMENT_COLORS = {
