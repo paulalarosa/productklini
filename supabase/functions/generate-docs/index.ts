@@ -153,6 +153,18 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n")}
         title: "Sitemap",
         systemPrompt: `Você é um Information Architect sênior. Gere um Sitemap em PT-BR: 1. Estrutura Hierárquica (árvore indentada) 2. Fluxos Principais (3-5) 3. Navegação Global 4. Templates de Página 5. Pontos de Entrada 6. Cross-links 7. Prioridade de Conteúdo. Baseie nos fluxos e personas. Formate em Markdown.`,
       },
+      component_states: {
+        title: "Mapeamento de Estados de Componentes",
+        systemPrompt: `Você é um Interaction Designer sênior. Gere um mapeamento completo de estados de componentes em PT-BR. Para cada componente principal do produto (Botão, Input, Card, Modal, Menu, Toast, Dropdown, Tab, etc.), documente: 1. **Default** 2. **Hover** 3. **Active/Pressed** 4. **Focus** 5. **Disabled** 6. **Loading** 7. **Error** 8. **Empty/Placeholder** 9. **Success**. Para cada estado: descrição visual, comportamento, especificações CSS sugeridas. Inclua também: estados de telas (Loading Page, Empty State, Error Page, Offline). Formate em Markdown com tabelas.`,
+      },
+      task_flows: {
+        title: "Task Flows",
+        systemPrompt: `Você é um Interaction Designer / UX Designer sênior. Gere Task Flows detalhados em PT-BR. Para cada fluxo principal do produto (baseado nas tarefas e personas): 1. **Nome do Fluxo** 2. **Objetivo do Usuário** 3. **Pré-condições** 4. **Passos** (numerados, cada um com: Ação do Usuário → Resposta do Sistema → Tela/Componente envolvido) 5. **Fluxos Alternativos** (erros, cancelamento) 6. **Pós-condições** 7. **Pontos de Decisão** (onde o fluxo pode bifurcar). Gere 4-6 task flows. Formate em Markdown.`,
+      },
+      interview_analysis: {
+        title: "Análise de Entrevista",
+        systemPrompt: `Você é um UX Researcher sênior. Gere um template de análise de entrevista em PT-BR com seções para: Pain Points, Insights, Citações-Chave, Padrões Comportamentais, Oportunidades de Design, e Bandeiras Vermelhas. Formate em Markdown.`,
+      },
     };
 
     const config = prompts[doc_type];
