@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   BarChart3,
   Sparkles,
+  CircleDot,
   Figma,
   GitBranch,
   Settings,
@@ -53,6 +54,7 @@ const navGroups: NavGroup[] = [
     title: "UI Design",
     items: [
       { label: "Design System", icon: Palette, path: "/ui/design-system" },
+      { label: "DS Hub", icon: CircleDot, path: "/ui/ds-hub" },
       { label: "Telas", icon: Layers, path: "/ui/telas" },
       { label: "Handoff", icon: ArrowRightLeft, path: "/ui/handoff" },
     ],

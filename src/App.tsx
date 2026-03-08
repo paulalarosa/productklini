@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { PesquisasPage, PersonasPage, FluxosPage } from "./pages/UXPages";
 import { DesignSystemPage, TelasPage, HandoffPage } from "./pages/UIPages";
+import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
 import { KanbanPage, SprintsPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { FigmaPage, GitHubPage, ConfigPage } from "./pages/IntegrationPages";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/ux/fluxos" element={<FluxosPage />} />
               <Route path="/ui/design-system" element={<DesignSystemPage />} />
               <Route path="/ui/telas" element={<TelasPage />} />
+              <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />
               <Route path="/ui/handoff" element={<HandoffPage />} />
               <Route path="/dev/kanban" element={<KanbanPage />} />
               <Route path="/dev/sprints" element={<SprintsPage />} />
