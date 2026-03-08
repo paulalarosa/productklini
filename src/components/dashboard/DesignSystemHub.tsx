@@ -8,6 +8,7 @@ import {
   Trash2, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/authHeaders";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
