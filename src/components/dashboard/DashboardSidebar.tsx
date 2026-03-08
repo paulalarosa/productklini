@@ -13,6 +13,7 @@ import {
   Zap,
   ShieldCheck,
   BarChart3,
+  Sparkles,
   Figma,
   GitBranch,
   Settings,
