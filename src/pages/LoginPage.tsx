@@ -48,7 +48,7 @@ export default function LoginPage() {
       toast.error(err instanceof Error ? err.message : "Erro na autenticação");
     }
 
-    setLoading(false);
+    setSubmitting(false);
   };
 
   const handleGoogleLogin = async () => {
