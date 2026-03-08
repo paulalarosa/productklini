@@ -34,10 +34,11 @@ export function PresentationMode({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     (async () => {
+      const projectId = await getProjectId();
       const { data } = await supabase
         .from("canvas_designs")
         .select("*")
-        .eq("project_id", PROJECT_ID)
+        .eq("project_id", projectId)
         .order("updated_at", { ascending: true });
       if (data) {
         setDesigns(data.map((d: any) => ({

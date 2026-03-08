@@ -90,8 +90,9 @@ function AddTaskForm({ onAdded }: { onAdded: () => void }) {
   const handleAdd = async () => {
     if (!title.trim()) return;
     setLoading(true);
+    const projectId = await getProjectId();
     const { error } = await supabase.from("tasks").insert({
-      project_id: PROJECT_ID, title, module, phase, priority, status: "todo", days_in_phase: 0, estimated_days: 3,
+      project_id: projectId, title, module, phase, priority, status: "todo", days_in_phase: 0, estimated_days: 3,
     });
     if (error) { toast.error("Erro ao criar tarefa"); setLoading(false); return; }
     setTitle(""); setOpen(false); setLoading(false);

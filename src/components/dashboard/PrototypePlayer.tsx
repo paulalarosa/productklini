@@ -48,10 +48,11 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
   }, []);
 
   const loadData = async () => {
+    const projectId = await getProjectId();
     const { data: designs } = await supabase
       .from("canvas_designs")
       .select("*")
-      .eq("project_id", PROJECT_ID)
+      .eq("project_id", projectId)
       .order("created_at");
 
     if (designs && designs.length > 0) {

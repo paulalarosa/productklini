@@ -57,7 +57,8 @@ export function NotificationsPanel() {
   const markAllRead = async () => {
     const ids = notifications.filter((n) => !n.is_read).map((n) => n.id);
     if (ids.length === 0) return;
-    await supabase.from("notifications").update({ is_read: true }).eq("project_id", PROJECT_ID).eq("is_read", false);
+    const projectId = await getProjectId();
+    await supabase.from("notifications").update({ is_read: true }).eq("project_id", projectId).eq("is_read", false);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
   };
 
