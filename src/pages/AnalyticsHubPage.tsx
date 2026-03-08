@@ -53,6 +53,7 @@ export function AnalyticsHubPage() {
   const [scraping, setScraping] = useState(false);
   const [importing, setImporting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [tagFilter, setTagFilter] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
@@ -115,9 +116,49 @@ export function AnalyticsHubPage() {
     ];
   }, [reviews]);
 
-  const filteredReviews = platform === "all"
-    ? (reviews ?? [])
-    : (reviews ?? []).filter((r) => r.platform === platform);
+  const filteredReviews = useMemo(() => {
+    let result = reviews ?? [];
+    if (platform !== "all") result = result.filter(r => r.platform === platform);
+    if (tagFilter !== "all") result = result.filter(r => r.ai_tag_type === tagFilter);
+    return result;
+  }, [reviews, platform, tagFilter]);
+
+  // Compute tag counts for filter chips
+  const tagCounts = useMemo(() => {
+    const base = platform === "all" ? (reviews ?? []) : (reviews ?? []).filter(r => r.platform === platform);
+    const counts: Record<string, number> = {};
+    base.forEach(r => { counts[r.ai_tag_type] = (counts[r.ai_tag_type] || 0) + 1; });
+    return counts;
+  }, [reviews, platform]);
+
+  // AI Insights summary panel data
+  const aiInsightsSummary = useMemo(() => {
+    if (!reviews || reviews.length === 0) return null;
+    const total = reviews.length;
+    const grouped: Record<string, DbAppReview[]> = {};
+    reviews.forEach(r => {
+      if (!grouped[r.ai_tag_type]) grouped[r.ai_tag_type] = [];
+      grouped[r.ai_tag_type].push(r);
+    });
+
+    const sorted = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
+    const topIssues = sorted.filter(([type]) => type !== "praise").slice(0, 3);
+    const praiseCount = grouped["praise"]?.length || 0;
+    const bugCount = grouped["bug"]?.length || 0;
+    const crashCount = grouped["crash"]?.length || 0;
+    const perfCount = grouped["performance"]?.length || 0;
+    const negativeCount = reviews.filter(r => r.stars <= 2).length;
+    const positiveCount = reviews.filter(r => r.stars >= 4).length;
+
+    const recommendations: string[] = [];
+    if (bugCount + crashCount > 0) recommendations.push(`Priorizar correção de ${bugCount + crashCount} problemas técnicos (bugs + crashes) reportados pelos usuários.`);
+    if (perfCount > 0) recommendations.push(`Investigar ${perfCount} reclamações de performance — possível impacto na retenção.`);
+    if (negativeCount > total * 0.3) recommendations.push("Mais de 30% das reviews são negativas. Considere um sprint dedicado à qualidade.");
+    if (positiveCount > total * 0.6) recommendations.push("Sentimento majoritariamente positivo! Aproveite para solicitar reviews e melhorar o ranking na loja.");
+    if (recommendations.length === 0) recommendations.push("Métricas equilibradas. Continue monitorando tendências semanalmente.");
+
+    return { total, sorted, topIssues, praiseCount, negativeCount, positiveCount, recommendations };
+  }, [reviews]);
 
   const handleCreateCard = (review: DbAppReview, type: "ux" | "dev") => {
     toast.success(
@@ -243,15 +284,10 @@ export function AnalyticsHubPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Find top AI insight
-  const topInsight = useMemo(() => {
-    if (!reviews || reviews.length === 0) return null;
-    const bugs = reviews.filter(r => r.ai_tag_type === "bug");
-    const perfIssues = reviews.filter(r => r.ai_tag_type === "performance");
-    if (bugs.length > 2) return `Detectamos ${bugs.length} reports de bugs de UI nas últimas reviews. O padrão mais comum: falhas na tela de checkout em Android.`;
-    if (perfIssues.length > 1) return `${perfIssues.length} usuários reportaram problemas de performance. Considere otimizar o carregamento de imagens e tempo de resposta da API.`;
-    return "Métricas estáveis. Continue monitorando o sentimento dos usuários para detectar tendências.";
-  }, [reviews]);
+  const TAG_LABELS: Record<string, string> = {
+    bug: "🐛 Bug", performance: "⚡ Performance", praise: "👏 Elogio", ux: "🎯 UX",
+    crash: "💥 Crash", feature: "✨ Feature", security: "🔒 Segurança", accessibility: "♿ Acessibilidade",
+  };
 
   if (isEmpty) {
     return (
@@ -303,18 +339,38 @@ export function AnalyticsHubPage() {
         </div>
       </div>
 
-      {/* AI Insight Banner */}
-      {topInsight && (
+      {/* AI Insights Panel */}
+      {aiInsightsSummary && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 md:p-5 border-l-4 border-l-status-deliver">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-status-deliver/15 flex items-center justify-center shrink-0">
               <Sparkles size={18} className="text-status-deliver" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Insight IA</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Painel de Insights IA</span>
+                <span className="text-[10px] text-muted-foreground">({aiInsightsSummary.total} reviews analisadas)</span>
               </div>
-              <p className="text-sm text-foreground leading-relaxed">{topInsight}</p>
+
+              {/* Tag distribution */}
+              <div className="flex flex-wrap gap-2">
+                {aiInsightsSummary.sorted.map(([type, items]) => (
+                  <div key={type} className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${TAG_STYLES[type] || "bg-muted/30 text-muted-foreground border-border/50"}`}>
+                    {TAG_LABELS[type] || type} · {items.length}
+                  </div>
+                ))}
+              </div>
+
+              {/* Recommendations */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Recomendações</span>
+                {aiInsightsSummary.recommendations.map((rec, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle2 size={12} className="text-status-deliver shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground/90 leading-relaxed">{rec}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>
@@ -522,6 +578,31 @@ export function AnalyticsHubPage() {
             </button>
             <span className="text-[10px] text-muted-foreground">{filteredReviews.length} reviews</span>
           </div>
+        </div>
+
+        {/* Tag Filter Chips */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          <button
+            onClick={() => setTagFilter("all")}
+            className={`text-[10px] px-2.5 py-1 rounded-full border font-medium transition-colors ${
+              tagFilter === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-muted/30 text-muted-foreground border-border/50 hover:bg-muted/50"
+            }`}
+          >
+            Todas ({reviews?.length ?? 0})
+          </button>
+          {Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+            <button
+              key={type}
+              onClick={() => setTagFilter(tagFilter === type ? "all" : type)}
+              className={`text-[10px] px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                tagFilter === type
+                  ? `${TAG_STYLES[type] || ""} ring-1 ring-offset-1 ring-offset-background ring-primary/30`
+                  : `${TAG_STYLES[type] || "bg-muted/30 text-muted-foreground border-border/50"} opacity-70 hover:opacity-100`
+              }`}
+            >
+              {TAG_LABELS[type] || type} ({count})
+            </button>
+          ))}
         </div>
         {loadingReviews ? (
           <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
