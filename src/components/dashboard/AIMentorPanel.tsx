@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, X, Send, Sparkles, AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
+import { Bot, X, Send, Sparkles, AlertTriangle, CheckCircle2, ChevronRight, RefreshCw } from "lucide-react";
 import { useAIChat } from "@/hooks/useAIChat";
+import { useTasks, useProject, usePersonas, useUxMetrics } from "@/hooks/useProjectData";
 import ReactMarkdown from "react-markdown";
 
 interface AISuggestion {
@@ -11,26 +12,105 @@ interface AISuggestion {
   actionLabel?: string;
 }
 
-const defaultSuggestions: AISuggestion[] = [
-  {
-    id: "1",
-    message: "A tela de Checkout está na fase de testes há 5 dias e está bloqueada. Deseja que eu gere um roteiro de teste de usabilidade?",
-    type: "warning",
-    actionLabel: "Gerar Roteiro",
-  },
-  {
-    id: "2",
-    message: "Design System v2 está 1 dia atrasado. Sugiro priorizar os componentes de formulário.",
-    type: "suggestion",
-    actionLabel: "Ver Prioridades",
-  },
-  {
-    id: "3",
-    message: "Discovery concluído! 🎉 Deseja gerar o checklist de acessibilidade (WCAG 2.1 AA)?",
-    type: "milestone",
-    actionLabel: "Gerar Checklist",
-  },
-];
+function generateDynamicSuggestions(
+  tasks: any[] | undefined,
+  project: any | undefined,
+  personas: any[] | undefined,
+  metrics: any[] | undefined
+): AISuggestion[] {
+  const suggestions: AISuggestion[] = [];
+  const allTasks = tasks ?? [];
+  const allPersonas = personas ?? [];
+  const allMetrics = metrics ?? [];
+
+  // Check for blocked tasks
+  const blockedTasks = allTasks.filter(t => t.status === "blocked");
+  if (blockedTasks.length > 0) {
+    suggestions.push({
+      id: "blocked",
+      message: `Existem ${blockedTasks.length} tarefa(s) bloqueada(s): "${blockedTasks[0]?.title}". Deseja que eu sugira como desbloqueá-las?`,
+      type: "warning",
+      actionLabel: "Sugerir Solução",
+    });
+  }
+
+  // Check for overdue tasks
+  const overdueTasks = allTasks.filter(t => t.days_in_phase > t.estimated_days && t.status !== "done");
+  if (overdueTasks.length > 0) {
+    suggestions.push({
+      id: "overdue",
+      message: `${overdueTasks.length} tarefa(s) estão atrasadas. "${overdueTasks[0]?.title}" já tem ${overdueTasks[0]?.days_in_phase}d vs ${overdueTasks[0]?.estimated_days}d estimados.`,
+      type: "warning",
+      actionLabel: "Ver Prioridades",
+    });
+  }
+
+  // Check phase progress
+  if (project) {
+    const pp = project.phase_progress as Record<string, number>;
+    const currentPhase = project.current_phase;
+    const progress = pp?.[currentPhase] ?? 0;
+    if (progress >= 90) {
+      suggestions.push({
+        id: "phase-complete",
+        message: `A fase "${currentPhase}" está em ${progress}%! 🎉 Deseja gerar o checklist de transição para a próxima fase?`,
+        type: "milestone",
+        actionLabel: "Gerar Checklist",
+      });
+    } else if (progress < 30 && allTasks.filter(t => t.phase === currentPhase && t.status === "in_progress").length === 0) {
+      suggestions.push({
+        id: "phase-stalled",
+        message: `A fase "${currentPhase}" está em apenas ${progress}% e não há tarefas em andamento. Deseja que eu sugira próximos passos?`,
+        type: "suggestion",
+        actionLabel: "Sugerir Passos",
+      });
+    }
+  }
+
+  // No personas yet
+  if (allPersonas.length === 0) {
+    suggestions.push({
+      id: "no-personas",
+      message: "Seu projeto ainda não tem personas definidas. Deseja que eu gere personas baseadas no contexto do projeto?",
+      type: "suggestion",
+      actionLabel: "Gerar Personas",
+    });
+  }
+
+  // No UX metrics
+  if (allMetrics.length === 0) {
+    suggestions.push({
+      id: "no-metrics",
+      message: "Nenhuma métrica de UX cadastrada. Deseja definir KPIs como NPS, Taxa de Conclusão e Tempo de Tarefa?",
+      type: "suggestion",
+      actionLabel: "Definir Métricas",
+    });
+  }
+
+  // Task completion rate
+  const doneTasks = allTasks.filter(t => t.status === "done").length;
+  const totalTasks = allTasks.length;
+  if (totalTasks > 5 && doneTasks / totalTasks > 0.7) {
+    suggestions.push({
+      id: "good-progress",
+      message: `Ótimo progresso! ${doneTasks}/${totalTasks} tarefas concluídas (${Math.round(doneTasks / totalTasks * 100)}%). Deseja gerar um relatório de status?`,
+      type: "milestone",
+      actionLabel: "Gerar Relatório",
+    });
+  }
+
+  // No tasks at all
+  if (totalTasks === 0) {
+    suggestions.push({
+      id: "no-tasks",
+      message: "Nenhuma tarefa criada ainda. Deseja que eu sugira tarefas iniciais para começar o projeto?",
+      type: "suggestion",
+      actionLabel: "Sugerir Tarefas",
+    });
+  }
+
+  return suggestions.slice(0, 4);
+}
 
 function SuggestionCard({ suggestion, onAction }: { suggestion: AISuggestion; onAction: (msg: string) => void }) {
   const icons = {
@@ -74,8 +154,17 @@ export function AIMentorPanel({
   projectContext?: Record<string, unknown>;
 }) {
   const { messages, isLoading, send } = useAIChat(projectContext);
+  const { data: tasks } = useTasks();
+  const { data: project } = useProject();
+  const { data: personas } = usePersonas();
+  const { data: metrics } = useUxMetrics();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const suggestions = useMemo(
+    () => generateDynamicSuggestions(tasks, project, personas, metrics),
+    [tasks, project, personas, metrics]
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -122,11 +211,17 @@ export function AIMentorPanel({
           {/* Suggestions */}
           <div className="px-3 py-3 space-y-2 border-b border-border shrink-0 max-h-[240px] overflow-y-auto">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
-              Sugestões Contextuais
+              Sugestões Contextuais ({suggestions.length})
             </span>
-            {defaultSuggestions.map((s) => (
-              <SuggestionCard key={s.id} suggestion={s} onAction={handleSuggestionAction} />
-            ))}
+            {suggestions.length === 0 ? (
+              <p className="text-[10px] text-muted-foreground text-center py-3">
+                Nenhuma sugestão no momento. Adicione tarefas e dados ao projeto para receber insights.
+              </p>
+            ) : (
+              suggestions.map((s) => (
+                <SuggestionCard key={s.id} suggestion={s} onAction={handleSuggestionAction} />
+              ))
+            )}
           </div>
 
           {/* Chat */}
