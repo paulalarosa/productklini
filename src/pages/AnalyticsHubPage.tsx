@@ -40,8 +40,14 @@ const TOOLTIP_STYLE = {
 type Platform = "all" | "ios" | "android";
 
 export function AnalyticsHubPage() {
+  const queryClient = useQueryClient();
   const [platform, setPlatform] = useState<Platform>("all");
   const [seeding, setSeeding] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [storeUrl, setStoreUrl] = useState("");
+  const [scraping, setScraping] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
     queryKey: ["analytics-snapshots"],
