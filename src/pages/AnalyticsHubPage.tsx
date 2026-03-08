@@ -339,18 +339,38 @@ export function AnalyticsHubPage() {
         </div>
       </div>
 
-      {/* AI Insight Banner */}
-      {topInsight && (
+      {/* AI Insights Panel */}
+      {aiInsightsSummary && (
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 md:p-5 border-l-4 border-l-status-deliver">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-status-deliver/15 flex items-center justify-center shrink-0">
               <Sparkles size={18} className="text-status-deliver" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Insight IA</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-status-deliver">Painel de Insights IA</span>
+                <span className="text-[10px] text-muted-foreground">({aiInsightsSummary.total} reviews analisadas)</span>
               </div>
-              <p className="text-sm text-foreground leading-relaxed">{topInsight}</p>
+
+              {/* Tag distribution */}
+              <div className="flex flex-wrap gap-2">
+                {aiInsightsSummary.sorted.map(([type, items]) => (
+                  <div key={type} className={`text-[10px] px-2.5 py-1 rounded-full border font-medium ${TAG_STYLES[type] || "bg-muted/30 text-muted-foreground border-border/50"}`}>
+                    {TAG_LABELS[type] || type} · {items.length}
+                  </div>
+                ))}
+              </div>
+
+              {/* Recommendations */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Recomendações</span>
+                {aiInsightsSummary.recommendations.map((rec, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <CheckCircle2 size={12} className="text-status-deliver shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground/90 leading-relaxed">{rec}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>
