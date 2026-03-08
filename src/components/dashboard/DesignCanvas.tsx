@@ -92,7 +92,7 @@ const SCREEN_PRESETS = [
   { label: "Desktop", icon: Monitor, w: 1440, h: 900 },
 ];
 
-const PROJECT_ID = "a0000000-0000-0000-0000-000000000001";
+import { getProjectId } from "@/lib/api";
 const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.1;
