@@ -28,7 +28,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { action, content, project_id } = await req.json();
+    const body = await req.json();
+    const action = body.action || body.type;
+    const content = body.content;
+    const project_id = body.project_id;
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
       return new Response(JSON.stringify({ error: "API key não configurada" }), {
