@@ -121,6 +121,81 @@ export function AnalyticsHubPage() {
     );
   };
 
+  const handleScrapeStore = async () => {
+    if (!storeUrl.trim()) return;
+    setScraping(true);
+    try {
+      const result = await scrapeStoreReviews(storeUrl);
+      if (result.reviews.length === 0) {
+        toast.warning("Nenhuma review encontrada na página. Tente outra URL.");
+        setScraping(false);
+        return;
+      }
+      const reviewsToInsert = result.reviews.map(r => ({
+        stars: r.stars,
+        text: r.text,
+        author: r.author,
+        platform: r.platform,
+        ai_tag: r.stars >= 4 ? "Elogio" : r.stars <= 2 ? "Problema" : "Feedback",
+        ai_tag_type: r.stars >= 4 ? "praise" : r.stars <= 2 ? "bug" : "ux",
+      }));
+      await insertAppReviews(reviewsToInsert);
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${result.reviews.length} reviews importadas da ${result.platform === "ios" ? "App Store" : "Play Store"}!`);
+      setStoreUrl("");
+      setShowImport(false);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao extrair reviews");
+    }
+    setScraping(false);
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      let parsed: any[];
+      if (file.name.endsWith(".json")) {
+        parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) parsed = [parsed];
+      } else {
+        // CSV parsing
+        const lines = text.split("\n").filter(l => l.trim());
+        const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+        parsed = lines.slice(1).map(line => {
+          const values = line.split(",");
+          const obj: Record<string, string> = {};
+          headers.forEach((h, i) => obj[h] = (values[i] || "").trim());
+          return obj;
+        });
+      }
+      const reviewsToInsert = parsed.map((r: any) => ({
+        stars: parseInt(r.stars || r.rating || "3") || 3,
+        text: r.text || r.review || r.content || "",
+        author: r.author || r.user || r.name || "Anônimo",
+        platform: (r.platform || "android").toLowerCase(),
+        ai_tag: r.ai_tag || r.tag || "Feedback",
+        ai_tag_type: r.ai_tag_type || r.tag_type || "ux",
+      })).filter((r: any) => r.text.length > 0);
+
+      if (reviewsToInsert.length === 0) {
+        toast.warning("Nenhuma review válida encontrada no arquivo.");
+        setImporting(false);
+        return;
+      }
+      await insertAppReviews(reviewsToInsert);
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${reviewsToInsert.length} reviews importadas do arquivo!`);
+      setShowImport(false);
+    } catch (e: any) {
+      toast.error("Erro ao processar arquivo. Verifique o formato.");
+    }
+    setImporting(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   // Find top AI insight
   const topInsight = useMemo(() => {
     if (!reviews || reviews.length === 0) return null;
