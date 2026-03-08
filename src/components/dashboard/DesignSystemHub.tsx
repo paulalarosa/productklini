@@ -188,8 +188,9 @@ export function DesignSystemHub() {
       const result = data.result;
 
       // Save to DB
+      const projectId = await getProjectId();
       const { error } = await supabase.from("ds_components" as any).insert([{
-        project_id: PROJECT_ID,
+        project_id: projectId,
         name: result.component_name || "Componente",
         description: result.description || genPrompt,
         category: "components",

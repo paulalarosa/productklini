@@ -72,8 +72,9 @@ const flowNodeColors: Record<string, string> = {
 
 // ---- Save to DS Hub ----
 async function saveComponentToDS(result: any, prompt: string) {
+  const projectId = await getProjectId();
   const { error } = await supabase.from("ds_components" as any).insert([{
-    project_id: PROJECT_ID,
+    project_id: projectId,
     name: result.component_name || "Componente sem nome",
     description: result.description || prompt,
     category: "components",

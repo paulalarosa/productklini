@@ -245,7 +245,8 @@ export function DesignCanvas() {
       await supabase.from("canvas_designs").update({ name: designName, elements: elementsJson }).eq("id", currentDesignId);
       await saveVersion(currentDesignId);
     } else {
-      const { data } = await supabase.from("canvas_designs").insert([{ project_id: PROJECT_ID, name: designName, elements: elementsJson }]).select("id").single();
+      const projectId = await getProjectId();
+      const { data } = await supabase.from("canvas_designs").insert([{ project_id: projectId, name: designName, elements: elementsJson }]).select("id").single();
       if (data) { setCurrentDesignId(data.id); await saveVersion(data.id); }
     }
     toast.success("Design salvo!");
