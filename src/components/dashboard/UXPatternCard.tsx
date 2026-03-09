@@ -86,14 +86,21 @@ export function UXPatternCard({ pattern }: UXPatternCardProps) {
           <CardContent className="pt-0">
             <div className="space-y-3">
               <div className="flex flex-wrap gap-1">
+                {pattern.category === "flutter" && (
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs flex items-center gap-1">
+                    <Smartphone className="w-3 h-3" /> Flutter
+                  </Badge>
+                )}
                 <Badge variant="secondary" className={getDifficultyColor(pattern.difficulty_level)}>
                   {pattern.difficulty_level === "beginner" && "Iniciante"}
                   {pattern.difficulty_level === "intermediate" && "Intermediário"}
                   {pattern.difficulty_level === "advanced" && "Avançado"}
                 </Badge>
-                <Badge variant="outline">
-                  {pattern.category.charAt(0).toUpperCase() + pattern.category.slice(1)}
-                </Badge>
+                {pattern.category !== "flutter" && (
+                  <Badge variant="outline">
+                    {pattern.category.charAt(0).toUpperCase() + pattern.category.slice(1)}
+                  </Badge>
+                )}
               </div>
               
               {pattern.tags && pattern.tags.length > 0 && (
