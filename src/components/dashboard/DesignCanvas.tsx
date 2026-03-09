@@ -200,6 +200,7 @@ export function DesignCanvas() {
   const [showLayers, setShowLayers] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showUXPatterns, setShowUXPatterns] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showPrototype, setShowPrototype] = useState(false);
