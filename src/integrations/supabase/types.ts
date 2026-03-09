@@ -112,6 +112,48 @@ export type Database = {
           },
         ]
       }
+      achievement_definitions: {
+        Row: {
+          badge_color: string
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          name: string
+          points: number
+          requirement_config: Json
+          requirement_type: string
+          updated_at: string
+        }
+        Insert: {
+          badge_color?: string
+          category?: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          name: string
+          points?: number
+          requirement_config?: Json
+          requirement_type?: string
+          updated_at?: string
+        }
+        Update: {
+          badge_color?: string
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          name?: string
+          points?: number
+          requirement_config?: Json
+          requirement_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_messages: {
         Row: {
           content: string
@@ -1017,6 +1059,104 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string
+          id: string
+          points_awarded: number
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string
+          id?: string
+          points_awarded?: number
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string
+          id?: string
+          points_awarded?: number
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievement_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_points: {
+        Row: {
+          id: string
+          level: number
+          project_id: string
+          total_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          level?: number
+          project_id: string
+          total_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          level?: number
+          project_id?: string
+          total_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          completion_percentage: number
+          created_at: string
+          id: string
+          last_activity: string
+          module_name: string
+          points_earned: number
+          project_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completion_percentage?: number
+          created_at?: string
+          id?: string
+          last_activity?: string
+          module_name: string
+          points_earned?: number
+          project_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completion_percentage?: number
+          created_at?: string
+          id?: string
+          last_activity?: string
+          module_name?: string
+          points_earned?: number
+          project_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       ux_metrics: {
         Row: {
