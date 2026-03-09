@@ -34,6 +34,7 @@ import { SVGManagerPage } from "./pages/SVGManagerPage";
 import { AnalyticsHubPage } from "./pages/AnalyticsHubPage";
 import { GitSyncHubPage } from "./pages/GitSyncHubPage";
 import { BehaviorModelPage } from "./pages/BehaviorModelPage";
+import UXPatternsPage from "./pages/UXPatternsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
