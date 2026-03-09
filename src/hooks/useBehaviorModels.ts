@@ -72,9 +72,8 @@ export function useCreateBehaviorModel() {
 
   return useMutation({
     mutationFn: async (model: Partial<BehaviorModel>) => {
-      // Create a dummy project if none exists just to satisfy constraints if needed,
-      // or assume project_id is provided. If not, we might need a default.
-      // Usually project_id is handled by the calling component.
+      // Ensure required fields are present
+      if (!model.behavior) throw new Error("Behavior is required");
       
       const prob = calculateProbability(
         model.motivation_score || 5, 
@@ -91,10 +90,11 @@ export function useCreateBehaviorModel() {
       const { data, error } = await supabase
         .from("behavior_models")
         .insert([{ 
-          ...model, 
+          ...model,
+          behavior: model.behavior,
           behavior_probability: prob, 
           recommendations: recs 
-        }])
+        } as any])
         .select()
         .single();
 
