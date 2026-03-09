@@ -409,6 +409,13 @@ export function DesignCanvas() {
     toast.success("Template aplicado!");
   };
 
+  const applyUXPattern = (pattern: Tables<"ux_patterns">, patternElements: CanvasElement[]) => {
+    const newEls = patternElements.map(el => ({ ...el, id: `pattern-${Date.now()}-${Math.random()}` }));
+    setElements(prev => [...prev, ...newEls]);
+    setShowUXPatterns(false);
+    toast.success(`Pattern "${pattern.name}" aplicado!`);
+  };
+
   const generateWireframe = async () => {
     if (!aiPrompt.trim()) return;
     setAiLoading(true);
