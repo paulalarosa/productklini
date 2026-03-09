@@ -282,7 +282,8 @@ ${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/
     return new Response(JSON.stringify({ 
       error: "Erro interno", 
       details: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack : undefined
+      stack: e instanceof Error ? e.stack : undefined,
+      debug_tag: "v0.2.3"
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -40,10 +40,17 @@ export function DocumentManager({ documents, docType, docTypeLabel, emptyIcon, e
         body: JSON.stringify({ doc_type: docType, project_id: projectId }),
       });
       if (!resp.ok) {
-        const err = await resp.json().catch(() => ({}));
+        const text = await resp.text().catch(() => "");
+        let err: any = {};
+        try {
+          err = JSON.parse(text);
+        } catch {
+          console.error("Non-JSON error from Edge Function:", text);
+        }
+        
         const errorMessage = err.details 
           ? `${err.error}: ${err.details}${err.stack ? `\n\nStack: ${err.stack.substring(0, 100)}...` : ""}` 
-          : (err.error || "Erro ao gerar documento");
+          : (err.error || (text.includes("Erro interno") ? "Erro interno no servidor" : "Erro ao gerar documento"));
         
         toast.error(errorMessage, {
           duration: 5000,

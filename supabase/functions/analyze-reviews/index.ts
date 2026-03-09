@@ -41,9 +41,8 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -175,7 +174,8 @@ Be precise. A 5★ review praising the app is "praise/positive". A 1★ about cr
       JSON.stringify({ 
         error: "Erro interno", 
         details: e instanceof Error ? e.message : String(e),
-        stack: e instanceof Error ? e.stack : undefined
+        stack: e instanceof Error ? e.stack : undefined,
+        debug_tag: "v0.2.3"
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
