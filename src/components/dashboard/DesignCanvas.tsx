@@ -415,7 +415,7 @@ export function DesignCanvas() {
     const newEls = patternElements.map(el => ({ ...el, id: `pattern-${Date.now()}-${Math.random()}` }));
     setElements(prev => [...prev, ...newEls]);
     setShowUXPatterns(false);
-    toast.success(`Pattern "${pattern.name}" aplicado!`);
+    trackPatternApplication(pattern.name);
   };
 
   const generateWireframe = async () => {
