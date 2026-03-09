@@ -241,6 +241,63 @@ export type Database = {
         }
         Relationships: []
       }
+      business_model_canvas: {
+        Row: {
+          channels: Json
+          cost_structure: Json
+          created_at: string
+          customer_relationships: Json
+          customer_segments: Json
+          description: string | null
+          id: string
+          key_activities: Json
+          key_partners: Json
+          key_resources: Json
+          name: string
+          project_id: string
+          revenue_streams: Json
+          status: string
+          updated_at: string
+          value_propositions: Json
+        }
+        Insert: {
+          channels?: Json
+          cost_structure?: Json
+          created_at?: string
+          customer_relationships?: Json
+          customer_segments?: Json
+          description?: string | null
+          id?: string
+          key_activities?: Json
+          key_partners?: Json
+          key_resources?: Json
+          name?: string
+          project_id: string
+          revenue_streams?: Json
+          status?: string
+          updated_at?: string
+          value_propositions?: Json
+        }
+        Update: {
+          channels?: Json
+          cost_structure?: Json
+          created_at?: string
+          customer_relationships?: Json
+          customer_segments?: Json
+          description?: string | null
+          id?: string
+          key_activities?: Json
+          key_partners?: Json
+          key_resources?: Json
+          name?: string
+          project_id?: string
+          revenue_streams?: Json
+          status?: string
+          updated_at?: string
+          value_propositions?: Json
+        }
+        Relationships: []
+      }
       canvas_designs: {
         Row: {
           canvas_height: number
