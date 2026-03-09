@@ -3,11 +3,13 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
 import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
+import { GamificationPanel } from "@/components/dashboard/GamificationPanel";
 import { Outlet } from "react-router-dom";
 import { useProject, useTasks } from "@/hooks/useProjectData";
 
 export function DashboardLayout() {
   const [aiOpen, setAiOpen] = useState(false);
+  const [gamificationOpen, setGamificationOpen] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const { data: project, isLoading } = useProject();
   const { data: tasks } = useTasks();
@@ -56,6 +58,11 @@ export function DashboardLayout() {
         open={aiOpen}
         onClose={() => setAiOpen(false)}
         projectContext={projectContext}
+      />
+
+      <GamificationPanel
+        isOpen={gamificationOpen}
+        onToggle={() => setGamificationOpen(!gamificationOpen)}
       />
 
       {showSetup && (

@@ -3,15 +3,18 @@ import {
   Square, Circle, Type, MousePointer, Trash2, Minus, Download, Undo2, Redo2,
   Layers, Sparkles, Loader2, Save, FolderOpen, Plus, Smartphone, Monitor,
   Image, ToggleLeft, Menu as MenuIcon, CreditCard, Layout, History, Maximize2,
-  BookTemplate, ZoomIn, ZoomOut, Maximize, Map, Play, MousePointer2,
+  BookTemplate, ZoomIn, ZoomOut, Maximize, Map, Play, MousePointer2, Grid,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { WireframeTemplatePanel } from "./WireframeTemplates";
+import { UXPatternsPanel } from "./UXPatternsPanel";
 import { PresentationMode, PresentationButton } from "./PresentationMode";
 import { PrototypePlayer, HotspotEditor } from "./PrototypePlayer";
 import { AnimatePresence } from "framer-motion";
+import type { Tables } from "@/integrations/supabase/types";
+import { useGamificationActions } from "@/hooks/useGamificationActions";
 
 // ---- Types ----
 type ElementType = "rect" | "circle" | "text" | "line";
@@ -188,6 +191,7 @@ function Minimap({ elements, canvasW, canvasH, zoom, panX, panY, viewportW, view
 
 // ---- Component ----
 export function DesignCanvas() {
+  const { trackPatternApplication, trackCanvasDesignCreation } = useGamificationActions();
   const { value: elements, set: setElements, undo, redo, canUndo, canRedo } = useHistory<CanvasElement[]>([]);
   const [selectedTool, setSelectedTool] = useState<ToolType>("select");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -198,6 +202,7 @@ export function DesignCanvas() {
   const [showLayers, setShowLayers] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showUXPatterns, setShowUXPatterns] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showPrototype, setShowPrototype] = useState(false);
@@ -406,6 +411,13 @@ export function DesignCanvas() {
     toast.success("Template aplicado!");
   };
 
+  const applyUXPattern = (pattern: Tables<"ux_patterns">, patternElements: CanvasElement[]) => {
+    const newEls = patternElements.map(el => ({ ...el, id: `pattern-${Date.now()}-${Math.random()}` }));
+    setElements(prev => [...prev, ...newEls]);
+    setShowUXPatterns(false);
+    trackPatternApplication(pattern.name);
+  };
+
   const generateWireframe = async () => {
     if (!aiPrompt.trim()) return;
     setAiLoading(true);
@@ -550,14 +562,18 @@ export function DesignCanvas() {
               className={`p-1.5 rounded-md transition-colors ${showMinimap ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Map className="w-4 h-4" />
             </button>
-            <button onClick={() => { setShowTemplates(!showTemplates); setShowAI(false); }} title="Templates"
+            <button onClick={() => { setShowTemplates(!showTemplates); setShowAI(false); setShowUXPatterns(false); }} title="Templates"
               className={`p-1.5 rounded-md transition-colors ${showTemplates ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <BookTemplate className="w-4 h-4" />
+            </button>
+            <button onClick={() => { setShowUXPatterns(!showUXPatterns); setShowAI(false); setShowTemplates(false); }} title="UX Patterns"
+              className={`p-1.5 rounded-md transition-colors ${showUXPatterns ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+              <Grid className="w-4 h-4" />
             </button>
             <button onClick={() => setShowLayers(!showLayers)} title="Layers" className={`p-1.5 rounded-md transition-colors ${showLayers ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Layers className="w-4 h-4" />
             </button>
-            <button onClick={() => { setShowAI(!showAI); setShowTemplates(false); }} title="AI Wireframe" className={`p-1.5 rounded-md transition-colors ${showAI ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+            <button onClick={() => { setShowAI(!showAI); setShowTemplates(false); setShowUXPatterns(false); }} title="AI Wireframe" className={`p-1.5 rounded-md transition-colors ${showAI ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Sparkles className="w-4 h-4" />
             </button>
             {currentDesignId && (
@@ -603,6 +619,15 @@ export function DesignCanvas() {
 
         {/* Main area */}
         <div className="flex flex-1 gap-3 overflow-hidden">
+          {/* UX Patterns Panel */}
+          {showUXPatterns && (
+            <UXPatternsPanel
+              isOpen={showUXPatterns}
+              onClose={() => setShowUXPatterns(false)}
+              onApplyPattern={applyUXPattern}
+            />
+          )}
+
           {/* Templates Panel */}
           {showTemplates && (
             <div className="w-64 glass-card p-3 flex flex-col gap-3 shrink-0 overflow-y-auto">
