@@ -20,7 +20,7 @@ interface Props {
 
 // forwardRef needed because ModulePage wraps children in motion.div which tries to pass refs
 export const DocumentManager = forwardRef<HTMLDivElement, Props>(
-  function DocumentManager({ documents, docType, docTypeLabel, emptyIcon, emptyMessage }, ref) {
+  function DocumentManagerRender({ documents, docType, docTypeLabel, emptyIcon, emptyMessage }, ref) {
     const queryClient = useQueryClient();
     const [generating, setGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -112,7 +112,6 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
 
     return (
       <div ref={ref} className="space-y-4">
-        {/* Actions bar */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleGenerate}
@@ -130,7 +129,6 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
           </button>
         </div>
 
-        {/* Add form */}
         {adding && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             className="glass-card p-5 space-y-3 border-2 border-primary/20">
@@ -151,7 +149,6 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
           </motion.div>
         )}
 
-        {/* Empty state */}
         {documents.length === 0 && !adding && (
           <div className="glass-card p-8 text-center">
             {emptyIcon}
@@ -162,7 +159,6 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
           </div>
         )}
 
-        {/* Document list */}
         {documents.map((doc, i) => (
           <motion.div key={doc.id} className="glass-card overflow-hidden"
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
@@ -216,19 +212,19 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
                     </button>
                   </div>
                 </div>
-                <div className="px-5 py-4 max-h-[500px] overflow-y-auto">
+                <div className="px-5 py-4 max-h-[500px] overflow-y-auto font-sans leading-relaxed text-sm">
                   {previewMode[doc.id] ? (
                     <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">{doc.content}</pre>
                   ) : (
                     <div className="prose prose-invert prose-sm max-w-none text-foreground">
                       <ReactMarkdown
                         components={{
-                          h1: ({ children }) => <h1 className="text-lg font-bold text-foreground mt-4 mb-2">{children}</h1>,
-                          h2: ({ children }) => <h2 className="text-base font-semibold text-foreground mt-3 mb-2">{children}</h2>,
-                          h3: ({ children }) => <h3 className="text-sm font-semibold text-foreground mt-2 mb-1">{children}</h3>,
+                          h1: ({ children }) => <h1 className="text-lg font-bold text-foreground mt-4 mb-2 tracking-tight">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-semibold text-foreground mt-3 mb-2 tracking-tight">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-semibold text-foreground mt-2 mb-1 tracking-tight">{children}</h3>,
                           p: ({ children }) => <p className="text-xs text-foreground/80 leading-relaxed mb-2">{children}</p>,
-                          ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 mb-2">{children}</ul>,
-                          ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 mb-2">{children}</ol>,
+                          ul: ({ children }) => <ul className="list-disc pl-4 space-y-1 mb-2 text-xs">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal pl-4 space-y-1 mb-2 text-xs">{children}</ol>,
                           li: ({ children }) => <li className="text-xs text-foreground/80">{children}</li>,
                           strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
                           table: ({ children }) => <table className="w-full text-xs border-collapse my-2">{children}</table>,
@@ -251,3 +247,4 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
     );
   }
 );
+DocumentManager.displayName = "DocumentManager";

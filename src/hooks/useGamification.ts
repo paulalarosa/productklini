@@ -75,7 +75,7 @@ export function useUserPoints(projectId?: string) {
         .from("user_points")
         .select("*")
         .eq("project_id", projectId)
-        .single();
+        .maybeSingle();
       
       if (error && error.code !== 'PGRST116') throw error;
       return data;
@@ -114,7 +114,7 @@ export function useUpdateProgress() {
           last_activity: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (progressError) throw progressError;
 
@@ -124,7 +124,7 @@ export function useUpdateProgress() {
         .select("*")
         .eq("user_id", user.id)
         .eq("project_id", projectId)
-        .single();
+        .maybeSingle();
 
       const newTotalPoints = (existingPoints?.total_points || 0) + (pointsEarned || 0);
       const newLevel = Math.floor(newTotalPoints / 1000) + 1;
@@ -176,7 +176,7 @@ export function useAwardAchievement() {
         .eq("user_id", user.id)
         .eq("project_id", projectId)
         .eq("achievement_id", achievementId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         return existing; // Achievement already earned
@@ -195,7 +195,7 @@ export function useAwardAchievement() {
           *,
           achievement_definitions:achievement_id (*)
         `)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -205,7 +205,7 @@ export function useAwardAchievement() {
         .select("*")
         .eq("user_id", user.id)
         .eq("project_id", projectId)
-        .single();
+        .maybeSingle();
 
       const newTotalPoints = (existingPoints?.total_points || 0) + pointsAwarded;
       const newLevel = Math.floor(newTotalPoints / 1000) + 1;

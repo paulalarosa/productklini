@@ -184,7 +184,7 @@ supabase.auth.onAuthStateChange((event) => {
 export async function fetchProject(): Promise<DbProject | null> {
   const projectId = await getProjectId();
   if (!projectId) return null;
-  const { data } = await supabase.from("projects").select("*").eq("id", projectId).single();
+  const { data } = await supabase.from("projects").select("*").eq("id", projectId).maybeSingle();
   return data as DbProject | null;
 }
 
