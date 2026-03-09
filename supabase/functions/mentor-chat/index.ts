@@ -100,7 +100,16 @@ DIRETRIZES:
 - Quando o usuário pedir para criar QUALQUER documento, persona ou tarefa, USE AS FERRAMENTAS.
 - Não apenas explique como fazer, FAÇA usando as ferramentas.
 - IDs de projetos e usuários são tratados automaticamente pelo backend.
-- Se o usuário falar "crie o mapa de empatia", use create_document com doc_type="empathy_map".`;
+- Se o usuário falar "crie o mapa de empatia", use create_empathy_map.
+- Se o usuário falar "crie o sitemap", use create_sitemap.
+- Se o usuário falar "crie o tom de voz", use create_tone_of_voice.
+- Se o usuário falar "crie o microcopy", use create_microcopy.
+- Se o usuário falar "crie o card sorting", use create_card_sorting.
+- Se o usuário falar "faça a avaliação heurística", use create_nielsen_evaluation.
+- Se o usuário falar "registre o teste de usabilidade", use create_usability_result.
+- Se o usuário falar "crie a auditoria wcag", use create_wcag_audit.
+- Se o usuário falar "relate um bug" ou "crie um ticket de qa", use create_qa_bug.
+- Sempre tente preencher o máximo de informações técnicas possíveis baseado no contexto que você tem.`;
 
     const tools = [
       {
@@ -246,6 +255,7 @@ DIRETRIZES:
             required: ["title", "research_type", "summary"],
           },
         },
+      },
       {
         type: "function",
         function: {
@@ -372,6 +382,149 @@ DIRETRIZES:
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "create_sitemap",
+          description: "Cria a estrutura de um sitemap (nós de navegação).",
+          parameters: {
+            type: "object",
+            properties: {
+              nodes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    node_name: { type: "string" },
+                    url_path: { type: "string" },
+                    description: { type: "string" },
+                    hierarchy_level: { type: "number" }
+                  }
+                }
+              }
+            },
+            required: ["nodes"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_card_sorting",
+          description: "Cria categorias e itens para um exercício de Card Sorting.",
+          parameters: {
+            type: "object",
+            properties: {
+              category_name: { type: "string" },
+              items: { type: "array", items: { type: "string" } }
+            },
+            required: ["category_name", "items"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_tone_of_voice",
+          description: "Define as diretrizes de Tom de Voz da marca.",
+          parameters: {
+            type: "object",
+            properties: {
+              personality_traits: { type: "array", items: { type: "string" } },
+              do_say: { type: "array", items: { type: "string" } },
+              dont_say: { type: "array", items: { type: "string" } },
+              brand_archetype: { type: "string" }
+            },
+            required: ["personality_traits", "do_say", "dont_say"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_microcopy",
+          description: "Cria inventário de microcopy para componentes da interface.",
+          parameters: {
+            type: "object",
+            properties: {
+              component_type: { type: "string" },
+              context: { type: "string" },
+              original_text: { type: "string" },
+              suggested_copy: { type: "string" },
+              tone_applied: { type: "string" }
+            },
+            required: ["component_type", "suggested_copy"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_nielsen_evaluation",
+          description: "Registra uma avaliação heurística de Nielsen para uma tela ou fluxo.",
+          parameters: {
+            type: "object",
+            properties: {
+              heuristic_name: { type: "string" },
+              evaluation_notes: { type: "string" },
+              severity_level: { type: "number", minimum: 1, maximum: 5 },
+              recommendation: { type: "string" }
+            },
+            required: ["heuristic_name", "severity_level"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_usability_result",
+          description: "Registra os resultados de um teste de usabilidade com usuários.",
+          parameters: {
+            type: "object",
+            properties: {
+              task_description: { type: "string" },
+              success_rate_percentage: { type: "number" },
+              user_feedback: { type: "string" },
+              key_observations: { type: "string" }
+            },
+            required: ["task_description", "success_rate_percentage"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_wcag_audit",
+          description: "Registra um item de auditoria de acessibilidade WCAG.",
+          parameters: {
+            type: "object",
+            properties: {
+              guideline_reference: { type: "string" },
+              compliance_status: { type: "string", enum: ["Pass", "Fail", "Warning"] },
+              issue_description: { type: "string" },
+              fix_suggestion: { type: "string" }
+            },
+            required: ["guideline_reference", "compliance_status"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_qa_bug",
+          description: "Relata um bug ou erro técnico encontrado no sistema.",
+          parameters: {
+            type: "object",
+            properties: {
+              bug_title: { type: "string" },
+              steps_to_reproduce: { type: "string" },
+              severity: { type: "string", enum: ["Baixa", "Média", "Alta", "Crítica"] },
+              status: { type: "string", enum: ["Aberto", "Em Análise", "Resolvido"] }
+            },
+            required: ["bug_title", "severity"]
+          }
+        }
+      }
     ];
 
     // ── First call: non-streaming to detect tool use ──────────────────
@@ -564,6 +717,83 @@ DIRETRIZES:
         }));
         await supabase.from("hmw_questions").insert(questionsToInsert);
         actionsPerformed.push(`✅ How Might We (${args.questions.length} perguntas)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_sitemap") {
+        const nodes = args.nodes.map((n: any) => ({
+          project_id: projectId,
+          ...n
+        }));
+        await supabase.from("sitemaps").insert(nodes);
+        actionsPerformed.push(`✅ Sitemap (${args.nodes.length} nós)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_card_sorting") {
+        await supabase.from("card_sorting").insert({
+          project_id: projectId,
+          category_name: args.category_name,
+          items: args.items
+        });
+        actionsPerformed.push(`✅ Card Sorting ("${args.category_name}")`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_tone_of_voice") {
+        await supabase.from("tone_of_voice").insert({
+          project_id: projectId,
+          personality_traits: args.personality_traits,
+          do_say: args.do_say,
+          dont_say: args.dont_say,
+          brand_archetype: args.brand_archetype
+        });
+        actionsPerformed.push(`✅ Tom de Voz`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_microcopy") {
+        await supabase.from("microcopy_inventory").insert({
+          project_id: projectId,
+          component_type: args.component_type,
+          context: args.context,
+          original_text: args.original_text,
+          suggested_copy: args.suggested_copy,
+          tone_applied: args.tone_applied
+        });
+        actionsPerformed.push(`✅ Microcopy ("${args.component_type}")`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_nielsen_evaluation") {
+        await supabase.from("nielsen_heuristics").insert({
+          project_id: projectId,
+          heuristic_name: args.heuristic_name,
+          evaluation_notes: args.evaluation_notes,
+          severity_level: args.severity_level,
+          recommendation: args.recommendation
+        });
+        actionsPerformed.push(`✅ Heurística "${args.heuristic_name}" (Nível ${args.severity_level})`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_usability_result") {
+        await supabase.from("usability_tests").insert({
+          project_id: projectId,
+          task_description: args.task_description,
+          success_rate_percentage: args.success_rate_percentage,
+          user_feedback: args.user_feedback,
+          key_observations: args.key_observations
+        });
+        actionsPerformed.push(`✅ Teste "${args.task_description}" (${args.success_rate_percentage}%)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_wcag_audit") {
+        await supabase.from("wcag_audits").insert({
+          project_id: projectId,
+          guideline_reference: args.guideline_reference,
+          compliance_status: args.compliance_status,
+          issue_description: args.issue_description,
+          fix_suggestion: args.fix_suggestion
+        });
+        actionsPerformed.push(`✅ WCAG Audit: ${args.guideline_reference} (${args.compliance_status})`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_qa_bug") {
+        await supabase.from("qa_bugs").insert({
+          project_id: projectId,
+          bug_title: args.bug_title,
+          steps_to_reproduce: args.steps_to_reproduce,
+          severity: args.severity,
+          status: args.status || "Aberto"
+        });
+        actionsPerformed.push(`✅ Bug: "${args.bug_title}" (${args.severity})`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       }
     }

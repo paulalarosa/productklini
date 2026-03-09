@@ -706,6 +706,47 @@ export type Database = {
         }
         Relationships: []
       }
+      nielsen_heuristics: {
+        Row: {
+          id: string
+          project_id: string
+          heuristic_name: string
+          evaluation_notes: string | null
+          severity_level: number
+          recommendation: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          heuristic_name: string
+          evaluation_notes?: string | null
+          severity_level: number
+          recommendation?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          heuristic_name?: string
+          evaluation_notes?: string | null
+          severity_level?: number
+          recommendation?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nielsen_heuristics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       personas: {
         Row: {
           created_at: string
@@ -1060,6 +1101,88 @@ export type Database = {
           },
         ]
       }
+      usability_tests: {
+        Row: {
+          id: string
+          project_id: string
+          task_description: string
+          success_rate_percentage: number
+          user_feedback: string | null
+          key_observations: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          task_description: string
+          success_rate_percentage: number
+          user_feedback?: string | null
+          key_observations?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          task_description?: string
+          success_rate_percentage?: number
+          user_feedback?: string | null
+          key_observations?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usability_tests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      qa_bugs: {
+        Row: {
+          id: string
+          project_id: string
+          bug_title: string
+          steps_to_reproduce: string | null
+          severity: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          bug_title: string
+          steps_to_reproduce?: string | null
+          severity: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          bug_title?: string
+          steps_to_reproduce?: string | null
+          severity?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qa_bugs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_achievements: {
         Row: {
           achievement_id: string
@@ -1307,6 +1430,47 @@ export type Database = {
             referencedRelation: "projects"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      wcag_audits: {
+        Row: {
+          id: string
+          project_id: string
+          guideline_reference: string
+          compliance_status: string
+          issue_description: string | null
+          fix_suggestion: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          guideline_reference: string
+          compliance_status: string
+          issue_description?: string | null
+          fix_suggestion?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          guideline_reference?: string
+          compliance_status?: string
+          issue_description?: string | null
+          fix_suggestion?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wcag_audits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
         ]
       }
     }

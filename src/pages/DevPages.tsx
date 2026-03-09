@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Kanban, ShieldCheck, BarChart3, Plus } from "lucide-react";
 import { TeamMetrics } from "@/components/dashboard/TeamMetrics";
 import { ModulePage } from "@/components/dashboard/ModulePage";
@@ -7,6 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getProjectId, type DbTask } from "@/lib/api";
+import { useQABugs, useUpdateBugStatus, useDeleteBug } from "@/hooks/useQABugs";
+import { QABugTracker } from "@/components/dashboard/QABugTracker";
+import { Sparkles, Bug, Loader2 } from "lucide-react";
 
 const columns = ["todo", "in_progress", "review", "done"] as const;
 const columnLabels: Record<string, string> = { todo: "A Fazer", in_progress: "Em Andamento", review: "Em Revisão", done: "Concluído" };
@@ -229,28 +232,79 @@ export function KanbanPage() {
 }
 
 export function QAPage() {
+  const [projectId, setProjectId] = useState<string>();
+  const { data: bugs, isLoading } = useQABugs(projectId);
+  const updateStatusMutation = useUpdateBugStatus();
+  const deleteMutation = useDeleteBug();
+
   const { data: tasks } = useTasks();
   const blockedTasks = (tasks ?? []).filter((t) => t.status === "blocked" || t.status === "review");
 
+  useEffect(() => {
+    getProjectId().then(setProjectId);
+  }, []);
+
   return (
-    <ModulePage title="QA" subtitle="Qualidade e testes" icon={<ShieldCheck className="w-4 h-4 text-primary-foreground" />}>
-      <div className="glass-card p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Tarefas em Revisão / Bloqueadas</h3>
-        <div className="space-y-2">
-          {blockedTasks.map((t) => (
-            <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-              <div>
-                <p className="text-xs font-medium text-foreground">{t.title}</p>
-                <p className="text-[10px] text-muted-foreground">{t.assignee} · {t.days_in_phase}d na fase</p>
+    <ModulePage title="QA & Qualidade" subtitle="Gerenciamento de bugs e tickets técnicos" icon={<ShieldCheck className="w-4 h-4 text-primary-foreground" />}>
+      <div className="space-y-6">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-bold text-primary">Preenchimento Automático de QA</h4>
+            <p className="text-sm text-foreground/70">
+              O Mentor IA pode analisar o projeto e reportar bugs técnicos. Tente: "Relate um bug crítico no login de usuários".
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+           <div className="xl:col-span-2 space-y-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Bug className="w-4 h-4 text-red-500" /> Bug Tracker
+              </h3>
+              
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 animate-pulse">
+                  <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
+                </div>
+              ) : bugs && bugs.length > 0 ? (
+                <QABugTracker 
+                  bugs={bugs} 
+                  onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status })}
+                  onDelete={(id) => deleteMutation.mutate({ id })}
+                />
+              ) : (
+                <div className="text-center py-12 glass-card bg-card/10 border-dashed border-2">
+                  <Bug className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                  <h3 className="text-sm font-bold text-foreground mb-1">Nenhum Bug Reportado</h3>
+                  <p className="text-[11px] text-muted-foreground">Sistema está operando nominalmente. Peça à IA para simular erros.</p>
+                </div>
+              )}
+           </div>
+
+           <div className="space-y-4">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-primary" /> Tarefas em Revisão / Bloqueadas
+              </h3>
+              <div className="space-y-2">
+                {blockedTasks.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-white/5">
+                    <div>
+                      <p className="text-xs font-bold text-foreground">{t.title}</p>
+                      <p className="text-[10px] text-muted-foreground">{t.assignee} · {t.days_in_phase}d</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      t.status === "blocked" ? "bg-red-500/10 text-red-500" : "bg-primary/10 text-primary"
+                    }`}>{t.status === "blocked" ? "BLOQUEADO" : "REVISÃO"}</span>
+                  </div>
+                ))}
+                {blockedTasks.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-8 bg-secondary/10 rounded-lg">Nenhuma tarefa crítica no momento ✅</p>
+                )}
               </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                t.status === "blocked" ? "bg-destructive/10 text-status-urgent" : "bg-status-discovery/10 text-status-discovery"
-              }`}>{t.status}</span>
-            </div>
-          ))}
-          {blockedTasks.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-8">Nenhuma tarefa em revisão ou bloqueada ✅</p>
-          )}
+           </div>
         </div>
       </div>
     </ModulePage>

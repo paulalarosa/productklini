@@ -60,14 +60,22 @@ interface PersonaData {
     // Fetch project context for context-aware analysis
     let projectContext = "";
     if (project_id) {
-      const [pRes, persRes] = await Promise.all([
+      const [pRes, persRes, toneRes] = await Promise.all([
         supabase.from("projects").select("name, description").eq("id", project_id).single(),
         supabase.from("personas").select("name, role, goals, pain_points").eq("project_id", project_id),
+        supabase.from("tone_of_voice" as any).select("*").eq("project_id", project_id).maybeSingle(),
       ]);
       const p = pRes.data as ProjectData | null;
       const personas = (persRes.data ?? []) as PersonaData[];
+      const tone = toneRes.data as any;
+      
       projectContext = `Projeto: ${p?.name || "N/A"}. ${p?.description || ""}
-Personas: ${personas.map((pe: PersonaData) => `${pe.name} (${pe.role})`).join(", ") || "Nenhuma"}`;
+Personas: ${personas.map((pe: PersonaData) => `${pe.name} (${pe.role})`).join(", ") || "Nenhuma"}
+${tone ? `TOM DE VOZ:
+- Arquétipo: ${tone.brand_archetype}
+- Traços: ${tone.personality_traits?.join(", ")}
+- Falar (Do): ${tone.do_say?.join("; ")}
+- Evitar (Don't): ${tone.dont_say?.join("; ")}` : "Tom de voz ainda não definido para este projeto."}`;
     }
 
     const prompts: Record<string, string> = {
