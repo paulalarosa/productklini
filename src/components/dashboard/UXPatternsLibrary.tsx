@@ -17,9 +17,9 @@ export function UXPatternsLibrary() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: patterns, isLoading } = useUXPatterns({
-    category: selectedCategory || undefined,
-    pattern_type: selectedType || undefined,
-    difficulty_level: selectedDifficulty || undefined,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    pattern_type: selectedType !== "all" ? selectedType : undefined,
+    difficulty_level: selectedDifficulty !== "all" ? selectedDifficulty : undefined,
     search: searchTerm || undefined,
   });
 
