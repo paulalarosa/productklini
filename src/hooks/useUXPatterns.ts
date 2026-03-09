@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type UXPattern = Tables<"ux_patterns">;
@@ -94,10 +95,10 @@ export function useCreateUXPattern() {
       use_cases?: string[];
       psychology_principles?: string[];
       best_practices?: string[];
-      examples?: any;
-      design_tokens?: any;
-      code_examples?: any;
-      metrics?: any;
+      examples?: Record<string, unknown>;
+      design_tokens?: Record<string, unknown>;
+      code_examples?: Record<string, unknown>;
+      metrics?: Record<string, unknown>;
     }) => {
       // Get current project
       const { data: projects } = await supabase.from("projects").select("id").limit(1).single();
@@ -107,6 +108,10 @@ export function useCreateUXPattern() {
         .from("ux_patterns")
         .insert({
           ...pattern,
+          examples: pattern.examples as unknown as Json,
+          design_tokens: pattern.design_tokens as unknown as Json,
+          code_examples: pattern.code_examples as unknown as Json,
+          metrics: pattern.metrics as unknown as Json,
           project_id: projects.id,
         })
         .select()

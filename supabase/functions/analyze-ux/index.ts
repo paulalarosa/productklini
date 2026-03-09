@@ -39,6 +39,18 @@ Deno.serve(async (req) => {
       });
     }
 
+interface ProjectData {
+  name: string;
+  description: string;
+}
+
+interface PersonaData {
+  name: string;
+  role: string;
+  goals?: string[];
+  pain_points?: string[];
+}
+
     // Fetch project context for context-aware analysis
     let projectContext = "";
     if (project_id) {
@@ -46,10 +58,10 @@ Deno.serve(async (req) => {
         supabase.from("projects").select("name, description").eq("id", project_id).single(),
         supabase.from("personas").select("name, role, goals, pain_points").eq("project_id", project_id),
       ]);
-      const p = pRes.data;
-      const personas = persRes.data ?? [];
+      const p = pRes.data as ProjectData | null;
+      const personas = (persRes.data ?? []) as PersonaData[];
       projectContext = `Projeto: ${p?.name || "N/A"}. ${p?.description || ""}
-Personas: ${personas.map(pe => `${pe.name} (${pe.role})`).join(", ") || "Nenhuma"}`;
+Personas: ${personas.map((pe: PersonaData) => `${pe.name} (${pe.role})`).join(", ") || "Nenhuma"}`;
     }
 
     const prompts: Record<string, string> = {
@@ -227,7 +239,7 @@ Contexto: ${projectContext}`;
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.0-flash",
           messages: [{ role: "system", content: visualPrompt }, { role: "user", content: `Paleta: ${colors.join(", ")}` }],
           tools: [{
             type: "function",
@@ -284,7 +296,7 @@ Contexto: ${projectContext}`;
         Authorization: `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.0-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: content },

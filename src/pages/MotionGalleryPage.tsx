@@ -10,7 +10,7 @@ interface MotionItem {
   description: string;
   framerCode: string;
   cssCode: string;
-  framerProps: Record<string, any>;
+  framerProps: Record<string, unknown>;
 }
 
 const MOTION_LIBRARY: MotionItem[] = [

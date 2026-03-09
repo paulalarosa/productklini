@@ -45,6 +45,8 @@ export type DbPersona = {
   goals: string[];
 };
 
+export type Persona = DbPersona;
+
 export type DbUxMetric = {
   id: string;
   project_id: string;
@@ -270,28 +272,28 @@ export type DbAppReview = {
 export async function fetchAnalyticsSnapshots(): Promise<DbAnalyticsSnapshot[]> {
   const projectId = await getProjectId();
   if (!projectId) return [];
-  const { data } = await supabase.from("analytics_snapshots" as any).select("*").eq("project_id", projectId).order("recorded_at");
+  const { data } = await supabase.from("analytics_snapshots").select("*").eq("project_id", projectId).order("recorded_at");
   return (data as unknown as DbAnalyticsSnapshot[]) ?? [];
 }
 
 export async function fetchFunnelSteps(): Promise<DbFunnelStep[]> {
   const projectId = await getProjectId();
   if (!projectId) return [];
-  const { data } = await supabase.from("analytics_funnel" as any).select("*").eq("project_id", projectId).order("step_order");
+  const { data } = await supabase.from("analytics_funnel").select("*").eq("project_id", projectId).order("step_order");
   return (data as unknown as DbFunnelStep[]) ?? [];
 }
 
 export async function fetchAppReviews(): Promise<DbAppReview[]> {
   const projectId = await getProjectId();
   if (!projectId) return [];
-  const { data } = await supabase.from("app_reviews" as any).select("*").eq("project_id", projectId).order("created_at", { ascending: false });
+  const { data } = await supabase.from("app_reviews").select("*").eq("project_id", projectId).order("created_at", { ascending: false });
   return (data as unknown as DbAppReview[]) ?? [];
 }
 
 export async function insertAppReview(review: Omit<DbAppReview, "id" | "project_id" | "created_at">) {
   const projectId = await getProjectId();
   if (!projectId) throw new Error("Nenhum projeto selecionado");
-  const { error } = await supabase.from("app_reviews" as any).insert({ ...review, project_id: projectId });
+  const { error } = await supabase.from("app_reviews").insert({ ...review, project_id: projectId });
   if (error) throw error;
 }
 
@@ -299,7 +301,7 @@ export async function insertAppReviews(reviews: Omit<DbAppReview, "id" | "projec
   const projectId = await getProjectId();
   if (!projectId) throw new Error("Nenhum projeto selecionado");
   const rows = reviews.map(r => ({ ...r, project_id: projectId }));
-  const { error } = await supabase.from("app_reviews" as any).insert(rows);
+  const { error } = await supabase.from("app_reviews").insert(rows);
   if (error) throw error;
 }
 
@@ -337,7 +339,7 @@ export async function analyzeReviewsWithAI(reviews: { id: string; text: string; 
 }
 
 export async function updateReviewTags(reviewId: string, ai_tag: string, ai_tag_type: string) {
-  const { error } = await supabase.from("app_reviews" as any).update({ ai_tag, ai_tag_type }).eq("id", reviewId);
+  const { error } = await supabase.from("app_reviews").update({ ai_tag, ai_tag_type }).eq("id", reviewId);
   if (error) throw error;
 }
 
@@ -354,7 +356,7 @@ export type DbTokenHistoryEntry = {
 export async function fetchDesignTokens(): Promise<DbDesignToken[]> {
   const projectId = await getProjectId();
   if (!projectId) return [];
-  const { data } = await supabase.from("design_tokens" as any).select("*").eq("project_id", projectId).order("token_key");
+  const { data } = await supabase.from("design_tokens").select("*").eq("project_id", projectId).order("token_key");
   return (data as unknown as DbDesignToken[]) ?? [];
 }
 
@@ -362,15 +364,15 @@ export async function upsertDesignToken(token: { token_key: string; token_value:
   const projectId = await getProjectId();
   if (!projectId) throw new Error("Nenhum projeto selecionado");
   const { data: existing } = await supabase
-    .from("design_tokens" as any)
+    .from("design_tokens")
     .select("token_value")
     .eq("project_id", projectId)
     .eq("token_key", token.token_key)
     .maybeSingle();
 
-  const oldValue = (existing as any)?.token_value;
+  const oldValue = existing?.token_value;
 
-  const { error } = await supabase.from("design_tokens" as any).upsert({
+  const { error } = await supabase.from("design_tokens").upsert({
     project_id: projectId,
     token_key: token.token_key,
     token_value: token.token_value,
@@ -381,7 +383,7 @@ export async function upsertDesignToken(token: { token_key: string; token_value:
   if (error) throw error;
 
   if (oldValue && oldValue !== token.token_value) {
-    await supabase.from("design_token_history" as any).insert({
+    await supabase.from("design_token_history").insert({
       project_id: projectId,
       token_key: token.token_key,
       old_value: oldValue,
@@ -395,14 +397,14 @@ export async function upsertDesignToken(token: { token_key: string; token_value:
 export async function fetchTokenHistory(): Promise<DbTokenHistoryEntry[]> {
   const projectId = await getProjectId();
   if (!projectId) return [];
-  const { data } = await supabase.from("design_token_history" as any).select("*").eq("project_id", projectId).order("changed_at", { ascending: false });
+  const { data } = await supabase.from("design_token_history").select("*").eq("project_id", projectId).order("changed_at", { ascending: false });
   return (data as unknown as DbTokenHistoryEntry[]) ?? [];
 }
 
 export async function seedAnalyticsData() {
   const projectId = await getProjectId();
   if (!projectId) return;
-  const { data: existing } = await supabase.from("analytics_snapshots" as any).select("id").eq("project_id", projectId).limit(1);
+  const { data: existing } = await supabase.from("analytics_snapshots").select("id").eq("project_id", projectId).limit(1);
   if (existing && existing.length > 0) return;
 
   const snapshots = [
@@ -414,7 +416,7 @@ export async function seedAnalyticsData() {
     { period_label: "Sem 6", dau: 14900, mau: 44800, crash_free_percent: 99.9 },
     { period_label: "Sem 7", dau: 16300, mau: 46100, crash_free_percent: 99.8 },
   ];
-  await supabase.from("analytics_snapshots" as any).insert(snapshots.map(s => ({ ...s, project_id: projectId })));
+  await supabase.from("analytics_snapshots").insert(snapshots.map(s => ({ ...s, project_id: projectId })));
 
   const funnel = [
     { step_name: "App Aberto", step_order: 0, percent_value: 100, user_count: 46100 },
@@ -422,7 +424,7 @@ export async function seedAnalyticsData() {
     { step_name: "Add Carrinho", step_order: 2, percent_value: 38, user_count: 17518 },
     { step_name: "Compra", step_order: 3, percent_value: 12, user_count: 5532 },
   ];
-  await supabase.from("analytics_funnel" as any).insert(funnel.map(f => ({ ...f, project_id: projectId })));
+  await supabase.from("analytics_funnel").insert(funnel.map(f => ({ ...f, project_id: projectId })));
 
   const reviews = [
     { stars: 5, text: "App incrível! A interface é super fluida e bonita. Parabéns ao time!", author: "Maria S.", platform: "ios", ai_tag: "Elogio", ai_tag_type: "praise" },
@@ -432,7 +434,7 @@ export async function seedAnalyticsData() {
     { stars: 4, text: "Muito bom! Só sinto falta de um modo escuro. Fora isso, 10/10.", author: "Fernanda M.", platform: "ios", ai_tag: "UX Sugestão", ai_tag_type: "ux" },
     { stars: 2, text: "O app consome muita bateria. Depois de 30 min de uso já drena 20%.", author: "Ricardo T.", platform: "android", ai_tag: "Performance", ai_tag_type: "performance" },
   ];
-  await supabase.from("app_reviews" as any).insert(reviews.map(r => ({ ...r, project_id: projectId })));
+  await supabase.from("app_reviews").insert(reviews.map(r => ({ ...r, project_id: projectId })));
 
   const tokens = [
     { token_key: "primary", token_value: "#6200EE", token_label: "Primary", category: "color" },
@@ -443,7 +445,7 @@ export async function seedAnalyticsData() {
     { token_key: "onPrimary", token_value: "#FFFFFF", token_label: "On Primary", category: "color" },
     { token_key: "onSurface", token_value: "#E2E8F0", token_label: "On Surface", category: "color" },
   ];
-  await supabase.from("design_tokens" as any).insert(tokens.map(t => ({ ...t, project_id: projectId })));
+  await supabase.from("design_tokens").insert(tokens.map(t => ({ ...t, project_id: projectId })));
 }
 
 export { };

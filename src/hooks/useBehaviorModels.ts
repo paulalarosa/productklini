@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 
 export interface BehaviorModel {
@@ -21,7 +22,7 @@ export interface BehaviorModel {
   success_metrics: string[];
   target_audience: string;
   context: string;
-  recommendations: any;
+  recommendations: Json;
   status: string;
   created_at: string;
   updated_at: string;
@@ -89,12 +90,13 @@ export function useCreateBehaviorModel() {
 
       const { data, error } = await supabase
         .from("behavior_models")
-        .insert([{ 
+        .insert({ 
           ...model,
+          project_id: model.project_id as string,
           behavior: model.behavior,
           behavior_probability: prob, 
-          recommendations: recs 
-        } as any])
+          recommendations: recs as unknown as Json
+        })
         .select()
         .single();
 

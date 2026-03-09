@@ -16,7 +16,7 @@ interface SVGAsset {
 const CATEGORIES = ["Todos", "Navigation", "Actions", "Status", "Social", "Custom"];
 
 function optimizeSVG(raw: string): { optimized: string; saved: number } {
-  let result = raw
+  const result = raw
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/\s{2,}/g, " ")
     .replace(/>\s+</g, "><")
@@ -44,7 +44,7 @@ export function SVGManagerPage() {
         return;
       }
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = (e: ProgressEvent<FileReader>) => {
         const raw = e.target?.result as string;
         const { optimized, saved } = optimizeSVG(raw);
         const asset: SVGAsset = {

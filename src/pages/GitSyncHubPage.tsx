@@ -346,7 +346,7 @@ export function GitSyncHubPage() {
       }
 
       // If the clicked version IS the current, nothing to do
-      if ((current as any).version === version.version) {
+      if ((current as { version: number }).version === version.version) {
         toast.info("Esta já é a versão atual do componente.");
         setRollingBack(null);
         return;
@@ -361,8 +361,8 @@ export function GitSyncHubPage() {
           version: version.version,
           status: "Review",
           updated_at: new Date().toISOString(),
-        } as any)
-        .eq("id", (current as any).id);
+        })
+        .eq("id", (current as { id: string }).id);
 
       if (error) throw error;
 
@@ -370,14 +370,14 @@ export function GitSyncHubPage() {
       await supabase
         .from("mcp_sync_logs")
         .insert({
-          component_id: (current as any).id,
+          component_id: (current as { id: string }).id,
           ai_insights: {
             action: "rollback",
-            from_version: (current as any).version,
+            from_version: (current as { version: number }).version,
             to_version: version.version,
             timestamp: new Date().toISOString(),
           },
-        } as any);
+        });
 
       toast.success(`Rollback para v${version.version} de ${version.component_name} realizado!`, {
         description: "O código Dart foi restaurado. Status alterado para Review.",
@@ -385,8 +385,9 @@ export function GitSyncHubPage() {
 
       // Refresh timeline
       await fetchVersions();
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao fazer rollback");
+    } catch (e) {
+      const err = e as Error;
+      toast.error(err.message || "Erro ao fazer rollback");
     }
     setRollingBack(null);
   };

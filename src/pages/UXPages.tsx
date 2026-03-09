@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getProjectId } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { type DbPersona } from "@/lib/api";
 
 export function PesquisasPage() {
   const { data: researchDocs } = useDocuments("research_plan");
@@ -93,7 +94,7 @@ export function PersonasPage() {
     toast.success("Persona removida");
   };
 
-  const startEdit = (p: any) => {
+  const startEdit = (p: DbPersona) => {
     setEditingId(p.id);
     setForm({ name: p.name, role: p.role, goals: p.goals.join(", "), painPoints: p.pain_points.join(", ") });
     setAdding(false);

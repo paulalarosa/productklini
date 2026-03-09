@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 type ABExperiment = Tables<"ab_experiments">;
@@ -64,9 +65,9 @@ export function useCreateABExperiment() {
       description: string;
       hypothesis: string;
       traffic_allocation: number;
-      variants: any[];
-      success_metrics: any[];
-      targeting_rules?: any;
+      variants: Record<string, unknown>[];
+      success_metrics: Record<string, unknown>[];
+      targeting_rules?: Record<string, unknown>;
     }) => {
       const { data: project } = await supabase.from("projects").select("id").limit(1).single();
       if (!project) throw new Error("Nenhum projeto encontrado");
@@ -75,6 +76,9 @@ export function useCreateABExperiment() {
         .from("ab_experiments")
         .insert({
           ...experiment,
+          variants: experiment.variants as unknown as Json,
+          success_metrics: experiment.success_metrics as unknown as Json,
+          targeting_rules: experiment.targeting_rules as unknown as Json,
           project_id: project.id,
           status: "draft",
         })
@@ -113,11 +117,14 @@ export function useRecordABResult() {
       event_type: string;
       event_value?: number;
       user_session: string;
-      metadata?: any;
+      metadata?: Record<string, unknown>;
     }) => {
       const { data, error } = await supabase
         .from("ab_results")
-        .insert(result)
+        .insert({
+          ...result,
+          metadata: result.metadata as unknown as Json,
+        })
         .select()
         .single();
       if (error) throw error;

@@ -140,8 +140,9 @@ export function ResponsiveAuditPage() {
       const data = await resp.json();
       setAiReport(data.result);
       toast.success("Análise de IA concluída!");
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao analisar com IA");
+    } catch (e) {
+      const err = e as Error;
+      toast.error(err.message || "Erro ao analisar com IA");
     } finally {
       setAiLoading(false);
     }

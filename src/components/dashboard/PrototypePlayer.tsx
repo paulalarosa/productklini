@@ -8,7 +8,7 @@ import { getProjectId } from "@/lib/api";
 interface CanvasDesign {
   id: string;
   name: string;
-  elements: any[];
+  elements: Record<string, unknown>[];
   canvas_width: number;
   canvas_height: number;
 }
@@ -25,7 +25,7 @@ interface Hotspot {
   label: string;
 }
 
-const TRANSITIONS: Record<string, { initial: any; animate: any; exit: any }> = {
+const TRANSITIONS: Record<string, { initial: Record<string, unknown>; animate: Record<string, unknown>; exit: Record<string, unknown> }> = {
   fade: { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } },
   "slide-left": { initial: { x: "100%" }, animate: { x: 0 }, exit: { x: "-100%" } },
   "slide-right": { initial: { x: "-100%" }, animate: { x: 0 }, exit: { x: "100%" } },
@@ -58,7 +58,7 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
     if (designs && designs.length > 0) {
       const mapped = designs.map(d => ({
         ...d,
-        elements: (d.elements as any[]) ?? [],
+        elements: (d.elements as Record<string, unknown>[]) ?? [],
       }));
       setScreens(mapped);
       setCurrentScreenId(mapped[0].id);
@@ -66,7 +66,7 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
     }
 
     const { data: spots } = await supabase
-      .from("prototype_hotspots" as any)
+      .from("prototype_hotspots")
       .select("*");
 
     if (spots) {
@@ -211,9 +211,9 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${currentScreenId}-${transitionKey}`}
-                initial={trans.initial}
-                animate={trans.animate}
-                exit={trans.exit}
+                initial={trans.initial as any}
+                animate={trans.animate as any}
+                exit={trans.exit as any}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="relative"
                 style={{ boxShadow: "0 20px 60px hsl(0 0% 0% / 0.5)" }}
@@ -225,12 +225,12 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
                   className="rounded-xl"
                   style={{ background: "hsl(228, 14%, 10%)", maxHeight: "calc(100vh - 120px)" }}
                 >
-                  {currentScreen.elements.map((el: any, i: number) => (
+                  {currentScreen.elements.map((el: Record<string, unknown>, i: number) => (
                     <g key={i}>
-                      {el.type === "rect" && <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rx={4} stroke={el.stroke} strokeWidth={el.strokeWidth} />}
-                      {el.type === "circle" && <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2} fill={el.fill} />}
-                      {el.type === "text" && <text x={el.x} y={el.y + (el.fontSize || 16)} fill={el.fill} fontSize={el.fontSize || 16} fontFamily="Inter, sans-serif" fontWeight={500}>{el.text}</text>}
-                      {el.type === "line" && <line x1={el.x} y1={el.y} x2={el.x + el.width} y2={el.y + el.height} stroke={el.fill} strokeWidth={3} strokeLinecap="round" />}
+                      {el.type === "rect" && <rect x={el.x as number} y={el.y as number} width={el.width as number} height={el.height as number} fill={el.fill as string} rx={4} stroke={el.stroke as string} strokeWidth={el.strokeWidth as number} />}
+                      {el.type === "circle" && <ellipse cx={(el.x as number) + (el.width as number) / 2} cy={(el.y as number) + (el.height as number) / 2} rx={(el.width as number) / 2} ry={(el.height as number) / 2} fill={el.fill as string} />}
+                      {el.type === "text" && <text x={el.x as number} y={(el.y as number) + ((el.fontSize as number) || 16)} fill={el.fill as string} fontSize={(el.fontSize as number) || 16} fontFamily="Inter, sans-serif" fontWeight={500}>{(el.text as string)}</text>}
+                      {el.type === "line" && <line x1={el.x as number} y1={el.y as number} x2={(el.x as number) + (el.width as number)} y2={(el.y as number) + (el.height as number)} stroke={el.fill as string} strokeWidth={3} strokeLinecap="round" />}
                     </g>
                   ))}
                 </svg>
@@ -310,7 +310,7 @@ export function HotspotEditor({
 
   const loadHotspots = async () => {
     const { data } = await supabase
-      .from("prototype_hotspots" as any)
+      .from("prototype_hotspots")
       .select("*")
       .eq("source_design_id", designId);
     if (data) setHotspots(data as unknown as Hotspot[]);
@@ -318,7 +318,7 @@ export function HotspotEditor({
 
   const addHotspot = async () => {
     if (!newHotspot.target_design_id) { toast.error("Selecione uma tela de destino"); return; }
-    const { error } = await supabase.from("prototype_hotspots" as any).insert([{
+    const { error } = await supabase.from("prototype_hotspots").insert([{
       source_design_id: designId,
       target_design_id: newHotspot.target_design_id,
       x: newHotspot.x,
@@ -336,7 +336,7 @@ export function HotspotEditor({
   };
 
   const deleteHotspot = async (id: string) => {
-    await supabase.from("prototype_hotspots" as any).delete().eq("id", id);
+    await supabase.from("prototype_hotspots").delete().eq("id", id);
     loadHotspots();
     toast.success("Hotspot removido");
   };

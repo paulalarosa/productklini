@@ -29,8 +29,8 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     let systemPrompt = "";
-    let tools: any[] = [];
-    let toolChoice: any = undefined;
+    let tools: { type: string; function: unknown }[] = [];
+    let toolChoice: { type: string; function: { name: string } } | undefined = undefined;
 
     if (mode === "ux-pilot") {
       systemPrompt = `Você é o UX Pilot, um assistente de ideação de UX especializado. Gere artefatos de UX como personas, mapas de jornada, fluxos de usuário e wireframes conceituais.
@@ -188,7 +188,7 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.0-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },

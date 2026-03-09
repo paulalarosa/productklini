@@ -41,9 +41,9 @@ export function PresentationMode({ onClose }: { onClose: () => void }) {
         .eq("project_id", projectId)
         .order("updated_at", { ascending: true });
       if (data) {
-        setDesigns(data.map((d: any) => ({
+        setDesigns(data.map((d) => ({
           ...d,
-          elements: (d.elements as CanvasElement[]) ?? [],
+          elements: (d.elements as unknown as CanvasElement[]) ?? [],
         })));
       }
     })();

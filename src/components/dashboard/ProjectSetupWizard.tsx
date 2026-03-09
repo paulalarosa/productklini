@@ -125,9 +125,10 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
       queryClient.invalidateQueries();
       toast.success("Projeto criado com sucesso!");
       onComplete();
-    } catch (e: any) {
-      console.error("Setup error:", e);
-      toast.error("Erro ao salvar: " + (e.message || "Tente novamente"));
+    } catch (e) {
+      const err = e as Error;
+      console.error("Setup error:", err);
+      toast.error("Erro ao salvar: " + (err.message || "Tente novamente"));
     }
     setSaving(false);
   };

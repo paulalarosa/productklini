@@ -44,11 +44,44 @@ Deno.serve(async (req) => {
       supabase.from("project_documents").select("*").eq("project_id", project_id),
     ]);
 
-    const project = projectRes.data;
-    const personas = personasRes.data ?? [];
-    const tasks = tasksRes.data ?? [];
-    const metrics = metricsRes.data ?? [];
-    const docs = docsRes.data ?? [];
+interface Project {
+  name: string;
+  description?: string;
+  current_phase: string;
+  progress: number;
+}
+
+interface Persona {
+  name: string;
+  role: string;
+  goals?: string[];
+  pain_points?: string[];
+}
+
+interface Task {
+  module: string;
+  phase: string;
+  title: string;
+  status: string;
+  priority: string;
+}
+
+interface Metric {
+  metric_name: string;
+  score: number;
+  previous_score?: number;
+}
+
+interface Document {
+  doc_type: string;
+  title: string;
+}
+
+    const project = projectRes.data as Project | null;
+    const personas = (personasRes.data ?? []) as Persona[];
+    const tasks = (tasksRes.data ?? []) as Task[];
+    const metrics = (metricsRes.data ?? []) as Metric[];
+    const docs = (docsRes.data ?? []) as Document[];
 
     if (!project) {
       return new Response(JSON.stringify({ error: "Projeto não encontrado" }), {
@@ -63,17 +96,17 @@ Descrição: ${project.description || "Sem descrição"}
 Fase atual: ${project.current_phase}
 Progresso: ${project.progress}%
 
-Personas (${personas.length}):
-${personas.map(p => `- ${p.name} (${p.role}): Objetivos: ${p.goals?.join(", ") || "N/A"} | Dores: ${p.pain_points?.join(", ") || "N/A"}`).join("\n")}
+Personas (${personas?.length || 0}):
+${personas?.map((p: Persona) => `- ${p.name} (${p.role}): Objetivos: ${p.goals?.join(", ") || "N/A"} | Dores: ${p.pain_points?.join(", ") || "N/A"}`).join("\n") || "Nenhuma persona cadastrada."}
 
-Tarefas (${tasks.length}):
-${tasks.slice(0, 15).map(t => `- [${t.module}/${t.phase}] ${t.title} (${t.status}, prioridade: ${t.priority})`).join("\n")}
+Tarefas (${tasks?.length || 0}):
+${tasks?.slice(0, 15).map((t: Task) => `- [${t.module}/${t.phase}] ${t.title} (${t.status}, prioridade: ${t.priority})`).join("\n") || "Nenhuma tarefa cadastrada."}
 
-Métricas UX (${metrics.length}):
-${metrics.map(m => `- ${m.metric_name}: ${m.score}${m.previous_score ? ` (anterior: ${m.previous_score})` : ""}`).join("\n")}
+Métricos UX (${metrics?.length || 0}):
+${metrics?.map((m: Metric) => `- ${m.metric_name}: ${m.score}${m.previous_score ? ` (anterior: ${m.previous_score})` : ""}`).join("\n") || "Nenhuma métrica cadastrada."}
 
-Documentos existentes (${docs.length}):
-${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n")}
+Documentos existentes (${docs?.length || 0}):
+${docs?.map((d: Document) => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento cadastrado."}
 `.trim();
 
     const prompts: Record<string, { systemPrompt: string; title: string }> = {
@@ -183,14 +216,14 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n")}
       });
     }
 
-    const aiResponse = await fetch("https://ai.lovable.dev/chat/completions", {
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.0-flash",
         messages: [
           { role: "system", content: config.systemPrompt },
           { role: "user", content: `Contexto do projeto:\n\n${contextStr}\n\nGere o documento "${config.title}" com base neste contexto.` },
@@ -220,7 +253,7 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n")}
         title: config.title,
         content,
         ai_generated: true,
-        metadata: { generated_at: new Date().toISOString(), model: "gemini-2.5-flash" },
+        metadata: { generated_at: new Date().toISOString(), model: "gemini-2.0-flash" },
       })
       .select()
       .single();

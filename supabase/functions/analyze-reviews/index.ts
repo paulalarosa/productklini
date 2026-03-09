@@ -7,6 +7,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface ReviewInput {
+  id: string;
+  text: string;
+  stars: number;
+}
+
+interface TaggedResult {
+  index: number;
+  ai_tag: string;
+  ai_tag_type: "bug" | "performance" | "praise" | "ux" | "crash" | "feature" | "security" | "accessibility";
+  sentiment: "positive" | "neutral" | "negative";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -52,7 +65,7 @@ serve(async (req) => {
 
     // Build prompt with reviews
     const reviewsList = reviews
-      .map((r: { id: string; text: string; stars: number }, i: number) => `[${i}] (${r.stars}★) "${r.text}"`)
+      .map((r: ReviewInput, i: number) => `[${i}] (${r.stars}★) "${r.text}"`)
       .join("\n");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -62,7 +75,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.0-flash",
         messages: [
           {
             role: "system",
@@ -145,12 +158,12 @@ Be precise. A 5★ review praising the app is "praise/positive". A 1★ about cr
     const results = parsed.results || [];
 
     // Map back to review IDs
-    const taggedReviews = results.map((r: any) => ({
+    const taggedReviews = results.map((r: TaggedResult) => ({
       id: reviews[r.index]?.id,
       ai_tag: r.ai_tag,
       ai_tag_type: r.ai_tag_type,
       sentiment: r.sentiment,
-    })).filter((r: any) => r.id);
+    })).filter((r: { id: string | undefined }) => r.id);
 
     return new Response(
       JSON.stringify({ success: true, results: taggedReviews }),

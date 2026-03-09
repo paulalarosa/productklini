@@ -136,8 +136,9 @@ export function EnhancedReportPage() {
       const data = await resp.json();
       setAiSummary(data.result);
       toast.success("Resumo gerado!");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e) {
+      const err = e as Error;
+      toast.error(err.message);
     } finally {
       setAiLoading(false);
     }

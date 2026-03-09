@@ -63,8 +63,9 @@ export function UXAnalysisPage() {
         [type]: { title: label, content: data.result, generatedAt: new Date().toISOString() },
       }));
       toast.success(`${label} concluída!`);
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao analisar");
+    } catch (e) {
+      const err = e as Error;
+      toast.error(err.message || "Erro ao analisar");
     } finally {
       setLoading(null);
     }

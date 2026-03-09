@@ -126,8 +126,9 @@ export function VisualCheckerPage() {
       const data = await res.json();
       setAIAnalysis(data.result);
       toast.success("Análise visual concluída!");
-    } catch (e: any) {
-      toast.error(e.message || "Erro");
+    } catch (e) {
+      const err = e as Error;
+      toast.error(err.message || "Erro");
     } finally {
       setLoading(false);
     }

@@ -189,7 +189,7 @@ export function ShareViewPage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {["discovery", "define", "develop", "deliver"].map((phase) => {
-                  const pct = (phaseProgress as any)[phase] ?? 0;
+                  const pct = (phaseProgress as Record<string, number>)[phase] ?? 0;
                   const isCurrent = project.current_phase === phase;
                   return (
                     <div key={phase} className={`p-3 rounded-xl border transition-colors ${isCurrent ? "border-primary bg-primary/5" : "border-border"}`}>

@@ -260,13 +260,14 @@ export function AnalyticsHubPage() {
       }
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
       toast.success(`${results.length} reviews analisadas por IA!`);
-    } catch (e: any) {
-      if (e.message?.includes("429") || e.message?.includes("Rate limit")) {
+    } catch (e) {
+      const err = e as Error;
+      if (err.message?.includes("429") || err.message?.includes("Rate limit")) {
         toast.error("Limite de requisições excedido. Tente novamente em alguns segundos.");
-      } else if (e.message?.includes("402") || e.message?.includes("Créditos")) {
+      } else if (err.message?.includes("402") || err.message?.includes("Créditos")) {
         toast.error("Créditos insuficientes para IA. Adicione créditos no workspace.");
       } else {
-        toast.error(e.message || "Erro na análise de IA");
+        toast.error(err.message || "Erro na análise de IA");
       }
     }
     setAnalyzing(false);
@@ -306,8 +307,9 @@ export function AnalyticsHubPage() {
       if (pendingReviews.length > 0) {
         await runAIAnalysis(pendingReviews);
       }
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao extrair reviews");
+    } catch (e) {
+      const err = e as Error;
+      toast.error(err.message || "Erro ao extrair reviews");
     }
     setScraping(false);
   };
@@ -318,7 +320,7 @@ export function AnalyticsHubPage() {
     setImporting(true);
     try {
       const text = await file.text();
-      let parsed: any[];
+      let parsed: Record<string, unknown>[];
       if (file.name.endsWith(".json")) {
         parsed = JSON.parse(text);
         if (!Array.isArray(parsed)) parsed = [parsed];
@@ -333,14 +335,20 @@ export function AnalyticsHubPage() {
           return obj;
         });
       }
-      const reviewsToInsert = parsed.map((r: any) => ({
-        stars: parseInt(r.stars || r.rating || "3") || 3,
-        text: r.text || r.review || r.content || "",
-        author: r.author || r.user || r.name || "Anônimo",
-        platform: (r.platform || "android").toLowerCase(),
-        ai_tag: "Pendente",
-        ai_tag_type: "ux",
-      })).filter((r: any) => r.text.length > 0);
+      const reviewsToInsert = parsed.map((r: Record<string, unknown>) => {
+        const textValue = (r.text || r.review || r.content || "") as string;
+        const authorValue = (r.author || r.user || r.name || "Anônimo") as string;
+        const platformValue = (r.platform || "android") as string;
+        
+        return {
+          stars: parseInt((r.stars || r.rating || "3") as string) || 3,
+          text: textValue,
+          author: authorValue,
+          platform: platformValue.toLowerCase(),
+          ai_tag: "Pendente",
+          ai_tag_type: "ux",
+        };
+      }).filter(r => r.text.length > 0);
 
       if (reviewsToInsert.length === 0) {
         toast.warning("Nenhuma review válida encontrada no arquivo.");
@@ -357,7 +365,7 @@ export function AnalyticsHubPage() {
       if (pendingReviews.length > 0) {
         await runAIAnalysis(pendingReviews);
       }
-    } catch (e: any) {
+    } catch (e) {
       toast.error("Erro ao processar arquivo. Verifique o formato.");
     }
     setImporting(false);

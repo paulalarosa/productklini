@@ -180,7 +180,7 @@ Diretrizes:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "google/gemini-2.0-flash",
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
@@ -200,7 +200,7 @@ Diretrizes:
 
     for (const tc of toolCalls) {
       const fnName = tc.function.name;
-      let args: any;
+      let args: Record<string, unknown>;
       try {
         args = JSON.parse(tc.function.arguments);
       } catch {
@@ -214,8 +214,8 @@ Diretrizes:
       }
 
       if (fnName === "create_tasks") {
-        const tasks = args.tasks ?? [];
-        const toInsert = tasks.map((t: any) => ({
+        const tasks = (args.tasks as { title: string; module?: string; phase?: string; priority?: string; estimated_days?: number }[]) ?? [];
+        const toInsert = tasks.map((t) => ({
           project_id: projectId,
           title: t.title,
           module: t.module || "dev",
@@ -230,11 +230,11 @@ Diretrizes:
           toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
         } else {
           actionsPerformed.push(`✅ ${tasks.length} tarefa(s) criada(s)`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${tasks.length} tarefas criadas com sucesso: ${tasks.map((t: any) => t.title).join(", ")}` });
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${tasks.length} tarefas criadas com sucesso: ${tasks.map((t) => t.title).join(", ")}` });
         }
       } else if (fnName === "create_personas") {
-        const personas = args.personas ?? [];
-        const toInsert = personas.map((p: any) => ({
+        const personas = (args.personas as { name: string; role?: string; goals?: string[]; pain_points?: string[] }[]) ?? [];
+        const toInsert = personas.map((p) => ({
           project_id: projectId,
           name: p.name,
           role: p.role || "Usuário",
@@ -246,14 +246,14 @@ Diretrizes:
           toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
         } else {
           actionsPerformed.push(`✅ ${personas.length} persona(s) criada(s)`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${personas.length} personas criadas: ${personas.map((p: any) => p.name).join(", ")}` });
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${personas.length} personas criadas: ${personas.map((p) => p.name).join(", ")}` });
         }
       } else if (fnName === "create_document") {
         const { error } = await supabase.from("project_documents").insert({
           project_id: projectId,
-          title: args.title,
-          doc_type: args.doc_type,
-          content: args.content,
+          title: args.title as string,
+          doc_type: args.doc_type as string,
+          content: args.content as string,
           ai_generated: true,
           metadata: { generated_by: "mentor-ia", generated_at: new Date().toISOString() },
         });
