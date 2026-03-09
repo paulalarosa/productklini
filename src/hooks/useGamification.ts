@@ -119,33 +119,24 @@ export function useUpdateProgress() {
       if (progressError) throw progressError;
 
       // Update total points
-      const { error: pointsError } = await supabase.rpc('update_user_points', {
-        p_user_id: user.id,
-        p_project_id: projectId,
-        p_points_to_add: pointsEarned || 0
-      });
+      const { data: existingPoints } = await supabase
+        .from("user_points")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("project_id", projectId)
+        .single();
 
-      if (pointsError) {
-        // If function doesn't exist, handle manually
-        const { data: existingPoints } = await supabase
-          .from("user_points")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("project_id", projectId)
-          .single();
+      const newTotalPoints = (existingPoints?.total_points || 0) + (pointsEarned || 0);
+      const newLevel = Math.floor(newTotalPoints / 1000) + 1;
 
-        const newTotalPoints = (existingPoints?.total_points || 0) + (pointsEarned || 0);
-        const newLevel = Math.floor(newTotalPoints / 1000) + 1;
-
-        await supabase
-          .from("user_points")
-          .upsert({
-            user_id: user.id,
-            project_id: projectId,
-            total_points: newTotalPoints,
-            level: newLevel,
-          });
-      }
+      await supabase
+        .from("user_points")
+        .upsert({
+          user_id: user.id,
+          project_id: projectId,
+          total_points: newTotalPoints,
+          level: newLevel,
+        });
 
       return progress;
     },

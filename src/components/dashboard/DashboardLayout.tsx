@@ -3,6 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
 import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
+import { GamificationPanel } from "@/components/dashboard/GamificationPanel";
 import { Outlet } from "react-router-dom";
 import { useProject, useTasks } from "@/hooks/useProjectData";
 
