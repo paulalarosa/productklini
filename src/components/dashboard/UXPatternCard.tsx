@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
   Eye, Code, Lightbulb, TrendingUp, Users, Copy, ExternalLink,
-  Brain, Target, CheckCircle, Star, Clock 
+  Brain, Target, CheckCircle, Star, Clock, Smartphone 
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
@@ -86,14 +86,21 @@ export function UXPatternCard({ pattern }: UXPatternCardProps) {
           <CardContent className="pt-0">
             <div className="space-y-3">
               <div className="flex flex-wrap gap-1">
+                {pattern.category === "flutter" && (
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200 text-xs flex items-center gap-1">
+                    <Smartphone className="w-3 h-3" /> Flutter
+                  </Badge>
+                )}
                 <Badge variant="secondary" className={getDifficultyColor(pattern.difficulty_level)}>
                   {pattern.difficulty_level === "beginner" && "Iniciante"}
                   {pattern.difficulty_level === "intermediate" && "Intermediário"}
                   {pattern.difficulty_level === "advanced" && "Avançado"}
                 </Badge>
-                <Badge variant="outline">
-                  {pattern.category.charAt(0).toUpperCase() + pattern.category.slice(1)}
-                </Badge>
+                {pattern.category !== "flutter" && (
+                  <Badge variant="outline">
+                    {pattern.category.charAt(0).toUpperCase() + pattern.category.slice(1)}
+                  </Badge>
+                )}
               </div>
               
               {pattern.tags && pattern.tags.length > 0 && (
@@ -138,12 +145,17 @@ export function UXPatternCard({ pattern }: UXPatternCardProps) {
               <div className="space-y-3">
                 <p className="text-muted-foreground">{pattern.description}</p>
                 <div className="flex flex-wrap gap-2">
+                  {pattern.category === "flutter" && (
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 flex items-center gap-1">
+                      <Smartphone className="w-3 h-3" /> Flutter
+                    </Badge>
+                  )}
                   <Badge className={getDifficultyColor(pattern.difficulty_level)}>
                     {pattern.difficulty_level === "beginner" && "Iniciante"}
                     {pattern.difficulty_level === "intermediate" && "Intermediário"}
                     {pattern.difficulty_level === "advanced" && "Avançado"}
                   </Badge>
-                  <Badge variant="outline">{pattern.category}</Badge>
+                  {pattern.category !== "flutter" && <Badge variant="outline">{pattern.category}</Badge>}
                   {pattern.tags?.map((tag) => (
                     <Badge key={tag} variant="secondary">{tag}</Badge>
                   ))}

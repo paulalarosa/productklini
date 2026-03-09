@@ -35,6 +35,7 @@ import { AnalyticsHubPage } from "./pages/AnalyticsHubPage";
 import { GitSyncHubPage } from "./pages/GitSyncHubPage";
 import { BehaviorModelPage } from "./pages/BehaviorModelPage";
 import UXPatternsPage from "./pages/UXPatternsPage";
+import { ABTestingPage } from "./pages/ABTestingPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -97,6 +98,7 @@ const App = () => (
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
               <Route path="/analytics" element={<AnalyticsHubPage />} />
+              <Route path="/ab-testing" element={<ABTestingPage />} />
               <Route path="/relatorio" element={<ReportPage />} />
               <Route path="/git-sync" element={<GitSyncHubPage />} />
               <Route path="/config" element={<ConfigPage />} />

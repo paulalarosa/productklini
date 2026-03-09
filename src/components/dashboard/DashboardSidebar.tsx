@@ -90,8 +90,9 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Analytics & Feedback",
+    title: "Validação & Experimentos",
     items: [
+      { label: "A/B Testing", icon: CircleDot, path: "/ab-testing" },
       { label: "Analytics Hub", icon: BarChart3, path: "/analytics" },
     ],
   },
