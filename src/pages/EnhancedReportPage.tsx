@@ -35,7 +35,7 @@ export function EnhancedReportPage() {
   const { data: metrics } = useUxMetrics();
   const { data: docs } = useDocuments();
   const { data: team } = useTeamMembers();
-  const { experiments } = useABExperiments();
+  const { data: experiments } = useABExperiments();
 
   const now = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
   const phaseProgress = (project?.phase_progress as Record<string, number>) ?? {};
