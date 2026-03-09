@@ -8,7 +8,7 @@ import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
-const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-docs`;
+const getGenerateUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-docs`;
 
 interface Props {
   documents: DbProjectDocument[];
@@ -34,7 +34,7 @@ export function DocumentManager({ documents, docType, docTypeLabel, emptyIcon, e
     try {
       const projectId = await getProjectId();
       const headers = await getAuthHeaders();
-      const resp = await fetch(GENERATE_URL, {
+      const resp = await fetch(getGenerateUrl(), {
         method: "POST",
         headers,
         body: JSON.stringify({ doc_type: docType, project_id: projectId }),

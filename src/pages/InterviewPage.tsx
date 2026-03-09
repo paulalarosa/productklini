@@ -8,7 +8,7 @@ import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
-const ANALYZE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ux`;
+const getAnalyzeUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ux`;
 
 export function InterviewTranscriberPage() {
   const { data: docs } = useDocuments("interview_analysis");
@@ -26,7 +26,7 @@ export function InterviewTranscriberPage() {
     try {
       const projectId = await getProjectId();
       const headers = await getAuthHeaders();
-      const resp = await fetch(ANALYZE_URL, {
+      const resp = await fetch(getAnalyzeUrl(), {
         method: "POST",
         headers,
         body: JSON.stringify({ action: "analyze_interview", content: text, project_id: projectId }),

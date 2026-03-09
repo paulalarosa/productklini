@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback } from "react";
-import { Kanban, ShieldCheck, BarChart3 } from "lucide-react";
+import { Kanban, ShieldCheck, BarChart3, Plus } from "lucide-react";
 import { TeamMetrics } from "@/components/dashboard/TeamMetrics";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useTasks } from "@/hooks/useProjectData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import type { DbTask } from "@/lib/api";
+import { getProjectId, type DbTask } from "@/lib/api";
 
 const columns = ["todo", "in_progress", "review", "done"] as const;
 const columnLabels: Record<string, string> = { todo: "A Fazer", in_progress: "Em Andamento", review: "Em Revisão", done: "Concluído" };
@@ -20,6 +20,9 @@ export function KanbanPage() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragGhost = useRef<HTMLDivElement | null>(null);
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [addingToCol, setAddingToCol] = useState<string | null>(null);
 
   const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
     setDraggedTask(taskId);
@@ -79,6 +82,38 @@ export function KanbanPage() {
     handleDragEnd();
   }, [allTasks, queryClient, handleDragEnd]);
 
+  const handleAddTask = async (col: string) => {
+    if (!newTaskTitle.trim()) {
+      setIsAddingTask(false);
+      setAddingToCol(null);
+      return;
+    }
+
+    try {
+      const projectId = await getProjectId();
+      const { error } = await supabase.from("tasks").insert({
+        project_id: projectId,
+        title: newTaskTitle.trim(),
+        status: col,
+        module: "dev",
+        phase: "develop",
+        priority: "medium",
+        days_in_phase: 0,
+        estimated_days: 3,
+      });
+
+      if (error) throw error;
+
+      toast.success("Tarefa criada!");
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      setNewTaskTitle("");
+      setIsAddingTask(false);
+      setAddingToCol(null);
+    } catch (e) {
+      toast.error("Erro ao criar tarefa");
+    }
+  };
+
   return (
     <ModulePage title="Kanban" subtitle="Board de desenvolvimento" icon={<Kanban className="w-4 h-4 text-primary-foreground" />}>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -98,6 +133,46 @@ export function KanbanPage() {
                 {columnLabels[col]}
                 <span className="text-[10px] bg-secondary rounded-full px-2 py-0.5">{colTasks.length}</span>
               </h4>
+
+              <div className="mb-3">
+                {isAddingTask && addingToCol === col ? (
+                  <div className="space-y-2">
+                    <input
+                      autoFocus
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddTask(col);
+                        if (e.key === "Escape") { setIsAddingTask(false); setAddingToCol(null); }
+                      }}
+                      placeholder="Título da tarefa..."
+                      className="w-full px-3 py-2 rounded-lg bg-background border border-primary/30 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                    />
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleAddTask(col)}
+                        className="flex-1 py-1 rounded bg-primary text-primary-foreground text-[10px] font-medium"
+                      >
+                        Adicionar
+                      </button>
+                      <button
+                        onClick={() => { setIsAddingTask(false); setAddingToCol(null); }}
+                        className="px-2 py-1 rounded bg-secondary text-muted-foreground text-[10px]"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => { setAddingToCol(col); setIsAddingTask(true); }}
+                    className="w-full py-1.5 rounded-lg border border-dashed border-muted-foreground/30 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Nova Tarefa
+                  </button>
+                )}
+              </div>
+
               <div className="space-y-2 min-h-[100px]">
                 {colTasks.map((t, i) => (
                   <div key={t.id}>

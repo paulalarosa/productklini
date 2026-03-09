@@ -109,6 +109,25 @@ export async function createNewProject(name: string, description?: string): Prom
   return data.id;
 }
 
+export async function deleteProject(projectId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  const { error } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", projectId)
+    .eq("user_id", user.id);
+
+  if (error) throw error;
+
+  // If the deleted project was the current one, clear it
+  const currentId = localStorage.getItem(CURRENT_PROJECT_KEY);
+  if (currentId === projectId) {
+    clearCurrentProjectId();
+  }
+}
+
 export async function getProjectId(): Promise<string> {
   if (cachedProjectId) return cachedProjectId;
 

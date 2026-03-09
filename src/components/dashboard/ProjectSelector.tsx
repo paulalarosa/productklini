@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, Plus, FolderOpen, Check } from "lucide-react";
-import { fetchAllProjects, setCurrentProjectId, type DbProject } from "@/lib/api";
+import { ChevronDown, Plus, FolderOpen, Check, Trash2 } from "lucide-react";
+import { fetchAllProjects, setCurrentProjectId, deleteProject, type DbProject } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface ProjectSelectorProps {
@@ -35,6 +35,21 @@ export function ProjectSelector({ currentProject, onCreateNew }: ProjectSelector
     setOpen(false);
   };
 
+  const handleDeleteProject = async (e: React.MouseEvent, projectId: string, projectName: string) => {
+    e.stopPropagation();
+    if (!confirm(`Tem certeza que deseja excluir o projeto "${projectName}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      await deleteProject(projectId);
+      await loadProjects();
+      queryClient.invalidateQueries();
+    } catch (e) {
+      console.error("Error deleting project:", e);
+    }
+  };
+
   return (
     <div className="relative">
       <button
@@ -63,7 +78,7 @@ export function ProjectSelector({ currentProject, onCreateNew }: ProjectSelector
                   <button
                     key={project.id}
                     onClick={() => switchProject(project)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent/50 transition-colors ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-accent/50 transition-colors group ${
                       currentProject?.id === project.id ? "bg-primary/5" : ""
                     }`}
                   >
@@ -74,8 +89,16 @@ export function ProjectSelector({ currentProject, onCreateNew }: ProjectSelector
                         <p className="text-[10px] text-muted-foreground truncate">{project.description}</p>
                       )}
                     </div>
-                    {currentProject?.id === project.id && (
+                    {currentProject?.id === project.id ? (
                       <Check className="w-4 h-4 shrink-0 text-primary" />
+                    ) : (
+                      <button
+                        onClick={(e) => handleDeleteProject(e, project.id, project.name)}
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Excluir projeto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     )}
                   </button>
                 ))

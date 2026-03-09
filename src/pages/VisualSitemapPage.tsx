@@ -6,7 +6,7 @@ import { getProjectId } from "@/lib/api";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 
-const GENERATE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-docs`;
+const getGenerateUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-docs`;
 
 interface TreeNode {
   id: string;
@@ -94,7 +94,7 @@ export function VisualSitemapPage() {
     try {
       const projectId = await getProjectId();
       const headers = await getAuthHeaders();
-      const resp = await fetch(GENERATE_URL, {
+      const resp = await fetch(getGenerateUrl(), {
         method: "POST",
         headers,
         body: JSON.stringify({ doc_type: "sitemap", project_id: projectId }),

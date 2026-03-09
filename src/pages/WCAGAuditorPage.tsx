@@ -8,7 +8,7 @@ import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
-const ANALYZE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ux`;
+const getAnalyzeUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ux`;
 
 export function WCAGAuditorPage() {
   const { data: docs } = useDocuments("wcag_audit");
@@ -25,7 +25,7 @@ export function WCAGAuditorPage() {
       const extraContext = context.trim()
         ? `\n\nInformações adicionais do usuário:\n${context}`
         : "\n\nFaça a auditoria baseada apenas no contexto do projeto disponível.";
-      const resp = await fetch(ANALYZE_URL, {
+      const resp = await fetch(getAnalyzeUrl(), {
         method: "POST",
         headers,
         body: JSON.stringify({ action: "audit_wcag", content: extraContext, project_id: projectId }),

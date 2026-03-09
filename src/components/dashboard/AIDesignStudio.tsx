@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/authHeaders";
 
+const getStudioUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`;
+
 // ---- Types ----
 type StudioMode = "ux-pilot" | "ui-make";
 
@@ -124,7 +126,7 @@ export function AIDesignStudio() {
 
     try {
       const headers = await getAuthHeaders();
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`, {
+      const resp = await fetch(getStudioUrl(), {
         method: "POST",
         headers,
         body: JSON.stringify({ prompt: text, mode }),
