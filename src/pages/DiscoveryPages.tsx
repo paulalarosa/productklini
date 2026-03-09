@@ -1,13 +1,41 @@
-import { Heart, Target, Briefcase, HelpCircle, Lightbulb, Grid3X3, Search, BarChart3 } from "lucide-react";
+import { Heart } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
-import { DocumentManager } from "@/components/dashboard/DocumentManager";
-import { useDocuments } from "@/hooks/useProjectData";
+import { EmpathyMapCard } from "@/components/dashboard/EmpathyMapCard";
+import { useEmpathyMaps, useDeleteEmpathyMap } from "@/hooks/useEmpathyMap";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export function EmpathyMapPage() {
-  const { data: docs } = useDocuments("empathy_map");
+  const { id: projectId } = useParams();
+  const { data: maps, isLoading } = useEmpathyMaps(projectId);
+  const { mutate: deleteMap } = useDeleteEmpathyMap();
+
+  const handleDelete = (id: string) => {
+    if (!projectId) return;
+    deleteMap({ id, projectId }, {
+      onSuccess: () => toast.success("Mapa excluído"),
+    });
+  };
+
   return (
-    <ModulePage title="Mapa de Empatia" subtitle="O que o usuário pensa, sente, vê e faz" icon={<Heart className="w-4 h-4 text-primary-foreground" />}>
-      <DocumentManager documents={docs ?? []} docType="empathy_map" docTypeLabel="Mapa de Empatia" emptyIcon={<Heart className="w-10 h-10 text-muted-foreground/30 mx-auto" />} emptyMessage="Nenhum mapa de empatia criado" />
+    <ModulePage 
+      title="Mapa de Empatia" 
+      subtitle="O que o usuário pensa, sente, vê e faz" 
+      icon={<Heart className="w-4 h-4 text-primary-foreground" />}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {maps?.map((map) => (
+          <EmpathyMapCard key={map.id} map={map} onDelete={handleDelete} />
+        ))}
+        
+        {!isLoading && (!maps || maps.length === 0) && (
+          <div className="col-span-full py-20 text-center border-2 border-dashed border-muted rounded-xl">
+            <Heart className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum Mapa Criado</h3>
+            <p className="text-sm text-muted-foreground mb-6">Peça ao Mentor IA para criar um mapa de empatia para uma persona.</p>
+          </div>
+        )}
+      </div>
     </ModulePage>
   );
 }

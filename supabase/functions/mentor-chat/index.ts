@@ -246,6 +246,25 @@ DIRETRIZES:
             required: ["title", "research_type", "summary"],
           },
         },
+      {
+        type: "function",
+        function: {
+          name: "create_empathy_map",
+          description: "Cria um mapa de empatia estruturado para uma persona.",
+          parameters: {
+            type: "object",
+            properties: {
+              persona_name: { type: "string" },
+              thinks_and_feels: { type: "array", items: { type: "string" } },
+              hears: { type: "array", items: { type: "string" } },
+              sees: { type: "array", items: { type: "string" } },
+              says_and_does: { type: "array", items: { type: "string" } },
+              pains: { type: "array", items: { type: "string" } },
+              gains: { type: "array", items: { type: "string" } },
+            },
+            required: ["persona_name", "thinks_and_feels", "hears", "sees", "says_and_does", "pains", "gains"]
+          },
+        },
       },
     ];
 
@@ -390,6 +409,19 @@ DIRETRIZES:
           conducted_at: new Date().toISOString()
         });
         actionsPerformed.push(`✅ Pesquisa "${args.title}"`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_empathy_map") {
+        await supabase.from("empathy_maps").insert({
+          project_id: projectId,
+          persona_name: args.persona_name,
+          thinks_and_feels: args.thinks_and_feels,
+          hears: args.hears,
+          sees: args.sees,
+          says_and_does: args.says_and_does,
+          pains: args.pains,
+          gains: args.gains
+        });
+        actionsPerformed.push(`✅ Mapa de Empatia "${args.persona_name}"`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       }
     }
