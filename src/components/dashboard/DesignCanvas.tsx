@@ -617,6 +617,15 @@ export function DesignCanvas() {
 
         {/* Main area */}
         <div className="flex flex-1 gap-3 overflow-hidden">
+          {/* UX Patterns Panel */}
+          {showUXPatterns && (
+            <UXPatternsPanel
+              isOpen={showUXPatterns}
+              onClose={() => setShowUXPatterns(false)}
+              onApplyPattern={applyUXPattern}
+            />
+          )}
+
           {/* Templates Panel */}
           {showTemplates && (
             <div className="w-64 glass-card p-3 flex flex-col gap-3 shrink-0 overflow-y-auto">
