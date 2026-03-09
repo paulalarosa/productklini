@@ -296,28 +296,27 @@ export function VoiceOfCustomerPage() {
       </div>
 
       {/* ── Import bar ── */}
-      <AnimatePresence>
-        {showImportBar && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            className="border-b border-border bg-muted/40 px-6 py-3 flex gap-3 items-center"
+      {showImportBar && (
+        <div className="border-b border-border bg-muted/40 px-6 py-3 flex gap-3 items-center">
+          <input
+            className="flex-1 text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+            placeholder="URL da App Store ou Google Play…"
+            value={storeUrl}
+            onChange={(e) => setStoreUrl(e.target.value)}
+          />
+          <Button size="sm" onClick={handleScrape} disabled={scraping || !storeUrl.trim()}>
+            {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+            Importar reviews
+          </Button>
+          <button 
+            type="button"
+            className="hover:bg-background/50 p-1.5 rounded-md transition-colors"
+            onClick={() => setShowImportBar(false)}
           >
-            <input
-              className="flex-1 text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-              placeholder="URL da App Store ou Google Play…"
-              value={storeUrl}
-              onChange={(e) => setStoreUrl(e.target.value)}
-            />
-            <Button size="sm" onClick={handleScrape} disabled={scraping || !storeUrl.trim()}>
-              {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-              Importar reviews
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => setShowImportBar(false)}>
-              <X className="w-4 h-4" />
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* ── Three-column body ── */}
       <div className="flex flex-1 overflow-hidden">

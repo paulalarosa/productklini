@@ -10,17 +10,18 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+
+    // ✅ Fix: usar getUser() em vez de getClaims() que não existe no supabase-js v2
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -129,6 +130,7 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
         },
       }];
       toolChoice = { type: "function", function: { name: "generate_ux_artifact" } };
+
     } else if (mode === "ui-make") {
       systemPrompt = `Você é o UI Make, um gerador de componentes de UI. Dado uma descrição, gere código React + Tailwind funcional para o componente.
 
@@ -236,6 +238,7 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
     return new Response(JSON.stringify({ error: "Resposta inesperada da IA" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e) {
     console.error("design-studio error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
