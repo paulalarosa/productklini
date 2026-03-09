@@ -132,7 +132,7 @@ export function UXPatternsLibrary() {
                   {PATTERN_CATEGORIES.find(c => c.value === selectedCategory)?.label}
                 </Badge>
               )}
-              {selectedType && (
+              {selectedType !== "all" && (
                 <Badge variant="secondary">
                   {PATTERN_TYPES.find(t => t.value === selectedType)?.label}
                 </Badge>
