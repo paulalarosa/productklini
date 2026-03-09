@@ -83,6 +83,7 @@ const App = () => (
               <Route path="/ixd/task-flows" element={<TaskFlowsPage />} />
               <Route path="/strategy/prioritization" element={<PrioritizationMatrixPage />} />
               <Route path="/strategy/sitemap" element={<SitemapPage />} />
+              <Route path="/strategy/business-model" element={<BusinessModelCanvasPage />} />
               <Route path="/ui/design-system" element={<DesignSystemPage />} />
               <Route path="/ui/telas" element={<TelasPage />} />
               <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />

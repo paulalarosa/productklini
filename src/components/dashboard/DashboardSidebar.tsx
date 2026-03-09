@@ -73,6 +73,7 @@ const navGroups: NavGroup[] = [
     title: "Estratégia",
     items: [
       { label: "Priorização", icon: ArrowUpDown, path: "/strategy/prioritization" },
+      { label: "Business Model Canvas", icon: Briefcase, path: "/strategy/business-model" },
     ],
   },
   {
