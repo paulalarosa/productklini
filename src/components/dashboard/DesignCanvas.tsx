@@ -3,7 +3,7 @@ import {
   Square, Circle, Type, MousePointer, Trash2, Minus, Download, Undo2, Redo2,
   Layers, Sparkles, Loader2, Save, FolderOpen, Plus, Smartphone, Monitor,
   Image, ToggleLeft, Menu as MenuIcon, CreditCard, Layout, History, Maximize2,
-  BookTemplate, ZoomIn, ZoomOut, Maximize, Map, Play, MousePointer2,
+  BookTemplate, ZoomIn, ZoomOut, Maximize, Map, Play, MousePointer2, Grid,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
