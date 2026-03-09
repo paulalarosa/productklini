@@ -127,7 +127,7 @@ export function UXPatternsLibrary() {
           {hasActiveFilters && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Filtros ativos:</span>
-              {selectedCategory && (
+              {selectedCategory !== "all" && (
                 <Badge variant="secondary">
                   {PATTERN_CATEGORIES.find(c => c.value === selectedCategory)?.label}
                 </Badge>
