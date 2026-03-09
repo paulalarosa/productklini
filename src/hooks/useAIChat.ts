@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { fetchAiMessages, saveAiMessage } from "@/lib/api";
+import { fetchAiMessages, saveAiMessage, getProjectId } from "@/lib/api";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 
