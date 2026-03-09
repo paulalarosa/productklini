@@ -24,9 +24,9 @@ export function UXPatternsLibrary() {
   });
 
   const clearFilters = () => {
-    setSelectedCategory("");
-    setSelectedType("");
-    setSelectedDifficulty("");
+    setSelectedCategory("all");
+    setSelectedType("all");
+    setSelectedDifficulty("all");
     setSearchTerm("");
   };
 
