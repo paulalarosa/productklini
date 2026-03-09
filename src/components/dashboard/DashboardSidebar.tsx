@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
       { label: "How Might We", icon: HelpCircle, path: "/ux/hmw" },
       { label: "Afinidade", icon: Lightbulb, path: "/ux/affinity" },
       { label: "Behavior Model", icon: BrainCircuit, path: "/ux/behavior-model" },
+      { label: "UX Patterns", icon: BookOpen, path: "/ux/patterns" },
       { label: "Fluxos de Jornada", icon: Route, path: "/ux/fluxos" },
     ],
   },

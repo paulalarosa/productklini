@@ -69,6 +69,7 @@ const App = () => (
               <Route path="/ux/hmw" element={<HMWPage />} />
               <Route path="/ux/affinity" element={<AffinityDiagramPage />} />
               <Route path="/ux/behavior-model" element={<BehaviorModelPage />} />
+              <Route path="/ux/patterns" element={<UXPatternsPage />} />
               <Route path="/ux/fluxos" element={<FluxosPage />} />
               <Route path="/ux/tone" element={<ToneOfVoicePage />} />
               <Route path="/ux/microcopy" element={<MicrocopyLibraryPage />} />
