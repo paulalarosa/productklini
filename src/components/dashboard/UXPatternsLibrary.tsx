@@ -189,15 +189,21 @@ export function UXPatternsLibrary() {
 
           {viewMode === "grid" ? (
             <Tabs defaultValue="all" className="w-full">
-              <TabsList>
+              <TabsList className="flex flex-wrap h-auto gap-1">
                 <TabsTrigger value="all">
                   Todos ({patterns.length})
                 </TabsTrigger>
-                {Object.entries(groupedPatterns).map(([category, categoryPatterns]) => (
-                  <TabsTrigger key={category} value={category}>
-                    {PATTERN_CATEGORIES.find(c => c.value === category)?.label || category} ({categoryPatterns.length})
-                  </TabsTrigger>
-                ))}
+                <TabsTrigger value="flutter" className="flex items-center gap-1">
+                  <Smartphone className="w-3 h-3" />
+                  Flutter ({groupedPatterns["flutter"]?.length ?? 0})
+                </TabsTrigger>
+                {Object.entries(groupedPatterns)
+                  .filter(([cat]) => cat !== "flutter")
+                  .map(([category, categoryPatterns]) => (
+                    <TabsTrigger key={category} value={category}>
+                      {PATTERN_CATEGORIES.find(c => c.value === category)?.label || category} ({categoryPatterns.length})
+                    </TabsTrigger>
+                  ))}
               </TabsList>
 
               <TabsContent value="all" className="mt-6">
@@ -208,15 +214,42 @@ export function UXPatternsLibrary() {
                 </div>
               </TabsContent>
 
-              {Object.entries(groupedPatterns).map(([category, categoryPatterns]) => (
-                <TabsContent key={category} value={category} className="mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {categoryPatterns.map((pattern) => (
-                      <UXPatternCard key={pattern.id} pattern={pattern} />
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
+              <TabsContent value="flutter" className="mt-6">
+                {(groupedPatterns["flutter"]?.length ?? 0) > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                      <Smartphone className="w-4 h-4 text-primary" />
+                      <p className="text-sm text-foreground">
+                        <span className="font-semibold">Biblioteca Flutter:</span> Widgets, padrões e boas práticas do Material Design 3 para apps Flutter.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {(groupedPatterns["flutter"] ?? []).map((pattern) => (
+                        <UXPatternCard key={pattern.id} pattern={pattern} />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <Card className="text-center py-12">
+                    <CardContent>
+                      <Smartphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhum pattern Flutter disponível.</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {Object.entries(groupedPatterns)
+                .filter(([cat]) => cat !== "flutter")
+                .map(([category, categoryPatterns]) => (
+                  <TabsContent key={category} value={category} className="mt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {categoryPatterns.map((pattern) => (
+                        <UXPatternCard key={pattern.id} pattern={pattern} />
+                      ))}
+                    </div>
+                  </TabsContent>
+                ))}
             </Tabs>
           ) : (
             <div className="space-y-4">
