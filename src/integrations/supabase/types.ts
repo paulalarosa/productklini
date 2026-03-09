@@ -166,6 +166,81 @@ export type Database = {
           },
         ]
       }
+      behavior_models: {
+        Row: {
+          ability_barriers: string[]
+          ability_level: string
+          ability_score: number
+          behavior: string
+          behavior_probability: string
+          context: string
+          created_at: string
+          description: string
+          id: string
+          motivation_factors: string[]
+          motivation_level: string
+          motivation_score: number
+          project_id: string
+          prompt_channel: string
+          prompt_score: number
+          prompt_timing: string
+          prompt_type: string
+          recommendations: Json
+          status: string
+          success_metrics: string[]
+          target_audience: string
+          updated_at: string
+        }
+        Insert: {
+          ability_barriers?: string[]
+          ability_level?: string
+          ability_score?: number
+          behavior: string
+          behavior_probability?: string
+          context?: string
+          created_at?: string
+          description?: string
+          id?: string
+          motivation_factors?: string[]
+          motivation_level?: string
+          motivation_score?: number
+          project_id: string
+          prompt_channel?: string
+          prompt_score?: number
+          prompt_timing?: string
+          prompt_type?: string
+          recommendations?: Json
+          status?: string
+          success_metrics?: string[]
+          target_audience?: string
+          updated_at?: string
+        }
+        Update: {
+          ability_barriers?: string[]
+          ability_level?: string
+          ability_score?: number
+          behavior?: string
+          behavior_probability?: string
+          context?: string
+          created_at?: string
+          description?: string
+          id?: string
+          motivation_factors?: string[]
+          motivation_level?: string
+          motivation_score?: number
+          project_id?: string
+          prompt_channel?: string
+          prompt_score?: number
+          prompt_timing?: string
+          prompt_type?: string
+          recommendations?: Json
+          status?: string
+          success_metrics?: string[]
+          target_audience?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       canvas_designs: {
         Row: {
           canvas_height: number
