@@ -955,6 +955,75 @@ export type Database = {
           },
         ]
       }
+      ux_patterns: {
+        Row: {
+          best_practices: string[]
+          category: string
+          code_examples: Json
+          created_at: string
+          description: string
+          design_tokens: Json
+          difficulty_level: string
+          examples: Json
+          id: string
+          metrics: Json
+          name: string
+          pattern_type: string
+          preview_image: string | null
+          project_id: string
+          psychology_principles: string[]
+          related_patterns: string[]
+          status: string
+          tags: string[]
+          updated_at: string
+          use_cases: string[]
+        }
+        Insert: {
+          best_practices?: string[]
+          category?: string
+          code_examples?: Json
+          created_at?: string
+          description?: string
+          design_tokens?: Json
+          difficulty_level?: string
+          examples?: Json
+          id?: string
+          metrics?: Json
+          name: string
+          pattern_type?: string
+          preview_image?: string | null
+          project_id: string
+          psychology_principles?: string[]
+          related_patterns?: string[]
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          use_cases?: string[]
+        }
+        Update: {
+          best_practices?: string[]
+          category?: string
+          code_examples?: Json
+          created_at?: string
+          description?: string
+          design_tokens?: Json
+          difficulty_level?: string
+          examples?: Json
+          id?: string
+          metrics?: Json
+          name?: string
+          pattern_type?: string
+          preview_image?: string | null
+          project_id?: string
+          psychology_principles?: string[]
+          related_patterns?: string[]
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          use_cases?: string[]
+        }
+        Relationships: []
+      }
       ux_research: {
         Row: {
           conducted_at: string
