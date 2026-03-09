@@ -114,7 +114,7 @@ export function UXPatternsLibrary() {
                 <SelectValue placeholder="Dificuldade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as Dificuldades</SelectItem>
+                <SelectItem value="all">Todas as Dificuldades</SelectItem>
                 {DIFFICULTY_LEVELS.map((level) => (
                   <SelectItem key={level.value} value={level.value}>
                     {level.label}
