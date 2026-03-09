@@ -30,7 +30,7 @@ export function UXPatternsLibrary() {
     setSearchTerm("");
   };
 
-  const hasActiveFilters = selectedCategory || selectedType || selectedDifficulty || searchTerm;
+  const hasActiveFilters = selectedCategory !== "all" || selectedType !== "all" || selectedDifficulty !== "all" || searchTerm;
 
   const groupedPatterns = patterns?.reduce((acc, pattern) => {
     const category = pattern.category;
