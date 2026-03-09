@@ -137,7 +137,7 @@ export function UXPatternsLibrary() {
                   {PATTERN_TYPES.find(t => t.value === selectedType)?.label}
                 </Badge>
               )}
-              {selectedDifficulty && (
+              {selectedDifficulty !== "all" && (
                 <Badge variant="secondary">
                   {DIFFICULTY_LEVELS.find(d => d.value === selectedDifficulty)?.label}
                 </Badge>
