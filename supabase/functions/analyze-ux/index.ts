@@ -80,7 +80,7 @@ Formate tudo em Markdown. Seja específico e cite trechos da entrevista.`,
 
 1. **Texto Original** → **Sugestão Melhorada**
 2. **Motivo da Mudança** — por que a versão nova é melhor
-3. **Princípio Aplicado** — qual princípio de UX Writing foi usado (clareza, concisão, tom, ação, etc.)
+3. **Princípio Aplicado** — qual princípio de UX Writing foi usado
 
 Categorize em:
 - 🔴 **Crítico** — textos confusos, ambíguos ou que podem causar erro
@@ -90,48 +90,122 @@ Categorize em:
 Também forneça:
 - **Score Geral de Qualidade** (0-100)
 - **Checklist de UX Writing**: ☑ Clareza | ☑ Concisão | ☑ Utilidade | ☑ Tom de voz | ☑ Acessibilidade
-- **Padrões de Microcopy Sugeridos** — templates para padronizar
 
 Contexto do projeto: ${projectContext}
 
 Formate em Markdown com tabelas.`,
 
-      audit_wcag: `Você é um Especialista em Acessibilidade (a11y) sênior certificado em WCAG 2.1. Com base no contexto do projeto e nas informações fornecidas, gere uma auditoria WCAG completa:
+      audit_wcag: `Você é um Especialista em Acessibilidade (a11y) sênior certificado em WCAG 2.1. Gere uma auditoria WCAG completa com:
 
-1. **Resumo Executivo** — Score geral de conformidade (A/AA/AAA) e nível atual estimado
-
-2. **Auditoria por Princípio** — Para cada princípio WCAG:
-   **PERCEPTÍVEL**
-   - 1.1 Alternativas em Texto — Status | Severidade | Recomendação
-   - 1.3 Adaptável — Status | Severidade | Recomendação
-   - 1.4 Distinguível (Contraste) — Status | Severidade | Recomendação
-
-   **OPERÁVEL**
-   - 2.1 Navegação por Teclado — Status | Severidade | Recomendação
-   - 2.4 Navegável (Focus, Headings) — Status | Severidade | Recomendação
-
-   **COMPREENSÍVEL**
-   - 3.1 Legível — Status | Severidade | Recomendação
-   - 3.3 Assistência de Input — Status | Severidade | Recomendação
-
-   **ROBUSTO**
-   - 4.1 Compatível (ARIA, Semântica) — Status | Severidade | Recomendação
-
-3. **Top 10 Issues Prioritários** com:
-   - Critério WCAG violado
-   - Severidade (Crítica/Alta/Média/Baixa)
-   - Impacto no usuário
-   - Como corrigir (código/design)
-
-4. **Anotações para Desenvolvedores** — Ordem de foco, tags ARIA necessárias, landmarks
-
-5. **Checklist de Quick Wins** — Correções rápidas de alto impacto
-
-6. **Roadmap de Conformidade** — Plano para atingir nível AA
+1. **Resumo Executivo** — Score geral de conformidade
+2. **Auditoria por Princípio** (Perceptível, Operável, Compreensível, Robusto)
+3. **Top 10 Issues Prioritários**
+4. **Anotações para Desenvolvedores**
+5. **Checklist de Quick Wins**
+6. **Roadmap de Conformidade**
 
 Contexto do projeto: ${projectContext}
 
 Formate em Markdown com tabelas e emojis de status (✅ ⚠️ ❌).`,
+
+      responsive_audit: `Você é um especialista em Design Responsivo e Mobile-First. Analise os resultados do audit de breakpoints abaixo e forneça:
+
+1. **📊 Score Geral** — Avaliação da responsividade
+2. **📱 Análise Mobile** — Problemas específicos de mobile
+3. **📱 Análise Tablet** — Problemas específicos de tablet
+4. **🖥️ Análise Desktop** — Problemas específicos de desktop
+5. **🔥 Issues Críticos** — Os problemas mais urgentes a corrigir
+6. **✅ Recomendações** — Ações prioritizadas por impacto
+7. **📐 Breakpoints Sugeridos** — Se os breakpoints atuais são adequados
+8. **🎯 Quick Wins** — Correções rápidas de alto impacto
+
+Contexto do projeto: ${projectContext}
+
+Formate em Markdown.`,
+
+      ai_ux_overview: `Você é um Head de UX/Product Design sênior. Com base nos dados do projeto abaixo, forneça uma análise completa do estado atual da UX:
+
+1. **📊 Diagnóstico Geral** — Estado atual do projeto e sua saúde
+2. **✅ Pontos Fortes** — O que está indo bem
+3. **⚠️ Pontos de Atenção** — O que precisa de melhoria
+4. **📈 Métricas vs Benchmarks** — Como as métricas se comparam ao mercado
+5. **🎯 Próximos Passos** — Top 5 ações recomendadas
+
+Contexto: ${projectContext}
+
+Formate em Markdown com emojis.`,
+
+      ai_ux_personas: `Você é um UX Researcher especialista em Personas. Analise as personas do projeto e forneça:
+
+1. **📋 Avaliação das Personas Atuais** — Qualidade e completude de cada persona
+2. **🔍 Gaps Identificados** — Segmentos de usuário não representados
+3. **🎯 Sugestões de Novas Personas** — Com nome, role, goals e pain points
+4. **🔗 Mapa de Relacionamento** — Como as personas interagem entre si
+5. **📊 Cobertura de Jornada** — Quais etapas da jornada cada persona cobre
+
+Contexto: ${projectContext}
+
+Formate em Markdown.`,
+
+      ai_ux_behavior: `Você é um especialista em Behavioral Design (Modelo de Fogg). Analise os modelos de comportamento e forneça:
+
+1. **📊 Análise dos Modelos Atuais** — Avaliação de cada modelo
+2. **🧠 Insights de Motivação** — Padrões motivacionais identificados
+3. **💪 Análise de Habilidade** — Barreiras de habilidade mais comuns
+4. **🔔 Eficácia dos Prompts** — Quais triggers funcionam melhor
+5. **🎯 Recomendações** — Como otimizar cada componente do modelo
+
+Contexto: ${projectContext}
+
+Formate em Markdown.`,
+
+      ai_ux_improvements: `Você é um Product Design Lead. Gere sugestões de melhoria priorizadas:
+
+1. **🔥 Quick Wins** — Melhorias de alto impacto e baixo esforço
+2. **📈 Melhorias Estratégicas** — Iniciativas de médio prazo
+3. **🚀 Inovações** — Oportunidades de diferenciação
+4. **📊 Impacto Estimado** — Para cada sugestão, estime o impacto
+5. **📋 Roadmap Sugerido** — Ordem de implementação
+
+Contexto: ${projectContext}
+
+Formate em Markdown com prioridades claras.`,
+
+      ai_ux_maturity: `Você é um consultor de Maturidade UX. Avalie o nível de maturidade:
+
+1. **📊 Nível Atual** — De 1 (Ausente) a 6 (Líder em UX)
+2. **📋 Avaliação por Dimensão** — Estratégia, Cultura, Processo, Outcomes
+3. **✅ O que já está bom** — Práticas que demonstram maturidade
+4. **⚠️ O que falta** — Gaps para o próximo nível
+5. **🎯 Roadmap de Evolução** — Passos concretos para evoluir
+
+Contexto: ${projectContext}
+
+Formate em Markdown.`,
+
+      ai_ux_risks: `Você é um Risk Analyst de UX/Product. Identifique riscos e lacunas:
+
+1. **🔴 Riscos Críticos** — Problemas que podem impactar o produto
+2. **🟡 Riscos Moderados** — Problemas que podem crescer
+3. **📋 Gaps de Processo** — Etapas faltantes no processo de UX
+4. **📊 Gaps de Dados** — Informações que estão faltando
+5. **🛡️ Plano de Mitigação** — Como endereçar cada risco
+
+Contexto: ${projectContext}
+
+Formate em Markdown.`,
+
+      ai_ux_report_summary: `Você é um Head de Produto/UX. Gere um resumo executivo do projeto:
+
+1. **📊 Status Geral** — Saúde do projeto em uma frase
+2. **📈 Destaques** — Os 3 pontos mais relevantes
+3. **⚠️ Alertas** — O que precisa de atenção imediata
+4. **🎯 Recomendação Principal** — A ação mais importante agora
+5. **📋 KPIs** — Métricas-chave e tendências
+
+Contexto: ${projectContext}
+
+Formate em Markdown de forma concisa e acionável.`,
     };
 
     // Handle visual-check with structured output (tool calling)

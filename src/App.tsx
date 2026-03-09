@@ -102,7 +102,9 @@ const App = () => (
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
               <Route path="/analytics" element={<AnalyticsHubPage />} />
               <Route path="/ab-testing" element={<ABTestingPage />} />
-              <Route path="/relatorio" element={<ReportPage />} />
+              <Route path="/responsive-audit" element={<ResponsiveAuditPage />} />
+              <Route path="/ux-analysis" element={<UXAnalysisPage />} />
+              <Route path="/relatorio" element={<EnhancedReportPage />} />
               <Route path="/git-sync" element={<GitSyncHubPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
