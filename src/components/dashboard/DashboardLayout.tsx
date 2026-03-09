@@ -9,6 +9,7 @@ import { useProject, useTasks } from "@/hooks/useProjectData";
 
 export function DashboardLayout() {
   const [aiOpen, setAiOpen] = useState(false);
+  const [gamificationOpen, setGamificationOpen] = useState(false);
   const [showSetup, setShowSetup] = useState(false);
   const { data: project, isLoading } = useProject();
   const { data: tasks } = useTasks();
