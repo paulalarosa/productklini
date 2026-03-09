@@ -82,7 +82,7 @@ export function useCreateBusinessModelCanvas() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (canvas: Omit<BusinessModelCanvasInsert, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (canvas: { name: string; description?: string }) => {
       // Get current project (in a real app, this would come from context)
       const { data: projects } = await supabase.from("projects").select("id").limit(1).single();
       if (!projects) throw new Error("No project found");
