@@ -32,6 +32,7 @@ import { MotionGalleryPage } from "./pages/MotionGalleryPage";
 import { SVGManagerPage } from "./pages/SVGManagerPage";
 import { AnalyticsHubPage } from "./pages/AnalyticsHubPage";
 import { GitSyncHubPage } from "./pages/GitSyncHubPage";
+import { BehaviorModelPage } from "./pages/BehaviorModelPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
