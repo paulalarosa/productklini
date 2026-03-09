@@ -1314,6 +1314,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_user_points: {
+        Args: { _points_to_add: number; _project_id: string }
+        Returns: undefined
+      }
+      award_achievement: {
+        Args: { _achievement_id: string; _project_id: string }
+        Returns: boolean
+      }
       user_owns_component: { Args: { _component_id: string }; Returns: boolean }
       user_owns_design: { Args: { _design_id: string }; Returns: boolean }
       user_owns_project: { Args: { _project_id: string }; Returns: boolean }
