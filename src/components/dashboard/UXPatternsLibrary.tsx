@@ -11,26 +11,26 @@ import { Search, Filter, Grid3X3, List, Loader2, Smartphone } from "lucide-react
 
 export function UXPatternsLibrary() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedType, setSelectedType] = useState<string>("all");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const { data: patterns, isLoading } = useUXPatterns({
-    category: selectedCategory || undefined,
-    pattern_type: selectedType || undefined,
-    difficulty_level: selectedDifficulty || undefined,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    pattern_type: selectedType !== "all" ? selectedType : undefined,
+    difficulty_level: selectedDifficulty !== "all" ? selectedDifficulty : undefined,
     search: searchTerm || undefined,
   });
 
   const clearFilters = () => {
-    setSelectedCategory("");
-    setSelectedType("");
-    setSelectedDifficulty("");
+    setSelectedCategory("all");
+    setSelectedType("all");
+    setSelectedDifficulty("all");
     setSearchTerm("");
   };
 
-  const hasActiveFilters = selectedCategory || selectedType || selectedDifficulty || searchTerm;
+  const hasActiveFilters = selectedCategory !== "all" || selectedType !== "all" || selectedDifficulty !== "all" || searchTerm;
 
   const groupedPatterns = patterns?.reduce((acc, pattern) => {
     const category = pattern.category;
@@ -86,7 +86,7 @@ export function UXPatternsLibrary() {
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as Categorias</SelectItem>
+                <SelectItem value="all">Todas as Categorias</SelectItem>
                 {PATTERN_CATEGORIES.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
@@ -100,7 +100,7 @@ export function UXPatternsLibrary() {
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Tipos</SelectItem>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
                 {PATTERN_TYPES.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
@@ -114,7 +114,7 @@ export function UXPatternsLibrary() {
                 <SelectValue placeholder="Dificuldade" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as Dificuldades</SelectItem>
+                <SelectItem value="all">Todas as Dificuldades</SelectItem>
                 {DIFFICULTY_LEVELS.map((level) => (
                   <SelectItem key={level.value} value={level.value}>
                     {level.label}
@@ -127,17 +127,17 @@ export function UXPatternsLibrary() {
           {hasActiveFilters && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Filtros ativos:</span>
-              {selectedCategory && (
+              {selectedCategory !== "all" && (
                 <Badge variant="secondary">
                   {PATTERN_CATEGORIES.find(c => c.value === selectedCategory)?.label}
                 </Badge>
               )}
-              {selectedType && (
+              {selectedType !== "all" && (
                 <Badge variant="secondary">
                   {PATTERN_TYPES.find(t => t.value === selectedType)?.label}
                 </Badge>
               )}
-              {selectedDifficulty && (
+              {selectedDifficulty !== "all" && (
                 <Badge variant="secondary">
                   {DIFFICULTY_LEVELS.find(d => d.value === selectedDifficulty)?.label}
                 </Badge>
