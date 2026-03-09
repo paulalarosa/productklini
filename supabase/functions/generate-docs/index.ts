@@ -33,7 +33,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { doc_type, project_id } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { doc_type, project_id } = body;
+
+    if (!doc_type || !project_id) {
+      return new Response(JSON.stringify({ error: "Parâmetros ausentes: doc_type ou project_id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Fetch project context
     const [projectRes, personasRes, tasksRes, metricsRes, docsRes] = await Promise.all([
@@ -93,20 +101,20 @@ interface Document {
     const contextStr = `
 Projeto: ${project.name}
 Descrição: ${project.description || "Sem descrição"}
-Fase atual: ${project.current_phase}
-Progresso: ${project.progress}%
+Fase atual: ${project.current_phase || "N/A"}
+Progresso: ${project.progress || 0}%
 
 Personas (${personas?.length || 0}):
-${personas?.map((p: Persona) => `- ${p.name} (${p.role}): Objetivos: ${p.goals?.join(", ") || "N/A"} | Dores: ${p.pain_points?.join(", ") || "N/A"}`).join("\n") || "Nenhuma persona cadastrada."}
+${(personas || []).map((p: Persona) => `- ${p.name || "N/A"} (${p.role || "N/A"}): Objetivos: ${Array.isArray(p.goals) ? p.goals.join(", ") : "N/A"} | Dores: ${Array.isArray(p.pain_points) ? p.pain_points.join(", ") : "N/A"}`).join("\n") || "Nenhuma persona cadastrada."}
 
 Tarefas (${tasks?.length || 0}):
-${tasks?.slice(0, 15).map((t: Task) => `- [${t.module}/${t.phase}] ${t.title} (${t.status}, prioridade: ${t.priority})`).join("\n") || "Nenhuma tarefa cadastrada."}
+${(tasks || []).slice(0, 15).map((t: Task) => `- [${t.module || "N/A"}/${t.phase || "N/A"}] ${t.title || "N/A"} (${t.status || "N/A"}, prioridade: ${t.priority || "N/A"})`).join("\n") || "Nenhuma tarefa cadastrada."}
 
 Métricos UX (${metrics?.length || 0}):
-${metrics?.map((m: Metric) => `- ${m.metric_name}: ${m.score}${m.previous_score ? ` (anterior: ${m.previous_score})` : ""}`).join("\n") || "Nenhuma métrica cadastrada."}
+${(metrics || []).map((m: Metric) => `- ${m.metric_name || "N/A"}: ${m.score || 0}${m.previous_score ? ` (anterior: ${m.previous_score})` : ""}`).join("\n") || "Nenhuma métrica cadastrada."}
 
 Documentos existentes (${docs?.length || 0}):
-${docs?.map((d: Document) => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento cadastrado."}
+${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`).join("\n") || "Nenhum documento cadastrado."}
 `.trim();
 
     const prompts: Record<string, { systemPrompt: string; title: string }> = {
@@ -271,7 +279,11 @@ ${docs?.map((d: Document) => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenh
     });
   } catch (e) {
     console.error("Error:", e);
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
+    return new Response(JSON.stringify({ 
+      error: "Erro interno", 
+      details: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

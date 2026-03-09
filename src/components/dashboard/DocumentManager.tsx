@@ -41,7 +41,13 @@ export function DocumentManager({ documents, docType, docTypeLabel, emptyIcon, e
       });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        toast.error(err.error || "Erro ao gerar documento");
+        const errorMessage = err.details 
+          ? `${err.error}: ${err.details}${err.stack ? `\n\nStack: ${err.stack.substring(0, 100)}...` : ""}` 
+          : (err.error || "Erro ao gerar documento");
+        
+        toast.error(errorMessage, {
+          duration: 5000,
+        });
         setGenerating(false);
         return;
       }
