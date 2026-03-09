@@ -560,9 +560,13 @@ export function DesignCanvas() {
               className={`p-1.5 rounded-md transition-colors ${showMinimap ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Map className="w-4 h-4" />
             </button>
-            <button onClick={() => { setShowTemplates(!showTemplates); setShowAI(false); }} title="Templates"
+            <button onClick={() => { setShowTemplates(!showTemplates); setShowAI(false); setShowUXPatterns(false); }} title="Templates"
               className={`p-1.5 rounded-md transition-colors ${showTemplates ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <BookTemplate className="w-4 h-4" />
+            </button>
+            <button onClick={() => { setShowUXPatterns(!showUXPatterns); setShowAI(false); setShowTemplates(false); }} title="UX Patterns"
+              className={`p-1.5 rounded-md transition-colors ${showUXPatterns ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+              <Grid className="w-4 h-4" />
             </button>
             <button onClick={() => setShowLayers(!showLayers)} title="Layers" className={`p-1.5 rounded-md transition-colors ${showLayers ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Layers className="w-4 h-4" />
