@@ -52,44 +52,11 @@ Deno.serve(async (req) => {
       supabase.from("project_documents").select("*").eq("project_id", project_id),
     ]);
 
-interface Project {
-  name: string;
-  description?: string;
-  current_phase: string;
-  progress: number;
-}
-
-interface Persona {
-  name: string;
-  role: string;
-  goals?: string[];
-  pain_points?: string[];
-}
-
-interface Task {
-  module: string;
-  phase: string;
-  title: string;
-  status: string;
-  priority: string;
-}
-
-interface Metric {
-  metric_name: string;
-  score: number;
-  previous_score?: number;
-}
-
-interface Document {
-  doc_type: string;
-  title: string;
-}
-
-    const project = projectRes.data as Project | null;
-    const personas = (personasRes.data ?? []) as Persona[];
-    const tasks = (tasksRes.data ?? []) as Task[];
-    const metrics = (metricsRes.data ?? []) as Metric[];
-    const docs = (docsRes.data ?? []) as Document[];
+    const project = projectRes.data;
+    const personas = personasRes.data ?? [];
+    const tasks = tasksRes.data ?? [];
+    const metrics = metricsRes.data ?? [];
+    const docs = docsRes.data ?? [];
 
     if (!project) {
       return new Response(JSON.stringify({ error: "Projeto não encontrado" }), {
@@ -105,16 +72,16 @@ Fase atual: ${project.current_phase || "N/A"}
 Progresso: ${project.progress || 0}%
 
 Personas (${personas?.length || 0}):
-${(personas || []).map((p: Persona) => `- ${p.name || "N/A"} (${p.role || "N/A"}): Objetivos: ${Array.isArray(p.goals) ? p.goals.join(", ") : "N/A"} | Dores: ${Array.isArray(p.pain_points) ? p.pain_points.join(", ") : "N/A"}`).join("\n") || "Nenhuma persona cadastrada."}
+${(personas || []).map((p: any) => `- ${p.name || "N/A"} (${p.role || "N/A"}): Objetivos: ${Array.isArray(p.goals) ? p.goals.join(", ") : "N/A"} | Dores: ${Array.isArray(p.pain_points) ? p.pain_points.join(", ") : "N/A"}`).join("\n") || "Nenhuma persona cadastrada."}
 
 Tarefas (${tasks?.length || 0}):
-${(tasks || []).slice(0, 15).map((t: Task) => `- [${t.module || "N/A"}/${t.phase || "N/A"}] ${t.title || "N/A"} (${t.status || "N/A"}, prioridade: ${t.priority || "N/A"})`).join("\n") || "Nenhuma tarefa cadastrada."}
+${(tasks || []).slice(0, 15).map((t: any) => `- [${t.module || "N/A"}/${t.phase || "N/A"}] ${t.title || "N/A"} (${t.status || "N/A"}, prioridade: ${t.priority || "N/A"})`).join("\n") || "Nenhuma tarefa cadastrada."}
 
 Métricos UX (${metrics?.length || 0}):
-${(metrics || []).map((m: Metric) => `- ${m.metric_name || "N/A"}: ${m.score || 0}${m.previous_score ? ` (anterior: ${m.previous_score})` : ""}`).join("\n") || "Nenhuma métrica cadastrada."}
+${(metrics || []).map((m: any) => `- ${m.metric_name || "N/A"}: ${m.score || 0}${m.previous_score ? ` (anterior: ${m.previous_score})` : ""}`).join("\n") || "Nenhuma métrica cadastrada."}
 
 Documentos existentes (${docs?.length || 0}):
-${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`).join("\n") || "Nenhum documento cadastrado."}
+${(docs || []).map((d: any) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`).join("\n") || "Nenhum documento cadastrado."}
 `.trim();
 
     const prompts: Record<string, { systemPrompt: string; title: string }> = {
@@ -140,71 +107,71 @@ ${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/
       },
       empathy_map: {
         title: "Mapa de Empatia",
-        systemPrompt: `Você é um UX Researcher sênior. Para cada persona do projeto, gere um Mapa de Empatia completo em PT-BR com: 1. Persona (nome e contexto) 2. O que PENSA e SENTE? (preocupações, aspirações, medos) 3. O que VÊ? (ambiente, mercado) 4. O que OUVE? (influências, mídia) 5. O que FALA e FAZ? (comportamento, atitude) 6. DORES (frustrações, obstáculos) 7. GANHOS (desejos, necessidades). Se não houver personas, crie 2-3 hipotéticas. Formate em Markdown.`,
+        systemPrompt: `Você é um UX Researcher sênior. Para cada persona do projeto, gere um Mapa de Empatia completo em PT-BR with: 1. Persona (nome e contexto) 2. O que PENSA e SENTE? 3. O que VÊ? 4. O que OUVE? 5. O que FALA e FAZ? 6. DORES 7. GANHOS. Se não houver personas, crie 2-3 hipotéticas. Formate em Markdown.`,
       },
       benchmark: {
         title: "Análise de Benchmark",
-        systemPrompt: `Você é um UX Strategist sênior. Gere uma análise competitiva/benchmark em PT-BR: 1. Objetivo da Análise 2. Concorrentes Diretos (3-5) com pontos fortes/fracos 3. Concorrentes Indiretos (2-3) 4. Tabela Comparativa (features, UX, pricing) 5. Padrões de UI/UX Identificados 6. Gaps e Oportunidades 7. Best Practices 8. Recomendações Estratégicas. Formate em Markdown com tabelas.`,
+        systemPrompt: `Você é um UX Strategist sênior. Gere uma análise competitiva/benchmark em PT-BR: 1. Objetivo 2. Concorrentes Diretos (3-5) 3. Concorrentes Indiretos (2-3) 4. Tabela Comparativa 5. Padrões UI/UX 6. Gaps e Oportunidades 7. Best Practices 8. Recomendações. Formate em Markdown com tabelas.`,
       },
       jtbd: {
         title: "Jobs To Be Done",
-        systemPrompt: `Você é um Product Strategist sênior. Gere um framework JTBD completo em PT-BR: 1. Contexto do Produto 2. Job Statements (5-8): "Quando [situação], eu quero [motivação], para que [resultado]" 3. Job Map (Definir, Localizar, Preparar, Confirmar, Executar, Monitorar, Modificar, Concluir) 4. Outcome Expectations 5. Underserved Needs 6. Switching Triggers 7. Hiring Criteria. Formate em Markdown.`,
+        systemPrompt: `Você é um Product Strategist sênior. Gere um framework JTBD em PT-BR: 1. Contexto 2. Job Statements (5-8) 3. Job Map 4. Outcome Expectations 5. Underserved Needs 6. Switching Triggers 7. Hiring Criteria. Formate em Markdown.`,
       },
       csd_matrix: {
         title: "Matriz CSD",
-        systemPrompt: `Você é um UX Researcher / Product Owner sênior. Gere uma Matriz CSD em PT-BR: 1. CERTEZAS (8-12 items) 2. SUPOSIÇÕES (8-12 items, classificadas por risco alto/médio/baixo) 3. DÚVIDAS (8-12 items) 4. Plano de Validação 5. Priorização de investigação. Formate em Markdown com tabelas.`,
+        systemPrompt: `Você é um UX Researcher / Product Owner sênior. Gere uma Matriz CSD em PT-BR: 1. CERTEZAS (8-12) 2. SUPOSIÇÕES (8-12, por risco) 3. DÚVIDAS (8-12) 4. Plano de Validação 5. Priorização. Formate em Markdown com tabelas.`,
       },
       hmw: {
         title: "How Might We",
-        systemPrompt: `Você é um Design Thinking facilitador. Gere perguntas HMW em PT-BR: 1. Contexto dos desafios 2. Perguntas HMW (10-15) agrupadas por tema: "Como poderíamos [verbo] [solução] para [benefício]?" 3. Critérios de Priorização 4. Ideias Iniciais (2-3 por HMW prioritário). Derive das dores das personas. Formate em Markdown.`,
+        systemPrompt: `Você é um Design Thinking facilitador. Gere perguntas HMW em PT-BR: 1. Contexto 2. HMW (10-15) por tema 3. Critérios de Priorização 4. Ideias Iniciais. Formate em Markdown.`,
       },
       affinity_diagram: {
         title: "Diagrama de Afinidade",
-        systemPrompt: `Você é um UX Researcher sênior. Gere um Diagrama de Afinidade em PT-BR: 1. Fonte dos Dados 2. Clusters Identificados (5-8) com nome, 5-10 insights e insight-chave 3. Hierarquia de Temas 4. Padrões Transversais 5. Prioridades de Ação. Formate em Markdown.`,
+        systemPrompt: `Você é um UX Researcher sênior. Gere um Diagrama de Afinidade em PT-BR: 1. Fonte dos Dados 2. Clusters (5-8) 3. Hierarquia de Temas 4. Padrões Transversais 5. Prioridades. Formate em Markdown.`,
       },
       tone_of_voice: {
         title: "Guia de Tom de Voz",
-        systemPrompt: `Você é um UX Writer / Content Strategist sênior. Gere um guia de Tom de Voz em PT-BR: 1. Personalidade da Marca (4-5 adjetivos, "Somos X, não Y") 2. Princípios de Escrita (5 regras) 3. Tom por Contexto (Onboarding, Sucesso, Erro, Vazio, Notificações) 4. Vocabulário preferido vs evitado (tabela) 5. Exemplos antes/depois 6. Checklist de Revisão. Formate em Markdown.`,
+        systemPrompt: `Você é um UX Writer / Content Strategist sênior. Gere um guia de Tom de Voz em PT-BR: 1. Personalidade (4-5 adjetivos) 2. Princípios (5 regras) 3. Tom por Contexto 4. Vocabulário (tabela) 5. Exemplos antes/depois 6. Checklist. Formate em Markdown.`,
       },
       microcopy_library: {
         title: "Biblioteca de Microcopy",
-        systemPrompt: `Você é um UX Writer sênior. Gere uma biblioteca de microcopy em PT-BR: 1. Mensagens de Erro (15-20) 2. Mensagens de Sucesso (10-15) 3. Estados Vazios (8-10) 4. CTAs (15-20) 5. Tooltips (10) 6. Placeholders 7. Confirmações 8. Loading/Progress. Formate em Markdown com tabelas.`,
+        systemPrompt: `Você é um UX Writer sênior. Gere uma biblioteca de microcopy em PT-BR: 1. Erros (15-20) 2. Sucesso (10-15) 3. Empty States (8-10) 4. CTAs (15-20) 5. Tooltips (10) 6. Placeholders 7. Confirmações 8. Loading. Formate em Markdown com tabelas.`,
       },
       content_audit: {
         title: "Inventário de Conteúdo",
-        systemPrompt: `Você é um Content Strategist sênior. Gere um inventário de conteúdo em PT-BR: 1. Escopo da Auditoria 2. Inventário por Tela (tabela) 3. Análise de Consistência 4. Gaps de Conteúdo 5. Oportunidades de Melhoria 6. Recomendações de Glossário 7. Métricas de Leitura. Formate em Markdown.`,
+        systemPrompt: `Você é um Content Strategist sênior. Gere um inventário de conteúdo em PT-BR: 1. Escopo 2. Inventário por Tela 3. Consistência 4. Gaps 5. Oportunidades 6. Glossário 7. Métricas. Formate em Markdown.`,
       },
       heuristic_evaluation: {
         title: "Avaliação Heurística",
-        systemPrompt: `Você é um UX Expert sênior. Gere uma avaliação heurística baseada nas 10 Heurísticas de Nielsen em PT-BR. Para cada: Nome, Descrição, Score (1-5), Evidências, Problemas, Recomendações, Severidade (1-4). As 10: Visibilidade do status, Correspondência sistema-mundo real, Controle/liberdade, Consistência, Prevenção de erros, Reconhecimento vs memorização, Flexibilidade, Design minimalista, Recuperação de erros, Ajuda/documentação. Score Geral e Top 5 Prioridades. Formate em Markdown com tabela.`,
+        systemPrompt: `Você é um UX Expert sênior. Gere uma avaliação heurística nas 10 Heurísticas de Nielsen em PT-BR. Para cada: Nome, Score (1-5), Evidências, Problemas, Recomendações, Severidade (1-4). Score Geral e Top 5. Formate em Markdown.`,
       },
       usability_test: {
         title: "Roteiro de Teste de Usabilidade",
-        systemPrompt: `Você é um UX Researcher sênior. Gere um roteiro de teste de usabilidade em PT-BR: 1. Objetivo 2. Perfil dos Participantes (5-8) 3. Setup 4. Script de Introdução 5. Tarefas (5-8) com cenário, critérios, métricas, perguntas pós-tarefa 6. Perguntas Pós-Teste (NPS) 7. Template de Registro (tabela) 8. Como compilar resultados. Formate em Markdown.`,
+        systemPrompt: `Você é um UX Researcher sênior. Gere um roteiro de teste de usabilidade em PT-BR: 1. Objetivo 2. Perfil (5-8) 3. Setup 4. Introdução 5. Tarefas (5-8) 6. Pós-Teste 7. Template de Registro 8. Como compilar. Formate em Markdown.`,
       },
       wcag_checklist: {
         title: "Checklist WCAG",
-        systemPrompt: `Você é um Accessibility Specialist. Gere um checklist WCAG 2.1 em PT-BR organizado por: 1. PERCEPTÍVEL (1.1-1.4) 2. OPERÁVEL (2.1-2.5) 3. COMPREENSÍVEL (3.1-3.3) 4. ROBUSTO (4.1). Para cada critério: ☐ Checkbox | Critério | Nível (A/AA/AAA) | Status sugerido | Recomendação. Inclua recomendações para o projeto. Formate em Markdown com tabelas.`,
+        systemPrompt: `Você é um Accessibility Specialist. Gere checklist WCAG 2.1 PT-BR: 1. PERCEPTÍVEL 2. OPERÁVEL 3. COMPREENSÍVEL 4. ROBUSTO. Para cada: ☐ | Critério | Nível | Status | Recomendação. Formate em Markdown com tabelas.`,
       },
       prioritization_matrix: {
         title: "Matriz de Priorização",
-        systemPrompt: `Você é um Product Manager sênior. Gere uma Matriz Impacto x Esforço em PT-BR: 1. Critérios (Impacto 1-5, Esforço 1-5) 2. Features analisadas 3. Quadrantes: 🟢 Quick Wins, 🔵 Estratégicos, 🟡 Fill-ins, 🔴 Thankless Tasks 4. Tabela de Scoring 5. Roadmap Sugerido 6. Justificativas. Formate em Markdown com tabelas.`,
+        systemPrompt: `Você é um Product Manager sênior. Gere uma Matriz Impacto x Esforço em PT-BR: 1. Critérios 2. Features 3. Quadrantes 🟢🔵🟡🔴 4. Scoring 5. Roadmap 6. Justificativas. Formate em Markdown com tabelas.`,
       },
       sitemap: {
         title: "Sitemap",
-        systemPrompt: `Você é um Information Architect sênior. Gere um Sitemap em PT-BR: 1. Estrutura Hierárquica (árvore indentada) 2. Fluxos Principais (3-5) 3. Navegação Global 4. Templates de Página 5. Pontos de Entrada 6. Cross-links 7. Prioridade de Conteúdo. Baseie nos fluxos e personas. Formate em Markdown.`,
+        systemPrompt: `Você é um Information Architect sênior. Gere um Sitemap em PT-BR: 1. Estrutura Hierárquica 2. Fluxos Principais (3-5) 3. Navegação Global 4. Templates 5. Pontos de Entrada 6. Cross-links 7. Prioridade. Formate em Markdown.`,
       },
       component_states: {
         title: "Mapeamento de Estados de Componentes",
-        systemPrompt: `Você é um Interaction Designer sênior. Gere um mapeamento completo de estados de componentes em PT-BR. Para cada componente principal do produto (Botão, Input, Card, Modal, Menu, Toast, Dropdown, Tab, etc.), documente: 1. **Default** 2. **Hover** 3. **Active/Pressed** 4. **Focus** 5. **Disabled** 6. **Loading** 7. **Error** 8. **Empty/Placeholder** 9. **Success**. Para cada estado: descrição visual, comportamento, especificações CSS sugeridas. Inclua também: estados de telas (Loading Page, Empty State, Error Page, Offline). Formate em Markdown com tabelas.`,
+        systemPrompt: `Você é um Interaction Designer sênior. Gere um mapeamento de estados de componentes em PT-BR. Para cada componente (Botão, Input, Card, Modal, etc.): Default, Hover, Active, Focus, Disabled, Loading, Error, Empty, Success. Inclua estados de telas. Formate em Markdown com tabelas.`,
       },
       task_flows: {
         title: "Task Flows",
-        systemPrompt: `Você é um Interaction Designer / UX Designer sênior. Gere Task Flows detalhados em PT-BR. Para cada fluxo principal do produto (baseado nas tarefas e personas): 1. **Nome do Fluxo** 2. **Objetivo do Usuário** 3. **Pré-condições** 4. **Passos** (numerados, cada um com: Ação do Usuário → Resposta do Sistema → Tela/Componente envolvido) 5. **Fluxos Alternativos** (erros, cancelamento) 6. **Pós-condições** 7. **Pontos de Decisão** (onde o fluxo pode bifurcar). Gere 4-6 task flows. Formate em Markdown.`,
+        systemPrompt: `Você é um Interaction Designer sênior. Gere Task Flows em PT-BR. Para cada fluxo: 1. Nome 2. Objetivo 3. Pré-condições 4. Passos (Ação→Resposta→Tela) 5. Fluxos Alternativos 6. Pós-condições 7. Pontos de Decisão. Gere 4-6 task flows. Formate em Markdown.`,
       },
       interview_analysis: {
         title: "Análise de Entrevista",
-        systemPrompt: `Você é um UX Researcher sênior. Gere um template de análise de entrevista em PT-BR com seções para: Pain Points, Insights, Citações-Chave, Padrões Comportamentais, Oportunidades de Design, e Bandeiras Vermelhas. Formate em Markdown.`,
+        systemPrompt: `Você é um UX Researcher sênior. Gere um template de análise de entrevista em PT-BR com: Pain Points, Insights, Citações-Chave, Padrões Comportamentais, Oportunidades de Design, Bandeiras Vermelhas. Formate em Markdown.`,
       },
     };
 
@@ -218,7 +185,7 @@ ${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/
 
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
-      return new Response(JSON.stringify({ error: "API key não configurada" }), {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY não configurada. Vá em Supabase → Project Settings → Edge Functions → Secrets e adicione a chave." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -241,16 +208,31 @@ ${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/
     });
 
     if (!aiResponse.ok) {
-      const err = await aiResponse.text();
-      console.error("AI error:", err);
-      return new Response(JSON.stringify({ error: "Erro ao gerar documento com IA" }), {
-        status: 500,
+      const errText = await aiResponse.text();
+      console.error("Lovable AI gateway error:", aiResponse.status, errText);
+
+      const friendlyMsg =
+        aiResponse.status === 429 ? "Rate limit excedido. Aguarde alguns segundos e tente novamente." :
+        aiResponse.status === 402 ? "Créditos insuficientes no workspace Lovable. Verifique seu plano." :
+        aiResponse.status === 401 ? "LOVABLE_API_KEY inválida ou expirada. Regenere a chave em Lovable." :
+        `Erro no gateway de IA (status ${aiResponse.status}). Detalhes: ${errText}`;
+
+      return new Response(JSON.stringify({ error: friendlyMsg }), {
+        status: aiResponse.status >= 500 ? 502 : aiResponse.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content ?? "";
+
+    if (!content) {
+      console.error("Empty AI content. Raw response:", JSON.stringify(aiData));
+      return new Response(JSON.stringify({ error: "IA não retornou conteúdo. Verifique os logs da Edge Function no Supabase." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Save to project_documents
     const { data: doc, error: insertError } = await supabase
@@ -277,13 +259,13 @@ ${(docs || []).map((d: Document) => `- [${d.doc_type || "N/A"}] ${d.title || "N/
     return new Response(JSON.stringify({ document: doc }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e) {
-    console.error("Error:", e);
-    return new Response(JSON.stringify({ 
-      error: "Erro interno", 
+    console.error("generate-docs unhandled error:", e);
+    return new Response(JSON.stringify({
+      error: "Erro interno",
       details: e instanceof Error ? e.message : String(e),
-      stack: e instanceof Error ? e.stack : undefined,
-      debug_tag: "v0.2.3"
+      debug_tag: "v0.3.0",
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

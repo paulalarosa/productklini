@@ -39,6 +39,7 @@ import { ABTestingPage } from "./pages/ABTestingPage";
 import { ResponsiveAuditPage } from "./pages/ResponsiveAuditPage";
 import { UXAnalysisPage } from "./pages/UXAnalysisPage";
 import { EnhancedReportPage } from "./pages/EnhancedReportPage";
+import { VoiceOfCustomerPage } from "./pages/VoiceOfCustomerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -101,6 +102,7 @@ const App = () => (
               <Route path="/dev/qa" element={<QAPage />} />
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
               <Route path="/analytics" element={<AnalyticsHubPage />} />
+              <Route path="/voice-of-customer" element={<VoiceOfCustomerPage />} />
               <Route path="/ab-testing" element={<ABTestingPage />} />
               <Route path="/responsive-audit" element={<ResponsiveAuditPage />} />
               <Route path="/ux-analysis" element={<UXAnalysisPage />} />

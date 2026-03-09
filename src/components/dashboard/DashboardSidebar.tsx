@@ -7,7 +7,7 @@ import {
   ChevronDown, Menu, X, Heart, Briefcase, Grid3X3, HelpCircle, Lightbulb,
   MessageSquare, BookOpen, ClipboardList, ListChecks, PlayCircle, Accessibility,
   ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid, BrainCircuit,
-  MonitorSmartphone, Microscope
+  MonitorSmartphone, Microscope, MessageSquareDot
 } from "lucide-react";
 
 interface NavItem { label: string; icon: React.ElementType; path: string; }
@@ -97,6 +97,7 @@ const navGroups: NavGroup[] = [
       { label: "Audit Responsivo", icon: MonitorSmartphone, path: "/responsive-audit" },
       { label: "Análise UX (IA)", icon: Microscope, path: "/ux-analysis" },
       { label: "Analytics Hub", icon: BarChart3, path: "/analytics" },
+      { label: "Voice of Customer", icon: MessageSquareDot, path: "/voice-of-customer" },
     ],
   },
   {
