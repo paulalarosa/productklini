@@ -171,6 +171,7 @@ export const PATTERN_CATEGORIES = [
   { value: "onboarding", label: "Onboarding" },
   { value: "accessibility", label: "Acessibilidade" },
   { value: "mobile", label: "Mobile" },
+  { value: "flutter", label: "Flutter / Mobile Nativo" },
   { value: "general", label: "Geral" },
 ];
 
