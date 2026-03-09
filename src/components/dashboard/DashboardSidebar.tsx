@@ -133,9 +133,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-sidebar-border shrink-0">
+      <div className="px-3 md:px-4 py-3 md:py-4 border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center">
+          <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center shrink-0">
             <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
           <span className="text-sm font-bold text-foreground tracking-tight">ProductOS</span>
@@ -143,7 +143,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-2 px-1.5 md:px-2 space-y-0.5 overscroll-contain">
         {navGroups.map((group, gi) => (
           <div key={`${group.title}-${gi}`}>
             <button
@@ -163,14 +163,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                     <button
                       key={item.path}
                       onClick={() => handleNav(item.path)}
-                      className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-2 md:py-1.5 rounded-md text-xs transition-colors active:scale-[0.98] ${
                         isActive
                           ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                           : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       }`}
                     >
                       <item.icon className="w-3.5 h-3.5 shrink-0" />
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </button>
                   );
                 })}
@@ -190,7 +190,8 @@ export function DashboardSidebar() {
     <>
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-50 p-2 rounded-lg bg-card border border-border md:hidden"
+        className="fixed top-2 left-2 z-50 p-2 rounded-lg bg-card border border-border md:hidden active:scale-95 transition-transform"
+        aria-label="Abrir menu"
       >
         <Menu className="w-5 h-5 text-foreground" />
       </button>
@@ -204,13 +205,14 @@ export function DashboardSidebar() {
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
-              className="fixed inset-y-0 left-0 z-50 w-[260px] bg-sidebar border-r border-sidebar-border flex flex-col md:hidden"
+              className="fixed inset-y-0 left-0 z-50 w-[260px] bg-sidebar border-r border-sidebar-border flex flex-col md:hidden safe-area-inset"
               initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <button
                 onClick={() => setMobileOpen(false)}
-                className="absolute top-3 right-3 p-1 rounded-md hover:bg-accent"
+                className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-accent z-10"
+                aria-label="Fechar menu"
               >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>

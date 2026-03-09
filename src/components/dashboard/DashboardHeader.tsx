@@ -36,32 +36,33 @@ export function DashboardHeader({ onToggleAI }: { onToggleAI: () => void }) {
   };
 
   return (
-    <header className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-border shrink-0">
-      <div className="flex items-center gap-5 ml-10 md:ml-0">
-        <div>
+    <header className="flex items-center justify-between px-3 md:px-6 py-2.5 md:py-4 border-b border-border shrink-0 gap-2 min-w-0">
+      {/* Left side - Project info */}
+      <div className="flex items-center gap-3 ml-10 md:ml-0 min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           {editing ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <input
                 value={editName}
                 onChange={e => setEditName(e.target.value)}
-                className="text-sm md:text-lg font-bold text-foreground bg-secondary border border-border rounded-md px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="text-sm font-bold text-foreground bg-secondary border border-border rounded-md px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-primary/50 w-full max-w-[200px]"
                 autoFocus
                 maxLength={100}
                 onKeyDown={e => e.key === "Enter" && saveEdit()}
               />
-              <button onClick={saveEdit} className="p-1 rounded hover:bg-accent"><Check className="w-3.5 h-3.5 text-primary" /></button>
-              <button onClick={() => setEditing(false)} className="p-1 rounded hover:bg-accent"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
+              <button onClick={saveEdit} className="p-1 rounded hover:bg-accent shrink-0"><Check className="w-3.5 h-3.5 text-primary" /></button>
+              <button onClick={() => setEditing(false)} className="p-1 rounded hover:bg-accent shrink-0"><X className="w-3.5 h-3.5 text-muted-foreground" /></button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 group">
-              <h1 className="text-sm md:text-lg font-bold text-foreground truncate max-w-[200px] md:max-w-none">{name}</h1>
-              <button onClick={startEdit} className="p-1 rounded hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1.5 group min-w-0">
+              <h1 className="text-sm md:text-lg font-bold text-foreground truncate">{name}</h1>
+              <button onClick={startEdit} className="p-1 rounded hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <Pencil className="w-3 h-3 text-muted-foreground" />
               </button>
             </div>
           )}
-          <div className="flex items-center gap-3 mt-1">
-            <div className="w-24 md:w-40 h-1.5 rounded-full bg-secondary overflow-hidden">
+          <div className="flex items-center gap-2 mt-0.5">
+            <div className="w-16 md:w-40 h-1.5 rounded-full bg-secondary overflow-hidden shrink-0">
               <motion.div
                 className="h-full rounded-full gradient-primary"
                 initial={{ width: 0 }}
@@ -69,13 +70,15 @@ export function DashboardHeader({ onToggleAI }: { onToggleAI: () => void }) {
                 transition={{ duration: 1.2, ease: "easeOut" }}
               />
             </div>
-            <span className="text-xs text-muted-foreground font-medium">{progress}%</span>
+            <span className="text-[10px] text-muted-foreground font-medium shrink-0">{progress}%</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3">
-        <div className="hidden sm:flex -space-x-2">
+      {/* Right side - Actions */}
+      <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
+        {/* Team avatars - hidden on mobile */}
+        <div className="hidden md:flex -space-x-2">
           {members.slice(0, 4).map((member) => (
             <div key={member.id} title={member.name}
               className="w-7 h-7 rounded-full bg-secondary border-2 border-card flex items-center justify-center text-[10px] font-semibold text-secondary-foreground">
@@ -92,17 +95,14 @@ export function DashboardHeader({ onToggleAI }: { onToggleAI: () => void }) {
         <NotificationsPanel />
 
         <button onClick={onToggleAI}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity">
+          className="flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg gradient-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity shrink-0">
           <Bot className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Mentor IA</span>
         </button>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground hidden md:inline truncate max-w-[120px]">{user?.email}</span>
-          <button onClick={signOut} title="Sair" className="p-1.5 rounded-md hover:bg-accent transition-colors">
-            <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-        </div>
+        <button onClick={signOut} title="Sair" className="p-1.5 rounded-md hover:bg-accent transition-colors shrink-0">
+          <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
       </div>
     </header>
   );

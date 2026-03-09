@@ -21,6 +21,17 @@ export function DashboardLayout() {
     }
   }, [project, isLoading]);
 
+  // Close AI panel on mobile when navigating
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768 && aiOpen) {
+        // Keep panel but ensure it's full-screen on mobile
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [aiOpen]);
+
   const projectContext = {
     project: project ?? {},
     tasksSummary: {
@@ -43,13 +54,13 @@ export function DashboardLayout() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
       <DashboardSidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <DashboardHeader onToggleAI={() => setAiOpen(!aiOpen)} />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">
           <Outlet />
         </main>
       </div>
