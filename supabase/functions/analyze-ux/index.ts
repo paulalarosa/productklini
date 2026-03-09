@@ -28,10 +28,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const action = body.action || body.type;
     const content = body.content;
     const project_id = body.project_id;
+
+    if (!action || !content) {
+      return new Response(JSON.stringify({ error: "Parâmetros ausentes: action ou content" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableApiKey) {
       return new Response(JSON.stringify({ error: "API key não configurada" }), {
@@ -331,7 +337,11 @@ Contexto: ${projectContext}`;
     });
   } catch (e) {
     console.error("Error:", e);
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
+    return new Response(JSON.stringify({ 
+      error: "Erro interno", 
+      details: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined
+    }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

@@ -171,9 +171,12 @@ Be precise. A 5★ review praising the app is "praise/positive". A 1★ about cr
     );
   } catch (e) {
     console.error("analyze-reviews error:", e);
-    const errorMessage = e instanceof Error ? e.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ 
+        error: "Erro interno", 
+        details: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
