@@ -571,7 +571,7 @@ export function DesignCanvas() {
             <button onClick={() => setShowLayers(!showLayers)} title="Layers" className={`p-1.5 rounded-md transition-colors ${showLayers ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Layers className="w-4 h-4" />
             </button>
-            <button onClick={() => { setShowAI(!showAI); setShowTemplates(false); }} title="AI Wireframe" className={`p-1.5 rounded-md transition-colors ${showAI ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+            <button onClick={() => { setShowAI(!showAI); setShowTemplates(false); setShowUXPatterns(false); }} title="AI Wireframe" className={`p-1.5 rounded-md transition-colors ${showAI ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
               <Sparkles className="w-4 h-4" />
             </button>
             {currentDesignId && (
