@@ -191,6 +191,7 @@ function Minimap({ elements, canvasW, canvasH, zoom, panX, panY, viewportW, view
 
 // ---- Component ----
 export function DesignCanvas() {
+  const { trackPatternApplication, trackCanvasDesignCreation } = useGamificationActions();
   const { value: elements, set: setElements, undo, redo, canUndo, canRedo } = useHistory<CanvasElement[]>([]);
   const [selectedTool, setSelectedTool] = useState<ToolType>("select");
   const [selectedId, setSelectedId] = useState<string | null>(null);
