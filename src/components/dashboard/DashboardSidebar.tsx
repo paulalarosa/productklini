@@ -6,7 +6,8 @@ import {
   Kanban, ShieldCheck, BarChart3, Sparkles, CircleDot, FileBarChart, Settings,
   ChevronDown, Menu, X, Heart, Briefcase, Grid3X3, HelpCircle, Lightbulb,
   MessageSquare, BookOpen, ClipboardList, ListChecks, PlayCircle, Accessibility,
-  ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid, BrainCircuit
+  ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid, BrainCircuit,
+  MonitorSmartphone, Microscope
 } from "lucide-react";
 
 interface NavItem { label: string; icon: React.ElementType; path: string; }
@@ -93,6 +94,8 @@ const navGroups: NavGroup[] = [
     title: "Validação & Experimentos",
     items: [
       { label: "A/B Testing", icon: CircleDot, path: "/ab-testing" },
+      { label: "Audit Responsivo", icon: MonitorSmartphone, path: "/responsive-audit" },
+      { label: "Análise UX (IA)", icon: Microscope, path: "/ux-analysis" },
       { label: "Analytics Hub", icon: BarChart3, path: "/analytics" },
     ],
   },

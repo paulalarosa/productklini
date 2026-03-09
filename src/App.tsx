@@ -15,7 +15,7 @@ import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
 import { KanbanPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { ConfigPage } from "./pages/ConfigPage";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
-import { ReportPage } from "./pages/ReportPage";
+
 import { EmpathyMapPage, BenchmarkPage, JTBDPage, CSDMatrixPage, HMWPage, AffinityDiagramPage } from "./pages/DiscoveryPages";
 import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages/UXWritingPages";
 import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
@@ -36,6 +36,9 @@ import { GitSyncHubPage } from "./pages/GitSyncHubPage";
 import { BehaviorModelPage } from "./pages/BehaviorModelPage";
 import UXPatternsPage from "./pages/UXPatternsPage";
 import { ABTestingPage } from "./pages/ABTestingPage";
+import { ResponsiveAuditPage } from "./pages/ResponsiveAuditPage";
+import { UXAnalysisPage } from "./pages/UXAnalysisPage";
+import { EnhancedReportPage } from "./pages/EnhancedReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -99,7 +102,9 @@ const App = () => (
               <Route path="/dev/metricas" element={<TeamMetricsPage />} />
               <Route path="/analytics" element={<AnalyticsHubPage />} />
               <Route path="/ab-testing" element={<ABTestingPage />} />
-              <Route path="/relatorio" element={<ReportPage />} />
+              <Route path="/responsive-audit" element={<ResponsiveAuditPage />} />
+              <Route path="/ux-analysis" element={<UXAnalysisPage />} />
+              <Route path="/relatorio" element={<EnhancedReportPage />} />
               <Route path="/git-sync" element={<GitSyncHubPage />} />
               <Route path="/config" element={<ConfigPage />} />
             </Route>
