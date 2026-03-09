@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Users, Target, Lightbulb, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getProjectId } from "@/lib/api";
+import { createNewProject, setCurrentProjectId } from "@/lib/api";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -56,12 +56,14 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const projectId = await getProjectId();
+      // Create a new project with the user's chosen name
+      const projectId = await createNewProject(
+        data.projectName.trim(),
+        data.projectDescription.trim() || undefined
+      );
 
-      // Update project
-      await supabase.from("projects").update({
-        name: data.projectName.trim(),
-        description: data.projectDescription.trim() || null,
+      // Update project with phase info
+      const { error: updateError } = await supabase.from("projects").update({
         current_phase: data.currentPhase,
         progress: data.currentPhase === "discovery" ? 5 : data.currentPhase === "define" ? 25 : data.currentPhase === "develop" ? 50 : 75,
         phase_progress: {
@@ -72,10 +74,15 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
         },
       }).eq("id", projectId);
 
+      if (updateError) {
+        console.error("Error updating project:", updateError);
+        throw updateError;
+      }
+
       // Insert team members
       const validMembers = data.teamMembers.filter(m => m.name.trim());
       if (validMembers.length > 0) {
-        await supabase.from("team_members").insert(
+        const { error: memberError } = await supabase.from("team_members").insert(
           validMembers.map(m => ({
             project_id: projectId,
             name: m.name.trim(),
@@ -83,12 +90,13 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
             avatar: m.name.trim().charAt(0).toUpperCase(),
           }))
         );
+        if (memberError) console.error("Error inserting team members:", memberError);
       }
 
       // Insert personas
       const validPersonas = data.personas.filter(p => p.name.trim());
       if (validPersonas.length > 0) {
-        await supabase.from("personas").insert(
+        const { error: personaError } = await supabase.from("personas").insert(
           validPersonas.map(p => ({
             project_id: projectId,
             name: p.name.trim(),
@@ -97,27 +105,29 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
             pain_points: p.painPoints.split(",").map(pp => pp.trim()).filter(Boolean),
           }))
         );
+        if (personaError) console.error("Error inserting personas:", personaError);
       }
 
       // Insert UX metrics
       const validMetrics = data.uxMetrics.filter(m => m.score.trim());
       if (validMetrics.length > 0) {
-        await supabase.from("ux_metrics").insert(
+        const { error: metricError } = await supabase.from("ux_metrics").insert(
           validMetrics.map(m => ({
             project_id: projectId,
             metric_name: m.name,
             score: parseFloat(m.score) || 0,
           }))
         );
+        if (metricError) console.error("Error inserting metrics:", metricError);
       }
 
-      // Invalidate all queries
+      // Invalidate all queries to reload with new project
       queryClient.invalidateQueries();
-      toast.success("Projeto configurado com sucesso!");
+      toast.success("Projeto criado com sucesso!");
       onComplete();
-    } catch (e) {
+    } catch (e: any) {
       console.error("Setup error:", e);
-      toast.error("Erro ao salvar configuração");
+      toast.error("Erro ao salvar: " + (e.message || "Tente novamente"));
     }
     setSaving(false);
   };
@@ -125,18 +135,18 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
       <motion.div
-        className="w-full max-w-2xl mx-4 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-2xl mx-4 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col"
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
       >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-border">
+        <div className="px-4 md:px-6 pt-4 md:pt-6 pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shrink-0">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">Configurar Projeto</h2>
+              <h2 className="text-lg font-bold text-foreground">Criar Novo Projeto</h2>
               <p className="text-xs text-muted-foreground">Preencha as informações iniciais para começar</p>
             </div>
           </div>
@@ -146,7 +156,7 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
               <button
                 key={s.title}
                 onClick={() => i <= step && setStep(i)}
-                className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${
+                className={`flex-1 flex items-center gap-2 px-2 md:px-3 py-2 rounded-lg text-xs transition-colors ${
                   i === step ? "bg-primary/10 text-primary font-medium" :
                   i < step ? "bg-accent text-foreground" : "text-muted-foreground"
                 }`}
@@ -159,7 +169,7 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 min-h-[320px]">
+        <div className="px-4 md:px-6 py-6 min-h-[280px] overflow-y-auto flex-1">
           <AnimatePresence mode="wait">
             {step === 0 && (
               <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
@@ -179,7 +189,7 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
                   <textarea
                     value={data.projectDescription}
                     onChange={e => setData(d => ({ ...d, projectDescription: e.target.value }))}
-                    placeholder="Descreva brevemente o objetivo do projeto, público-alvo e principais funcionalidades..."
+                    placeholder="Descreva brevemente o objetivo do projeto..."
                     rows={3}
                     className="w-full px-3 py-2.5 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                     maxLength={500}
@@ -313,7 +323,7 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
 
             {step === 3 && (
               <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                <p className="text-xs text-muted-foreground mb-2">Defina valores iniciais para as métricas UX (opcional — você pode preencher depois).</p>
+                <p className="text-xs text-muted-foreground mb-2">Defina valores iniciais para as métricas UX (opcional).</p>
                 <div className="grid grid-cols-2 gap-3">
                   {data.uxMetrics.map((m, i) => (
                     <div key={m.name} className="space-y-1">
@@ -338,7 +348,7 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+        <div className="px-4 md:px-6 py-4 border-t border-border flex items-center justify-between shrink-0">
           <button
             onClick={() => step > 0 && setStep(s => s - 1)}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-colors ${
@@ -350,12 +360,6 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
           </button>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={onComplete}
-              className="text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg transition-colors"
-            >
-              Pular configuração
-            </button>
             {step < 3 ? (
               <button
                 onClick={() => canAdvance() && setStep(s => s + 1)}
@@ -371,7 +375,7 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
                 className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-lg gradient-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                {saving ? "Salvando..." : "Finalizar"}
+                {saving ? "Salvando..." : "Criar Projeto"}
               </button>
             )}
           </div>

@@ -65,50 +65,111 @@ export type DbProjectDocument = {
   updated_at: string;
 };
 
-// Get or create the current user's project
+// ---- Multi-project support ----
+const CURRENT_PROJECT_KEY = "current_project_id";
 let cachedProjectId: string | null = null;
 
-export async function getProjectId(): Promise<string> {
-  if (cachedProjectId) return cachedProjectId;
+export function setCurrentProjectId(projectId: string) {
+  cachedProjectId = projectId;
+  localStorage.setItem(CURRENT_PROJECT_KEY, projectId);
+}
 
+export function clearCurrentProjectId() {
+  cachedProjectId = null;
+  localStorage.removeItem(CURRENT_PROJECT_KEY);
+}
+
+export async function fetchAllProjects(): Promise<DbProject[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+  return (data as DbProject[]) ?? [];
+}
+
+export async function createNewProject(name: string, description?: string): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado");
 
-  const { data: existing } = await supabase
+  const { data, error } = await supabase
     .from("projects")
-    .select("id")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    cachedProjectId = existing.id;
-    return existing.id;
-  }
-
-  const { data: created, error } = await supabase
-    .from("projects")
-    .insert({ name: "Meu Projeto", user_id: user.id })
+    .insert({
+      name,
+      description: description || null,
+      user_id: user.id,
+    })
     .select("id")
     .single();
 
   if (error) throw error;
-  cachedProjectId = created.id;
-  return created.id;
+  setCurrentProjectId(data.id);
+  return data.id;
 }
 
-supabase.auth.onAuthStateChange(() => {
-  cachedProjectId = null;
+export async function getProjectId(): Promise<string> {
+  if (cachedProjectId) return cachedProjectId;
+
+  // Check localStorage for saved project
+  const savedId = localStorage.getItem(CURRENT_PROJECT_KEY);
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Usuário não autenticado");
+
+  // If we have a saved ID, verify it still belongs to the user
+  if (savedId) {
+    const { data: existing } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", savedId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    
+    if (existing) {
+      cachedProjectId = existing.id;
+      return existing.id;
+    }
+  }
+
+  // Find the first project for this user
+  const { data: firstProject } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (firstProject) {
+    setCurrentProjectId(firstProject.id);
+    return firstProject.id;
+  }
+
+  // No projects exist — return empty string to signal "needs setup"
+  return "";
+}
+
+supabase.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") {
+    clearCurrentProjectId();
+  } else {
+    // Just clear cache so it re-fetches, but keep localStorage
+    cachedProjectId = null;
+  }
 });
 
 export async function fetchProject(): Promise<DbProject | null> {
   const projectId = await getProjectId();
+  if (!projectId) return null;
   const { data } = await supabase.from("projects").select("*").eq("id", projectId).single();
   return data as DbProject | null;
 }
 
 export async function fetchTasks(): Promise<DbTask[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at");
   return (data as DbTask[]) ?? [];
 }
@@ -120,24 +181,28 @@ export async function updateTaskStatus(taskId: string, status: string) {
 
 export async function fetchTeamMembers(): Promise<DbTeamMember[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("team_members").select("*").eq("project_id", projectId);
   return (data as DbTeamMember[]) ?? [];
 }
 
 export async function fetchPersonas(): Promise<DbPersona[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("personas").select("*").eq("project_id", projectId);
   return (data as DbPersona[]) ?? [];
 }
 
 export async function fetchUxMetrics(): Promise<DbUxMetric[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("ux_metrics").select("*").eq("project_id", projectId);
   return (data as DbUxMetric[]) ?? [];
 }
 
 export async function fetchDocuments(docType?: string): Promise<DbProjectDocument[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   let query = supabase.from("project_documents").select("*").eq("project_id", projectId);
   if (docType) query = query.eq("doc_type", docType);
   const { data } = await query.order("created_at", { ascending: false });
@@ -146,6 +211,7 @@ export async function fetchDocuments(docType?: string): Promise<DbProjectDocumen
 
 export async function fetchAllDocuments(): Promise<DbProjectDocument[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase
     .from("project_documents")
     .select("*")
@@ -156,12 +222,14 @@ export async function fetchAllDocuments(): Promise<DbProjectDocument[]> {
 
 export async function fetchAiMessages() {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("ai_messages").select("*").eq("project_id", projectId).order("created_at");
   return data ?? [];
 }
 
 export async function saveAiMessage(role: string, content: string) {
   const projectId = await getProjectId();
+  if (!projectId) throw new Error("Nenhum projeto selecionado");
   const { error } = await supabase.from("ai_messages").insert({ project_id: projectId, role, content });
   if (error) throw error;
 }
@@ -182,30 +250,35 @@ export type DbAppReview = {
 
 export async function fetchAnalyticsSnapshots(): Promise<DbAnalyticsSnapshot[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("analytics_snapshots" as any).select("*").eq("project_id", projectId).order("recorded_at");
   return (data as unknown as DbAnalyticsSnapshot[]) ?? [];
 }
 
 export async function fetchFunnelSteps(): Promise<DbFunnelStep[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("analytics_funnel" as any).select("*").eq("project_id", projectId).order("step_order");
   return (data as unknown as DbFunnelStep[]) ?? [];
 }
 
 export async function fetchAppReviews(): Promise<DbAppReview[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("app_reviews" as any).select("*").eq("project_id", projectId).order("created_at", { ascending: false });
   return (data as unknown as DbAppReview[]) ?? [];
 }
 
 export async function insertAppReview(review: Omit<DbAppReview, "id" | "project_id" | "created_at">) {
   const projectId = await getProjectId();
+  if (!projectId) throw new Error("Nenhum projeto selecionado");
   const { error } = await supabase.from("app_reviews" as any).insert({ ...review, project_id: projectId });
   if (error) throw error;
 }
 
 export async function insertAppReviews(reviews: Omit<DbAppReview, "id" | "project_id" | "created_at">[]) {
   const projectId = await getProjectId();
+  if (!projectId) throw new Error("Nenhum projeto selecionado");
   const rows = reviews.map(r => ({ ...r, project_id: projectId }));
   const { error } = await supabase.from("app_reviews" as any).insert(rows);
   if (error) throw error;
@@ -228,7 +301,6 @@ export type AIReviewTag = {
 };
 
 export async function analyzeReviewsWithAI(reviews: { id: string; text: string; stars: number }[]): Promise<AIReviewTag[]> {
-  // Process in batches of 20
   const batchSize = 20;
   const allResults: AIReviewTag[] = [];
 
@@ -262,13 +334,14 @@ export type DbTokenHistoryEntry = {
 
 export async function fetchDesignTokens(): Promise<DbDesignToken[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("design_tokens" as any).select("*").eq("project_id", projectId).order("token_key");
   return (data as unknown as DbDesignToken[]) ?? [];
 }
 
 export async function upsertDesignToken(token: { token_key: string; token_value: string; token_label: string; category?: string }) {
   const projectId = await getProjectId();
-  // Check existing value for history
+  if (!projectId) throw new Error("Nenhum projeto selecionado");
   const { data: existing } = await supabase
     .from("design_tokens" as any)
     .select("token_value")
@@ -288,7 +361,6 @@ export async function upsertDesignToken(token: { token_key: string; token_value:
   }, { onConflict: "project_id,token_key" });
   if (error) throw error;
 
-  // Record history if value changed
   if (oldValue && oldValue !== token.token_value) {
     await supabase.from("design_token_history" as any).insert({
       project_id: projectId,
@@ -303,17 +375,17 @@ export async function upsertDesignToken(token: { token_key: string; token_value:
 
 export async function fetchTokenHistory(): Promise<DbTokenHistoryEntry[]> {
   const projectId = await getProjectId();
+  if (!projectId) return [];
   const { data } = await supabase.from("design_token_history" as any).select("*").eq("project_id", projectId).order("changed_at", { ascending: false });
   return (data as unknown as DbTokenHistoryEntry[]) ?? [];
 }
 
 export async function seedAnalyticsData() {
   const projectId = await getProjectId();
-  // Check if data already exists
+  if (!projectId) return;
   const { data: existing } = await supabase.from("analytics_snapshots" as any).select("id").eq("project_id", projectId).limit(1);
   if (existing && existing.length > 0) return;
 
-  // Seed snapshots
   const snapshots = [
     { period_label: "Sem 1", dau: 12400, mau: 38200, crash_free_percent: 99.6 },
     { period_label: "Sem 2", dau: 13100, mau: 39800, crash_free_percent: 99.7 },
@@ -325,7 +397,6 @@ export async function seedAnalyticsData() {
   ];
   await supabase.from("analytics_snapshots" as any).insert(snapshots.map(s => ({ ...s, project_id: projectId })));
 
-  // Seed funnel
   const funnel = [
     { step_name: "App Aberto", step_order: 0, percent_value: 100, user_count: 46100 },
     { step_name: "Login", step_order: 1, percent_value: 72, user_count: 33192 },
@@ -334,7 +405,6 @@ export async function seedAnalyticsData() {
   ];
   await supabase.from("analytics_funnel" as any).insert(funnel.map(f => ({ ...f, project_id: projectId })));
 
-  // Seed reviews
   const reviews = [
     { stars: 5, text: "App incrível! A interface é super fluida e bonita. Parabéns ao time!", author: "Maria S.", platform: "ios", ai_tag: "Elogio", ai_tag_type: "praise" },
     { stars: 2, text: "Desde a última atualização o app trava na tela de checkout. Já tentei reinstalar.", author: "João P.", platform: "android", ai_tag: "Bug de UI", ai_tag_type: "bug" },
@@ -345,7 +415,6 @@ export async function seedAnalyticsData() {
   ];
   await supabase.from("app_reviews" as any).insert(reviews.map(r => ({ ...r, project_id: projectId })));
 
-  // Seed default tokens
   const tokens = [
     { token_key: "primary", token_value: "#6200EE", token_label: "Primary", category: "color" },
     { token_key: "secondary", token_value: "#03DAC6", token_label: "Secondary", category: "color" },
