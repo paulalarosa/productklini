@@ -30,7 +30,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { messages, projectContext } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { messages, projectContext, project_id: bodyProjectId } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -39,36 +40,74 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get user's project ID for tool execution
-    const { data: projectRow } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
-    const projectId = projectRow?.id;
+    // Identify project ID
+    let projectId = bodyProjectId;
+    if (!projectId) {
+      const { data: projectRow } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      projectId = projectRow?.id;
+    }
 
-    const systemPrompt = `Você é o "Mentor IA" de um Dashboard de Ciclo de Vida de Produto Digital. Você ajuda equipes de produto com análise de gargalos, checklists de QA, acessibilidade (WCAG), sugestões de handoff Design→Dev, e análise de métricas UX.
+    // Fetch rich context if project exists
+    let richContext = "";
+    if (projectId) {
+      const [projectRes, personasRes, tasksRes, metricsRes, docsRes] = await Promise.all([
+        supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
+        supabase.from("personas").select("*").eq("project_id", projectId),
+        supabase.from("tasks").select("*").eq("project_id", projectId),
+        supabase.from("ux_metrics").select("*").eq("project_id", projectId),
+        supabase.from("project_documents").select("doc_type, title").eq("project_id", projectId),
+      ]);
 
-Contexto do projeto atual:
-${projectContext ? JSON.stringify(projectContext) : "Nenhum contexto disponível."}
+      const p = projectRes.data;
+      if (p) {
+        richContext = `
+PROJETO: ${p.name}
+DESCRIÇÃO: ${p.description || "N/A"}
+FASE ATUAL: ${p.current_phase || "Discovery"}
+PROGRESSO: ${p.progress || 0}%
 
-Diretrizes:
-- Responda sempre em português brasileiro
-- Seja conciso e direto, use markdown para formatar
-- Use emojis relevantes para destacar pontos importantes
-- Quando identificar gargalos, sugira ações concretas
-- Considere as fases do Double Diamond (Descobrir, Definir, Desenvolver, Entregar)
-- Priorize recomendações acionáveis
-- Quando o usuário pedir para criar tarefas, personas ou documentos, USE AS FERRAMENTAS DISPONÍVEIS para criá-los diretamente no banco de dados
-- Após usar uma ferramenta, confirme o que foi criado com uma mensagem amigável`;
+PERSONAS (${personasRes.data?.length || 0}):
+${personasRes.data?.map(pers => `- ${pers.name} (${pers.role})`).join("\n") || "Nenhuma registrada."}
+
+TAREFAS (${tasksRes.data?.length || 0}):
+${tasksRes.data?.slice(0, 10).map(t => `- [${t.module}] ${t.title} (${t.status})`).join("\n") || "Nenhuma tarefa."}
+
+MÉTRICAS UX:
+${metricsRes.data?.map(m => `- ${m.metric_name}: ${m.score}`).join("\n") || "Nenhuma métrica."}
+
+DOCUMENTOS EXISTENTES:
+${docsRes.data?.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento."}
+        `.trim();
+      }
+    }
+
+    const systemPrompt = `Você é o "Mentor IA" de um Dashboard de Ciclo de Vida de Produto Digital.
+Você ajuda com análise de gargalos, checklists de QA, acessibilidade (WCAG), handoff Design→Dev, e análise de métricas UX.
+
+CONTEXTO REAL DO BANCO DE DADOS:
+${richContext || "Nenhum dado de projeto encontrado ainda."}
+
+CONTEXTO DA PÁGINA ATUAL (UI):
+${projectContext ? JSON.stringify(projectContext) : "Nenhum contexto de UI disponível."}
+
+DIRETRIZES:
+- Responda sempre em português brasileiro de forma direta e técnica.
+- Quando o usuário pedir para criar QUALQUER documento, persona ou tarefa, USE AS FERRAMENTAS.
+- Não apenas explique como fazer, FAÇA usando as ferramentas.
+- IDs de projetos e usuários são tratados automaticamente pelo backend.
+- Se o usuário falar "crie o mapa de empatia", use create_document com doc_type="empathy_map".`;
 
     const tools = [
       {
         type: "function",
         function: {
           name: "create_tasks",
-          description: "Cria uma ou mais tarefas no projeto. Use quando o usuário pedir para criar, sugerir ou adicionar tarefas.",
+          description: "Cria tarefas no projeto.",
           parameters: {
             type: "object",
             properties: {
@@ -77,19 +116,16 @@ Diretrizes:
                 items: {
                   type: "object",
                   properties: {
-                    title: { type: "string", description: "Título da tarefa" },
-                    module: { type: "string", enum: ["ux", "ui", "dev"], description: "Módulo: ux, ui ou dev" },
-                    phase: { type: "string", enum: ["discovery", "define", "develop", "deliver"], description: "Fase do Double Diamond" },
-                    priority: { type: "string", enum: ["low", "medium", "high", "urgent"], description: "Prioridade" },
-                    estimated_days: { type: "number", description: "Dias estimados" },
+                    title: { type: "string" },
+                    module: { type: "string", enum: ["ux", "ui", "dev"] },
+                    phase: { type: "string", enum: ["discovery", "define", "develop", "deliver"] },
+                    priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
                   },
                   required: ["title", "module", "phase"],
-                  additionalProperties: false,
                 },
               },
             },
             required: ["tasks"],
-            additionalProperties: false,
           },
         },
       },
@@ -97,7 +133,7 @@ Diretrizes:
         type: "function",
         function: {
           name: "create_personas",
-          description: "Cria uma ou mais personas no projeto. Use quando o usuário pedir para gerar ou adicionar personas.",
+          description: "Cria personas no projeto.",
           parameters: {
             type: "object",
             properties: {
@@ -106,18 +142,16 @@ Diretrizes:
                 items: {
                   type: "object",
                   properties: {
-                    name: { type: "string", description: "Nome da persona" },
-                    role: { type: "string", description: "Perfil/papel da persona" },
-                    goals: { type: "array", items: { type: "string" }, description: "Objetivos" },
-                    pain_points: { type: "array", items: { type: "string" }, description: "Dores/frustrações" },
+                    name: { type: "string" },
+                    role: { type: "string" },
+                    goals: { type: "array", items: { type: "string" } },
+                    pain_points: { type: "array", items: { type: "string" } },
                   },
                   required: ["name", "role"],
-                  additionalProperties: false,
                 },
               },
             },
             required: ["personas"],
-            additionalProperties: false,
           },
         },
       },
@@ -125,16 +159,25 @@ Diretrizes:
         type: "function",
         function: {
           name: "create_document",
-          description: "Cria um documento de projeto (insight, plano de pesquisa, mapa de jornada, etc). Use quando o usuário pedir para documentar algo.",
+          description: "Cria um documento de projeto. Use para preencher painéis de Discovery, UX Writing, Strategy, etc.",
           parameters: {
             type: "object",
             properties: {
               title: { type: "string", description: "Título do documento" },
-              doc_type: { type: "string", enum: ["research_plan", "journey_map", "insights_summary", "ds_foundation", "dev_handoff"], description: "Tipo de documento" },
-              content: { type: "string", description: "Conteúdo em Markdown" },
+              doc_type: { 
+                type: "string", 
+                enum: [
+                  "research_plan", "journey_map", "insights_summary", "ds_foundation", "dev_handoff",
+                  "empathy_map", "benchmark", "jtbd", "csd_matrix", "hmw", "affinity_diagram",
+                  "tone_of_voice", "microcopy_library", "content_audit", "heuristic_evaluation",
+                  "usability_test", "wcag_checklist", "prioritization_matrix", "sitemap", 
+                  "component_states", "task_flows"
+                ],
+                description: "Tipo de documento (slug)" 
+              },
+              content: { type: "string", description: "Conteúdo completo em Markdown" },
             },
             required: ["title", "doc_type", "content"],
-            additionalProperties: false,
           },
         },
       },
@@ -160,24 +203,7 @@ Diretrizes:
 
     if (!firstResponse.ok) {
       const errText = await firstResponse.text();
-      console.error("Lovable AI gateway error (first call):", firstResponse.status, errText);
-
-      if (firstResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit excedido. Tente novamente em alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (firstResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao workspace Lovable." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (firstResponse.status === 401) {
-        return new Response(JSON.stringify({ error: "LOVABLE_API_KEY inválida ou expirada. Regenere a chave em Lovable." }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: `Erro no gateway de IA (${firstResponse.status}). Detalhes: ${errText}` }), {
+      return new Response(JSON.stringify({ error: `Erro na IA (${firstResponse.status})`, details: errText }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -215,13 +241,8 @@ Diretrizes:
 
     for (const tc of toolCalls) {
       const fnName = tc.function.name;
-      let args: Record<string, unknown>;
-      try {
-        args = JSON.parse(tc.function.arguments);
-      } catch {
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Erro ao interpretar argumentos" });
-        continue;
-      }
+      let args: any;
+      try { args = JSON.parse(tc.function.arguments); } catch { continue; }
 
       if (!projectId) {
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Projeto não encontrado" });
@@ -229,122 +250,73 @@ Diretrizes:
       }
 
       if (fnName === "create_tasks") {
-        const tasks = (args.tasks as { title: string; module?: string; phase?: string; priority?: string; estimated_days?: number }[]) ?? [];
-        const toInsert = tasks.map((t) => ({
+        const tasks = args.tasks ?? [];
+        const toInsert = tasks.map((t: any) => ({
           project_id: projectId,
           title: t.title,
-          module: t.module || "dev",
-          phase: t.phase || "develop",
+          module: t.module || "ux",
+          phase: t.phase || "discovery",
           priority: t.priority || "medium",
-          status: "todo",
-          estimated_days: t.estimated_days || 3,
-          days_in_phase: 0,
+          status: "todo"
         }));
-        const { error } = await supabase.from("tasks").insert(toInsert);
-        if (error) {
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
-        } else {
-          actionsPerformed.push(`✅ ${tasks.length} tarefa(s) criada(s)`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${tasks.length} tarefas criadas com sucesso: ${tasks.map((t) => t.title).join(", ")}` });
-        }
+        await supabase.from("tasks").insert(toInsert);
+        actionsPerformed.push(`✅ ${tasks.length} tarefa(s)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_personas") {
-        const personas = (args.personas as { name: string; role?: string; goals?: string[]; pain_points?: string[] }[]) ?? [];
-        const toInsert = personas.map((p) => ({
+        const personas = args.personas ?? [];
+        const toInsert = personas.map((p: any) => ({
           project_id: projectId,
           name: p.name,
-          role: p.role || "Usuário",
+          role: p.role || "User",
           goals: p.goals || [],
-          pain_points: p.pain_points || [],
+          pain_points: p.pain_points || []
         }));
-        const { error } = await supabase.from("personas").insert(toInsert);
-        if (error) {
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
-        } else {
-          actionsPerformed.push(`✅ ${personas.length} persona(s) criada(s)`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${personas.length} personas criadas: ${personas.map((p) => p.name).join(", ")}` });
-        }
+        await supabase.from("personas").insert(toInsert);
+        actionsPerformed.push(`✅ ${personas.length} persona(s)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_document") {
-        const { error } = await supabase.from("project_documents").insert({
+        await supabase.from("project_documents").insert({
           project_id: projectId,
-          title: args.title as string,
-          doc_type: args.doc_type as string,
-          content: args.content as string,
-          ai_generated: true,
-          metadata: { generated_by: "mentor-ia", generated_at: new Date().toISOString() },
+          title: args.title,
+          doc_type: args.doc_type,
+          content: args.content,
+          ai_generated: true
         });
-        if (error) {
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
-        } else {
-          actionsPerformed.push(`✅ Documento "${args.title}" criado`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Documento "${args.title}" criado com sucesso` });
-        }
-      } else {
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Ferramenta desconhecida" });
+        actionsPerformed.push(`✅ Doc "${args.title}"`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       }
     }
 
-    // ── Second call: send tool results and stream final response ──────
-    const followUpMessages = [
-      { role: "system", content: systemPrompt },
-      ...messages,
-      choice.message,  // assistant message with tool_calls
-      ...toolResults,
-    ];
-
+    // ── Stream final response ─────────────────────────────────────────
     const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash",
-        messages: followUpMessages,
+        messages: [{ role: "system", content: systemPrompt }, ...messages, choice.message, ...toolResults],
         stream: true,
       }),
     });
 
-    if (!finalResponse.ok) {
-      // Return actions summary as fallback SSE
-      const summary = actionsPerformed.length > 0
-        ? `Ações realizadas:\n${actionsPerformed.join("\n")}`
-        : "Não foi possível gerar a resposta final.";
+    // Simple stream forward with prefix
+    const encoder = new TextEncoder();
+    const actionPrefix = actionsPerformed.length > 0 ? `[Ações: ${actionsPerformed.join(", ")}]\n\n` : "";
+    const prefixBytes = encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: actionPrefix } }] })}\n\n`);
 
-      const encoder = new TextEncoder();
-      const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content: summary } }] })}\n\ndata: [DONE]\n\n`;
-      return new Response(encoder.encode(sseData), {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
-    }
-
-    // Prepend action badges to the stream if any tools were executed
-    if (actionsPerformed.length > 0) {
-      const actionPrefix = actionsPerformed.join(" | ") + "\n\n";
-      const prefixSSE = `data: ${JSON.stringify({ choices: [{ delta: { content: actionPrefix } }] })}\n\n`;
-      const encoder = new TextEncoder();
-      const prefixBytes = encoder.encode(prefixSSE);
-
-      const reader = finalResponse.body!.getReader();
-      const stream = new ReadableStream({
-        async start(controller) {
-          controller.enqueue(prefixBytes);
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-          controller.close();
-        },
-      });
-
-      return new Response(stream, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
-    }
-
-    return new Response(finalResponse.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const reader = finalResponse.body!.getReader();
+    const stream = new ReadableStream({
+      async start(controller) {
+        if (actionPrefix) controller.enqueue(prefixBytes);
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(value);
+        }
+        controller.close();
+      },
     });
+
+    return new Response(stream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
 
   } catch (e) {
     console.error("mentor-chat unhandled error:", e);
