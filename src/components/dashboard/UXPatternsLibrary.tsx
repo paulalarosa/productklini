@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UXPatternCard } from "./UXPatternCard";
 import { useUXPatterns, PATTERN_CATEGORIES, PATTERN_TYPES, DIFFICULTY_LEVELS } from "@/hooks/useUXPatterns";
-import { Search, Filter, Grid3X3, List, Loader2 } from "lucide-react";
+import { Search, Filter, Grid3X3, List, Loader2, Smartphone } from "lucide-react";
 
 export function UXPatternsLibrary() {
   const [searchTerm, setSearchTerm] = useState("");
