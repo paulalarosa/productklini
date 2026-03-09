@@ -10,14 +10,15 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
+
     // ✅ Fix: usar getUser() em vez de getClaims() que não existe no supabase-js v2
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -126,7 +127,7 @@ Gere entre 8-20 elementos dependendo da complexidade.`;
 
     const data2 = await response.json();
     const toolCall = data2.choices?.[0]?.message?.tool_calls?.[0];
-    
+
     if (toolCall?.function?.arguments) {
       const args = JSON.parse(toolCall.function.arguments);
       return new Response(JSON.stringify(args), {
@@ -137,6 +138,7 @@ Gere entre 8-20 elementos dependendo da complexidade.`;
     return new Response(JSON.stringify({ error: "Resposta inesperada da IA" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e) {
     console.error("wireframe error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {

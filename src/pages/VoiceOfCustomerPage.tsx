@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Star, Smartphone, Apple, Filter, RefreshCw, Wand2, Loader2,
   MessageSquare, CheckCircle2, Clock, Tag, ChevronDown, Sparkles,
   AlertTriangle, ThumbsUp, Bug, Zap, Lock, LayoutGrid, X,
-  Send, GitBranch, Figma, PlusCircle, TrendingUp,
+  Send, GitBranch, Figma, PlusCircle, TrendingUp, Upload, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +95,8 @@ export function VoiceOfCustomerPage() {
   const [storeUrl, setStoreUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [showImportBar, setShowImportBar] = useState(false);
+  const [importMode, setImportMode] = useState<"url" | "csv">("url");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["app-reviews"],
@@ -168,9 +170,49 @@ export function VoiceOfCustomerPage() {
       setStoreUrl("");
       setShowImportBar(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao importar");
+      const msg = e instanceof Error ? e.message : "Erro ao importar";
+      if (msg.toLowerCase().includes("firecrawl") || msg.toLowerCase().includes("not configured")) {
+        toast.error("Importação via URL requer FIRECRAWL_API_KEY nos secrets do Supabase. Use a importação por CSV como alternativa.");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setScraping(false);
+    }
+  };
+
+  // ── Import CSV ──
+  // Formato esperado: platform,stars,author,text  (primeira linha = header)
+  const handleCSVImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScraping(true);
+    try {
+      const text = await file.text();
+      const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+      // skip header
+      const dataLines = lines[0].toLowerCase().includes("platform") ? lines.slice(1) : lines;
+      const toInsert = dataLines.map((line) => {
+        const [platform, stars, author, ...rest] = line.split(",");
+        return {
+          platform: (platform?.trim() || "android").toLowerCase(),
+          stars: Math.min(5, Math.max(1, parseInt(stars?.trim() || "3", 10))),
+          author: author?.trim() || "Anônimo",
+          text: rest.join(",").replace(/^"|"$/g, "").trim() || "Sem texto",
+          ai_tag: "",
+          ai_tag_type: "",
+        };
+      }).filter((r) => r.text.length > 3);
+      if (toInsert.length === 0) { toast.error("Nenhum review válido encontrado no CSV."); return; }
+      await insertAppReviews(toInsert);
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
+      toast.success(`${toInsert.length} reviews importados do CSV!`);
+      setShowImportBar(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao importar CSV");
+    } finally {
+      setScraping(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -297,21 +339,71 @@ export function VoiceOfCustomerPage() {
 
       {/* ── Import bar ── */}
       {showImportBar && (
-        <div className="border-b border-border bg-muted/40 px-6 py-3 flex gap-3 items-center">
-          <input
-            className="flex-1 text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder="URL da App Store ou Google Play…"
-            value={storeUrl}
-            onChange={(e) => setStoreUrl(e.target.value)}
-          />
-          <Button size="sm" onClick={handleScrape} disabled={scraping || !storeUrl.trim()}>
-            {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-            Importar reviews
-          </Button>
-          <button 
-            type="button"
-            className="hover:bg-background/50 p-1.5 rounded-md transition-colors"
+        <div className="relative border-b border-border bg-muted/40 px-6 py-4 space-y-3">
+          {/* Mode tabs */}
+          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg w-fit">
+            <button
+              onClick={() => setImportMode("url")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+                ${importMode === "url" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Globe className="w-3 h-3" /> URL da loja
+            </button>
+            <button
+              onClick={() => setImportMode("csv")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+                ${importMode === "csv" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Upload className="w-3 h-3" /> Importar CSV
+            </button>
+          </div>
+
+          {importMode === "url" ? (
+            <div className="flex gap-3 items-start">
+              <div className="flex-1 space-y-1">
+                <input
+                  className="w-full text-sm bg-background border border-border rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  placeholder="https://apps.apple.com/br/app/nome/id123456789  ou  play.google.com/store/apps/details?id=com.app"
+                  value={storeUrl}
+                  onChange={(e) => setStoreUrl(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Funciona com App Store e Google Play sem chave de API adicional.
+                </p>
+              </div>
+              <Button size="sm" onClick={handleScrape} disabled={scraping || !storeUrl.trim()}>
+                {scraping ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                Importar
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Formato CSV: <code className="bg-muted px-1 rounded">platform,stars,author,text</code> — primeira linha pode ser header.
+              </p>
+              <div className="flex gap-3 items-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCSVImport}
+                  className="text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-border file:text-xs file:bg-background file:text-foreground file:cursor-pointer cursor-pointer"
+                />
+                {scraping && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+              </div>
+              <a
+                href="data:text/csv;charset=utf-8,platform%2Cstars%2Cauthor%2Ctext%0Aandroid%2C5%2Cjoao_silva%2C%22App%20excelente%2C%20recomendo!%22%0Aios%2C2%2Cmaria_s%2C%22Trava%20na%20tela%20de%20login%22"
+                download="reviews_modelo.csv"
+                className="text-xs text-primary hover:underline"
+              >
+                Baixar CSV modelo
+              </a>
+            </div>
+          )}
+
+          <button
             onClick={() => setShowImportBar(false)}
+            className="absolute right-4 top-4 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -424,7 +516,7 @@ export function VoiceOfCustomerPage() {
               <p className="text-xs mt-1">
                 {reviews.length === 0
                   ? "Clique em 'Carregar exemplos' para ver dados de demonstração"
-                  : "Tente ajustar os filtros"}
+                  : "Tente ajustar los filtros"}
               </p>
             </div>
           ) : (

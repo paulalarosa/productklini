@@ -6,8 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 interface ParsedReview {
   author: string;
   text: string;
@@ -15,143 +13,188 @@ interface ParsedReview {
   platform: string;
 }
 
-// ─── Google Play scraping via unofficial RSS ──────────────────────────────────
+// ─── App Store — RSS oficial da Apple ─────────────────────────────────────────
+// Funciona sem autenticação. Retorna até 50 reviews por página.
+async function scrapeAppStore(appId: string): Promise<ParsedReview[]> {
+  const countries = ["br", "us", "pt"];
+  
+  for (const country of countries) {
+    try {
+      const url = `https://itunes.apple.com/${country}/rss/customerreviews/page=1/id=${appId}/sortby=mostrecent/json`;
+      console.log(`Trying App Store RSS: ${url}`);
 
+      const resp = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+          "Accept": "application/json",
+        },
+      });
+
+      if (!resp.ok) {
+        console.log(`Country ${country} returned ${resp.status}, trying next...`);
+        continue;
+      }
+
+      const raw = await resp.json();
+      const entries = raw?.feed?.entry;
+
+      if (!Array.isArray(entries) || entries.length === 0) {
+        console.log(`Country ${country}: no entries found`);
+        continue;
+      }
+
+      const reviews: ParsedReview[] = [];
+
+      for (const entry of entries) {
+        try {
+          // Apple RSS structure: each field is an object with a "label" key
+          const authorName = entry?.author?.name?.label ?? entry?.["author"]?.["name"]?.["label"] ?? "Anônimo";
+          const content = entry?.content?.label ?? entry?.summary?.label ?? "";
+          const title = entry?.title?.label ?? "";
+          const ratingRaw = entry?.["im:rating"]?.label ?? entry?.["im:rating"] ?? "3";
+          const stars = Math.min(5, Math.max(1, parseInt(String(ratingRaw), 10)));
+
+          const text = [title, content].filter(Boolean).join(" — ").trim();
+
+          if (text && text.length > 2) {
+            reviews.push({
+              author: String(authorName).slice(0, 80),
+              text: text.slice(0, 600),
+              stars,
+              platform: "ios",
+            });
+          }
+        } catch (parseErr) {
+          console.log("Skipping malformed entry:", parseErr);
+        }
+      }
+
+      if (reviews.length > 0) {
+        console.log(`Found ${reviews.length} reviews in country: ${country}`);
+        return reviews;
+      }
+    } catch (err) {
+      console.log(`Error with country ${country}:`, err);
+    }
+  }
+
+  throw new Error("Nenhum review encontrado na App Store. O app pode ter poucos reviews públicos ou a loja está indisponível temporariamente.");
+}
+
+// ─── Google Play — API pública de reviews ─────────────────────────────────────
 async function scrapeGooglePlay(appId: string): Promise<ParsedReview[]> {
-  // Google Play RSS feed — works without auth, returns up to 20 recent reviews
-  const url = `https://play.google.com/store/apps/details?id=${appId}&hl=pt_BR&showAllReviews=true`;
+  // Endpoint interno do Google Play que retorna reviews em JSON
+  const url = `https://play.google.com/store/getreviews`;
+  
+  console.log(`Fetching Google Play reviews for: ${appId}`);
 
-  // Use iTunes Search-style public RSS that Google exposes
-  const rssUrl = `https://play.google.com/store/getreviews?id=${appId}&reviewType=0&pageNum=0&hl=pt_BR`;
+  const body = new URLSearchParams({
+    id: appId,
+    reviewType: "0",
+    pageNum: "0",
+    hl: "pt_BR",
+    gl: "BR",
+  });
 
-  const resp = await fetch(rssUrl, {
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; ProductOS/1.0)",
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "*/*",
+      "Origin": "https://play.google.com",
+      "Referer": `https://play.google.com/store/apps/details?id=${appId}`,
     },
+    body: body.toString(),
   });
 
   if (!resp.ok) {
-    throw new Error(`Google Play fetch failed: ${resp.status}`);
+    throw new Error(`Google Play retornou status ${resp.status}`);
   }
 
   const text = await resp.text();
-
-  // Parse the JSON-in-text response that Google Play returns
-  // The response wraps JSON in )]}' 
-  const clean = text.replace(/^\)\]\}'\n/, "");
+  
+  // Google Play response starts with )]}' — remove it before parsing
+  const clean = text.replace(/^\s*\)\]\}'\s*\n?/, "").trim();
+  
   let parsed: unknown;
   try {
     parsed = JSON.parse(clean);
   } catch {
-    throw new Error("Não foi possível parsear a resposta do Google Play");
+    throw new Error("Não foi possível processar a resposta do Google Play. Tente novamente.");
   }
 
-  const reviews: ParsedReview[] = [];
-
-  // Navigate the nested array structure Google Play uses
-  const reviewData = (parsed as unknown[][])?.[0]?.[2];
-  if (!Array.isArray(reviewData)) {
-    throw new Error("Estrutura de reviews não encontrada. Verifique o ID do app.");
+  // Navigate Google Play's nested array structure
+  // Structure: [null, [null, [[reviewData...]]]]
+  const outerArray = parsed as unknown[][];
+  
+  // Try to find the reviews array by navigating the structure
+  let reviewsArray: unknown[] | null = null;
+  
+  try {
+    // Common path in Google Play's response
+    reviewsArray = outerArray?.[0]?.[2] as unknown[] ?? null;
+  } catch {
+    reviewsArray = null;
   }
 
-  for (const item of reviewData) {
+  if (!Array.isArray(reviewsArray) || reviewsArray.length === 0) {
+    // Try alternative path
     try {
-      const author = item?.[1]?.[4]?.[0] ?? "Anônimo";
-      const text = item?.[4] ?? "";
-      const stars = item?.[2] ?? 3;
-      if (text && typeof text === "string" && text.length > 3) {
-        reviews.push({
-          author: String(author),
-          text: String(text).slice(0, 600),
-          stars: Math.min(5, Math.max(1, Number(stars))),
-          platform: "android",
-        });
-      }
+      const alt = (outerArray as unknown[][][])?.[0]?.[0];
+      if (Array.isArray(alt)) reviewsArray = alt;
     } catch {
-      // skip malformed entries
+      // ignore
     }
   }
 
-  return reviews.slice(0, 40);
-}
-
-// ─── App Store scraping via Apple RSS ────────────────────────────────────────
-
-async function scrapeAppStore(appId: string, country = "br"): Promise<ParsedReview[]> {
-  // Apple's official RSS feed for app reviews — completely public
-  const url = `https://itunes.apple.com/${country}/rss/customerreviews/id=${appId}/sortBy=mostRecent/json`;
-
-  const resp = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; ProductOS/1.0)" },
-  });
-
-  if (!resp.ok) {
-    // Try US store as fallback
-    const fallback = await fetch(
-      `https://itunes.apple.com/us/rss/customerreviews/id=${appId}/sortBy=mostRecent/json`,
-      { headers: { "User-Agent": "Mozilla/5.0 (compatible; ProductOS/1.0)" } }
-    );
-    if (!fallback.ok) throw new Error(`App Store fetch failed: ${resp.status}`);
-    const data = await fallback.json();
-    return parseAppStoreRSS(data);
+  if (!Array.isArray(reviewsArray) || reviewsArray.length === 0) {
+    throw new Error("Nenhum review encontrado no Google Play. O app pode ter poucos reviews ou estar indisponível.");
   }
 
-  const data = await resp.json();
-  return parseAppStoreRSS(data);
-}
-
-function parseAppStoreRSS(data: unknown): ParsedReview[] {
-  const entries = (data as { feed?: { entry?: unknown[] } })?.feed?.entry ?? [];
   const reviews: ParsedReview[] = [];
 
-  for (const entry of entries) {
+  for (const item of reviewsArray) {
     try {
-      const e = entry as Record<string, { label?: string | number }>;
-      const author = e?.["author"]?.["name"]?.label ?? "Anônimo";
-      const text = String(e?.["content"]?.label ?? "").trim();
-      const rating = e?.["im:rating"]?.label;
-      const stars = Math.min(5, Math.max(1, Number(rating ?? 3)));
+      const arr = item as unknown[];
+      // Try multiple known positions for author/stars/text
+      const author = String(arr?.[1]?.[4]?.[0] ?? arr?.[1]?.[0] ?? "Anônimo").slice(0, 80);
+      const stars = Math.min(5, Math.max(1, Number(arr?.[2] ?? 3)));
+      const text = String(arr?.[4] ?? arr?.[3] ?? "").trim();
 
       if (text && text.length > 3) {
-        reviews.push({
-          author: String(author),
-          text: text.slice(0, 600),
-          stars,
-          platform: "ios",
-        });
+        reviews.push({ author, text: text.slice(0, 600), stars, platform: "android" });
       }
     } catch {
       // skip malformed
     }
   }
 
-  return reviews.slice(0, 40);
+  if (reviews.length === 0) {
+    throw new Error("Reviews encontrados mas não foi possível processá-los. Tente com outro app.");
+  }
+
+  return reviews.slice(0, 50);
 }
 
-// ─── Extract app ID from URL ──────────────────────────────────────────────────
-
+// ─── Extract IDs from URLs ────────────────────────────────────────────────────
 function extractPlayStoreId(url: string): string | null {
   const match = url.match(/[?&]id=([a-zA-Z0-9._]+)/);
   return match?.[1] ?? null;
 }
 
 function extractAppStoreId(url: string): string | null {
-  // Handles: /app/nome-do-app/id123456789  OR  /id123456789
   const match = url.match(/\/id(\d+)/);
   return match?.[1] ?? null;
 }
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
@@ -166,11 +209,11 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Use getUser() — getClaims() não existe no supabase-js v2
+    // ✅ Fix: getUser() em vez de getClaims()
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ success: false, error: "Invalid token" }),
+        JSON.stringify({ success: false, error: "Token inválido" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -185,7 +228,7 @@ Deno.serve(async (req) => {
 
     const formattedUrl = url.trim().startsWith("http") ? url.trim() : `https://${url.trim()}`;
     const isPlayStore = formattedUrl.includes("play.google.com");
-    const isAppStore = formattedUrl.includes("apps.apple.com");
+    const isAppStore = formattedUrl.includes("apps.apple.com") || formattedUrl.includes("itunes.apple.com");
 
     if (!isPlayStore && !isAppStore) {
       return new Response(
@@ -194,8 +237,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log("Scraping reviews from:", formattedUrl);
-
     let reviews: ParsedReview[] = [];
     let platform: string;
 
@@ -203,32 +244,27 @@ Deno.serve(async (req) => {
       const appId = extractPlayStoreId(formattedUrl);
       if (!appId) {
         return new Response(
-          JSON.stringify({ success: false, error: "ID do app não encontrado na URL da Play Store. Exemplo: play.google.com/store/apps/details?id=com.exemplo.app" }),
+          JSON.stringify({ success: false, error: "ID do app não encontrado. Exemplo de URL válida: play.google.com/store/apps/details?id=com.exemplo.app" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      console.log(`Scraping Google Play: ${appId}`);
       reviews = await scrapeGooglePlay(appId);
       platform = "android";
     } else {
       const appId = extractAppStoreId(formattedUrl);
       if (!appId) {
         return new Response(
-          JSON.stringify({ success: false, error: "ID do app não encontrado na URL da App Store. Exemplo: apps.apple.com/br/app/nome-do-app/id123456789" }),
+          JSON.stringify({ success: false, error: "ID do app não encontrado. Exemplo de URL válida: apps.apple.com/br/app/nome/id123456789" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+      console.log(`Scraping App Store: ${appId}`);
       reviews = await scrapeAppStore(appId);
       platform = "ios";
     }
 
-    if (reviews.length === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Nenhum review encontrado. O app pode ter poucos reviews ou a loja pode estar bloqueando a consulta temporariamente." }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`Found ${reviews.length} reviews for platform: ${platform}`);
+    console.log(`Returning ${reviews.length} reviews for platform: ${platform}`);
 
     return new Response(
       JSON.stringify({ success: true, reviews, platform, count: reviews.length }),
