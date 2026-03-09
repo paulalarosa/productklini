@@ -20,6 +20,7 @@ import { EmpathyMapPage, BenchmarkPage, JTBDPage, CSDMatrixPage, HMWPage, Affini
 import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages/UXWritingPages";
 import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
 import { PrioritizationMatrixPage, SitemapPage } from "./pages/StrategyPages";
+import BusinessModelCanvasPage from "./pages/BusinessModelCanvasPage";
 import { ShareViewPage } from "./pages/ShareViewPage";
 import { InterviewTranscriberPage } from "./pages/InterviewPage";
 import { MicrocopyValidatorPage } from "./pages/MicrocopyValidatorPage";
