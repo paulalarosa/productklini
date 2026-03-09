@@ -15,7 +15,7 @@ import { DesignSystemHubPage } from "./pages/DesignSystemHubPage";
 import { KanbanPage, QAPage, TeamMetricsPage } from "./pages/DevPages";
 import { ConfigPage } from "./pages/ConfigPage";
 import { AIDesignStudioPage } from "./pages/AIStudioPage";
-import { ReportPage } from "./pages/ReportPage";
+import { ReportPage } from "./pages/ReportPage"; // kept for reference
 import { EmpathyMapPage, BenchmarkPage, JTBDPage, CSDMatrixPage, HMWPage, AffinityDiagramPage } from "./pages/DiscoveryPages";
 import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages/UXWritingPages";
 import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
