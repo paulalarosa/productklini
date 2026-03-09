@@ -305,6 +305,73 @@ DIRETRIZES:
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "create_jtbd",
+          description: "Cria um framework Jobs To Be Done (JTBD) estruturado.",
+          parameters: {
+            type: "object",
+            properties: {
+              job_statement: { type: "string" },
+              situation: { type: "string" },
+              motivation: { type: "string" },
+              expected_outcome: { type: "string" },
+            },
+            required: ["job_statement", "situation", "motivation", "expected_outcome"]
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_csd_matrix",
+          description: "Adiciona novos itens à Matriz CSD (Certezas, Suposições, Dúvidas).",
+          parameters: {
+            type: "object",
+            properties: {
+              items: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    category: { type: "string", enum: ["Certeza", "Suposição", "Dúvida"] },
+                    description: { type: "string" },
+                    impact_level: { type: "string", enum: ["Low", "Medium", "High"] },
+                  },
+                  required: ["category", "description", "impact_level"]
+                }
+              }
+            },
+            required: ["items"]
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_hmw",
+          description: "Cria perguntas How Might We (Como Poderíamos) para ideação.",
+          parameters: {
+            type: "object",
+            properties: {
+              questions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    problem_statement: { type: "string" },
+                    hmw_question: { type: "string" },
+                    priority: { type: "string", enum: ["P1", "P2", "P3"] },
+                  },
+                  required: ["problem_statement", "hmw_question", "priority"]
+                }
+              }
+            },
+            required: ["questions"]
+          },
+        },
+      },
     ];
 
     // ── First call: non-streaming to detect tool use ──────────────────
@@ -471,6 +538,32 @@ DIRETRIZES:
           insights: args.insights
         });
         actionsPerformed.push(`✅ Benchmark "${args.name}"`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_jtbd") {
+        await supabase.from("jtbd_frameworks").insert({
+          project_id: projectId,
+          job_statement: args.job_statement,
+          situation: args.situation,
+          motivation: args.motivation,
+          expected_outcome: args.expected_outcome
+        });
+        actionsPerformed.push(`✅ JTBD Framework`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_csd_matrix") {
+        const itemsToInsert = args.items.map((item: any) => ({
+          project_id: projectId,
+          ...item
+        }));
+        await supabase.from("csd_matrices").insert(itemsToInsert);
+        actionsPerformed.push(`✅ Matriz CSD (${args.items.length} itens)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_hmw") {
+        const questionsToInsert = args.questions.map((q: any) => ({
+          project_id: projectId,
+          ...q
+        }));
+        await supabase.from("hmw_questions").insert(questionsToInsert);
+        actionsPerformed.push(`✅ How Might We (${args.questions.length} perguntas)`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       }
     }
