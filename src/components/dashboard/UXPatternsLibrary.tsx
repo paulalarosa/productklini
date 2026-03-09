@@ -86,7 +86,7 @@ export function UXPatternsLibrary() {
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas as Categorias</SelectItem>
+                <SelectItem value="all">Todas as Categorias</SelectItem>
                 {PATTERN_CATEGORIES.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label}
