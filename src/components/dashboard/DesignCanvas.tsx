@@ -14,6 +14,7 @@ import { PresentationMode, PresentationButton } from "./PresentationMode";
 import { PrototypePlayer, HotspotEditor } from "./PrototypePlayer";
 import { AnimatePresence } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
+import { useGamificationActions } from "@/hooks/useGamificationActions";
 
 // ---- Types ----
 type ElementType = "rect" | "circle" | "text" | "line";
