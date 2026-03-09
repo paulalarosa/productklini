@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_experiments: {
+        Row: {
+          created_at: string
+          description: string
+          end_date: string | null
+          hypothesis: string
+          id: string
+          minimum_sample_size: number | null
+          name: string
+          project_id: string
+          start_date: string | null
+          statistical_significance: number | null
+          status: string
+          success_metrics: Json
+          targeting_rules: Json
+          traffic_allocation: number
+          updated_at: string
+          variants: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          hypothesis?: string
+          id?: string
+          minimum_sample_size?: number | null
+          name: string
+          project_id: string
+          start_date?: string | null
+          statistical_significance?: number | null
+          status?: string
+          success_metrics?: Json
+          targeting_rules?: Json
+          traffic_allocation?: number
+          updated_at?: string
+          variants?: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          end_date?: string | null
+          hypothesis?: string
+          id?: string
+          minimum_sample_size?: number | null
+          name?: string
+          project_id?: string
+          start_date?: string | null
+          statistical_significance?: number | null
+          status?: string
+          success_metrics?: Json
+          targeting_rules?: Json
+          traffic_allocation?: number
+          updated_at?: string
+          variants?: Json
+        }
+        Relationships: []
+      }
+      ab_results: {
+        Row: {
+          event_type: string
+          event_value: number | null
+          experiment_id: string
+          id: string
+          metadata: Json
+          recorded_at: string
+          user_session: string
+          variant_id: string
+        }
+        Insert: {
+          event_type: string
+          event_value?: number | null
+          experiment_id: string
+          id?: string
+          metadata?: Json
+          recorded_at?: string
+          user_session: string
+          variant_id: string
+        }
+        Update: {
+          event_type?: string
+          event_value?: number | null
+          experiment_id?: string
+          id?: string
+          metadata?: Json
+          recorded_at?: string
+          user_session?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_results_experiment_id_fkey"
+            columns: ["experiment_id"]
+            isOneToOne: false
+            referencedRelation: "ab_experiments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_messages: {
         Row: {
           content: string
