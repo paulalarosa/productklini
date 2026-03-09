@@ -10,7 +10,7 @@ import { useBenchmarks, useDeleteBenchmark } from "@/hooks/useBenchmark";
 import { useJTBD, useDeleteJTBD } from "@/hooks/useJTBD";
 import { useCSD, useDeleteCSD } from "@/hooks/useCSD";
 import { useHMW, useDeleteHMW } from "@/hooks/useHMW";
-import { useDocuments } from "@/hooks/useDocuments";
+import { useDocuments } from "@/hooks/useProjectData";
 import { DocumentManager } from "@/components/dashboard/DocumentManager";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";

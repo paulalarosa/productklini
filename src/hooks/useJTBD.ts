@@ -14,7 +14,7 @@ export function useJTBD(projectId?: string) {
     queryFn: async () => {
       if (!projectId) return [];
       const { data, error } = await supabase
-        .from("jtbd_frameworks")
+        .from("jtbd_frameworks" as any)
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -32,7 +32,7 @@ export function useJTBD(projectId?: string) {
       .channel("jtbd-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "jtbd_frameworks", filter: `project_id=eq.${projectId}` },
+        { event: "*", schema: "public", table: "jtbd_frameworks" as any, filter: `project_id=eq.${projectId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["jtbd", projectId] });
         }
@@ -53,7 +53,7 @@ export function useDeleteJTBD() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await supabase
-        .from("jtbd_frameworks")
+        .from("jtbd_frameworks" as any)
         .delete()
         .eq("id", id);
 

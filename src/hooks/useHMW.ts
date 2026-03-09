@@ -13,7 +13,7 @@ export function useHMW(projectId?: string) {
     queryFn: async () => {
       if (!projectId) return [];
       const { data, error } = await supabase
-        .from("hmw_questions")
+        .from("hmw_questions" as any)
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -31,7 +31,7 @@ export function useHMW(projectId?: string) {
       .channel("hmw-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "hmw_questions", filter: `project_id=eq.${projectId}` },
+        { event: "*", schema: "public", table: "hmw_questions" as any, filter: `project_id=eq.${projectId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["hmw", projectId] });
         }
@@ -52,7 +52,7 @@ export function useDeleteHMW() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await supabase
-        .from("hmw_questions")
+        .from("hmw_questions" as any)
         .delete()
         .eq("id", id);
 
