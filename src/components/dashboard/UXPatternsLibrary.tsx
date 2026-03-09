@@ -100,7 +100,7 @@ export function UXPatternsLibrary() {
                 <SelectValue placeholder="Tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os Tipos</SelectItem>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
                 {PATTERN_TYPES.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
