@@ -14,23 +14,12 @@ export function DashboardLayout() {
   const { data: project, isLoading } = useProject();
   const { data: tasks } = useTasks();
 
-  // Show setup wizard if project exists but has default name (just created)
+  // Show setup wizard only if no project exists (project is null after loading)
   useEffect(() => {
-    if (!isLoading && project && project.name === "Meu Projeto" && !project.description) {
+    if (!isLoading && !project) {
       setShowSetup(true);
     }
   }, [project, isLoading]);
-
-  // Close AI panel on mobile when navigating
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768 && aiOpen) {
-        // Keep panel but ensure it's full-screen on mobile
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [aiOpen]);
 
   const projectContext = {
     project: project ?? {},
@@ -58,7 +47,10 @@ export function DashboardLayout() {
       <DashboardSidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashboardHeader onToggleAI={() => setAiOpen(!aiOpen)} />
+        <DashboardHeader
+          onToggleAI={() => setAiOpen(!aiOpen)}
+          onCreateProject={() => setShowSetup(true)}
+        />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">
           <Outlet />
