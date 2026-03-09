@@ -266,6 +266,45 @@ DIRETRIZES:
           },
         },
       },
+      {
+        type: "function",
+        function: {
+          name: "create_benchmark",
+          description: "Realiza uma análise de benchmark competitiva estruturada.",
+          parameters: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              competitors: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    name: { type: "string" },
+                    strengths: { type: "array", items: { type: "string" } },
+                    weaknesses: { type: "array", items: { type: "string" } },
+                    url: { type: "string" },
+                  },
+                  required: ["name", "strengths", "weaknesses"]
+                }
+              },
+              features: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    feature: { type: "string" },
+                    competitors: { type: "object", description: "Map of competitor name to 'Yes' or 'No'" }
+                  },
+                  required: ["feature", "competitors"]
+                }
+              },
+              insights: { type: "array", items: { type: "string" } },
+            },
+            required: ["name", "competitors", "features", "insights"]
+          },
+        },
+      },
     ];
 
     // ── First call: non-streaming to detect tool use ──────────────────
@@ -422,6 +461,16 @@ DIRETRIZES:
           gains: args.gains
         });
         actionsPerformed.push(`✅ Mapa de Empatia "${args.persona_name}"`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_benchmark") {
+        await supabase.from("benchmarks").insert({
+          project_id: projectId,
+          name: args.name,
+          competitors: args.competitors,
+          features: args.features,
+          insights: args.insights
+        });
+        actionsPerformed.push(`✅ Benchmark "${args.name}"`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       }
     }

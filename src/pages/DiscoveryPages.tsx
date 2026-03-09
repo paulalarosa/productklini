@@ -1,7 +1,11 @@
-import { Heart } from "lucide-react";
+import { Heart, BarChart3, Briefcase, Grid3X3, HelpCircle, Lightbulb } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { EmpathyMapCard } from "@/components/dashboard/EmpathyMapCard";
+import { BenchmarkCard } from "@/components/dashboard/BenchmarkCard";
 import { useEmpathyMaps, useDeleteEmpathyMap } from "@/hooks/useEmpathyMap";
+import { useBenchmarks, useDeleteBenchmark } from "@/hooks/useBenchmark";
+import { useDocuments } from "@/hooks/useDocuments";
+import { DocumentManager } from "@/components/dashboard/DocumentManager";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -41,10 +45,36 @@ export function EmpathyMapPage() {
 }
 
 export function BenchmarkPage() {
-  const { data: docs } = useDocuments("benchmark");
+  const { id: projectId } = useParams();
+  const { data: benchmarks, isLoading } = useBenchmarks(projectId);
+  const { mutate: deleteBenchmark } = useDeleteBenchmark();
+
+  const handleDelete = (id: string) => {
+    if (!projectId) return;
+    deleteBenchmark({ id, projectId }, {
+      onSuccess: () => toast.success("Benchmark excluído"),
+    });
+  };
+
   return (
-    <ModulePage title="Benchmark" subtitle="Análise competitiva e referências de mercado" icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}>
-      <DocumentManager documents={docs ?? []} docType="benchmark" docTypeLabel="Análise de Benchmark" emptyIcon={<BarChart3 className="w-10 h-10 text-muted-foreground/30 mx-auto" />} emptyMessage="Nenhuma análise de benchmark criada" />
+    <ModulePage 
+      title="Benchmark" 
+      subtitle="Análise competitiva e referências de mercado" 
+      icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {benchmarks?.map((b) => (
+          <BenchmarkCard key={b.id} benchmark={b} onDelete={handleDelete} />
+        ))}
+        
+        {!isLoading && (!benchmarks || benchmarks.length === 0) && (
+          <div className="col-span-full py-20 text-center border-2 border-dashed border-muted rounded-xl">
+            <BarChart3 className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-1">Análise Vazia</h3>
+            <p className="text-sm text-muted-foreground mb-6">Peça ao Mentor IA para realizar uma análise de benchmark para seu projeto.</p>
+          </div>
+        )}
+      </div>
     </ModulePage>
   );
 }
