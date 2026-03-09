@@ -20,6 +20,7 @@ import { EmpathyMapPage, BenchmarkPage, JTBDPage, CSDMatrixPage, HMWPage, Affini
 import { ToneOfVoicePage, MicrocopyLibraryPage, ContentAuditPage } from "./pages/UXWritingPages";
 import { HeuristicEvalPage, UsabilityTestPage, WCAGChecklistPage } from "./pages/ValidationPages";
 import { PrioritizationMatrixPage, SitemapPage } from "./pages/StrategyPages";
+import BusinessModelCanvasPage from "./pages/BusinessModelCanvasPage";
 import { ShareViewPage } from "./pages/ShareViewPage";
 import { InterviewTranscriberPage } from "./pages/InterviewPage";
 import { MicrocopyValidatorPage } from "./pages/MicrocopyValidatorPage";
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="/ixd/task-flows" element={<TaskFlowsPage />} />
               <Route path="/strategy/prioritization" element={<PrioritizationMatrixPage />} />
               <Route path="/strategy/sitemap" element={<SitemapPage />} />
+              <Route path="/strategy/business-model" element={<BusinessModelCanvasPage />} />
               <Route path="/ui/design-system" element={<DesignSystemPage />} />
               <Route path="/ui/telas" element={<TelasPage />} />
               <Route path="/ui/ds-hub" element={<DesignSystemHubPage />} />
