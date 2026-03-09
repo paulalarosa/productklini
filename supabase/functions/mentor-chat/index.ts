@@ -2,8 +2,58 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Convert Anthropic SSE stream → OpenAI-compatible SSE stream
+// so the existing frontend (which expects OpenAI format) keeps working.
+async function anthropicToOpenAIStream(anthropicStream: ReadableStream<Uint8Array>): Promise<ReadableStream<Uint8Array>> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      const reader = anthropicStream.getReader();
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let newlineIdx: number;
+          while ((newlineIdx = buffer.indexOf("\n")) !== -1) {
+            const line = buffer.slice(0, newlineIdx).replace(/\r$/, "");
+            buffer = buffer.slice(newlineIdx + 1);
+
+            if (!line.startsWith("data:")) continue;
+            const jsonStr = line.slice(5).trim();
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+
+            try {
+              const evt = JSON.parse(jsonStr);
+              if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+                const openaiChunk = {
+                  choices: [{ delta: { content: evt.delta.text }, finish_reason: null }],
+                };
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
+              } else if (evt.type === "message_stop") {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              }
+            } catch {
+              // skip malformed lines
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+        controller.close();
+      }
+    },
+  });
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -11,7 +61,9 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -22,21 +74,37 @@ Deno.serve(async (req) => {
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const { messages, projectContext } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const body = await req.json().catch(() => ({}));
+    const { messages, projectContext, project_id: bodyProjectId } = body;
 
-    // Get user's project ID for tool execution
-    const { data: projectRow } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
-    const projectId = projectRow?.id;
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) {
+      return new Response(JSON.stringify({ 
+        error: "ANTHROPIC_API_KEY não configurada", 
+        details: "Adicione em Project Settings > Edge Functions > Secrets.",
+        debug_tag: "v0.2.4"
+      }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Standardize projectId retrieval
+    let projectId = bodyProjectId;
+    if (!projectId) {
+      const { data: projectRow } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      projectId = projectRow?.id;
+    }
 
     const systemPrompt = `Você é o "Mentor IA" de um Dashboard de Ciclo de Vida de Produto Digital. Você ajuda equipes de produto com análise de gargalos, checklists de QA, acessibilidade (WCAG), sugestões de handoff Design→Dev, e análise de métricas UX.
 
@@ -50,166 +118,143 @@ Diretrizes:
 - Quando identificar gargalos, sugira ações concretas
 - Considere as fases do Double Diamond (Descobrir, Definir, Desenvolver, Entregar)
 - Priorize recomendações acionáveis
-- Quando o usuário pedir para criar tarefas, personas ou documentos, USE AS FERRAMENTAS DISPONÍVEIS para criá-los diretamente no banco de dados
+- Quando o usuário pedir para criar tarefas, personas ou documentos, USE AS FERRAMENTAS DISPONÍVEIS
 - Após usar uma ferramenta, confirme o que foi criado com uma mensagem amigável`;
 
+    // Anthropic tools format
     const tools = [
       {
-        type: "function",
-        function: {
-          name: "create_tasks",
-          description: "Cria uma ou mais tarefas no projeto. Use quando o usuário pedir para criar, sugerir ou adicionar tarefas.",
-          parameters: {
-            type: "object",
-            properties: {
-              tasks: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string", description: "Título da tarefa" },
-                    module: { type: "string", enum: ["ux", "ui", "dev"], description: "Módulo: ux, ui ou dev" },
-                    phase: { type: "string", enum: ["discovery", "define", "develop", "deliver"], description: "Fase do Double Diamond" },
-                    priority: { type: "string", enum: ["low", "medium", "high", "urgent"], description: "Prioridade" },
-                    estimated_days: { type: "number", description: "Dias estimados" },
-                  },
-                  required: ["title", "module", "phase"],
-                  additionalProperties: false,
+        name: "create_tasks",
+        description: "Cria uma ou mais tarefas no projeto. Use quando o usuário pedir para criar, sugerir ou adicionar tarefas.",
+        input_schema: {
+          type: "object",
+          properties: {
+            tasks: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string", description: "Título da tarefa" },
+                  module: { type: "string", enum: ["ux", "ui", "dev"], description: "Módulo" },
+                  phase: { type: "string", enum: ["discovery", "define", "develop", "deliver"], description: "Fase do Double Diamond" },
+                  priority: { type: "string", enum: ["low", "medium", "high", "urgent"], description: "Prioridade" },
+                  estimated_days: { type: "number", description: "Dias estimados" },
                 },
+                required: ["title", "module", "phase"],
               },
             },
-            required: ["tasks"],
-            additionalProperties: false,
           },
+          required: ["tasks"],
         },
       },
       {
-        type: "function",
-        function: {
-          name: "create_personas",
-          description: "Cria uma ou mais personas no projeto. Use quando o usuário pedir para gerar ou adicionar personas.",
-          parameters: {
-            type: "object",
-            properties: {
-              personas: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    name: { type: "string", description: "Nome da persona" },
-                    role: { type: "string", description: "Perfil/papel da persona" },
-                    goals: { type: "array", items: { type: "string" }, description: "Objetivos" },
-                    pain_points: { type: "array", items: { type: "string" }, description: "Dores/frustrações" },
-                  },
-                  required: ["name", "role"],
-                  additionalProperties: false,
+        name: "create_personas",
+        description: "Cria uma ou mais personas no projeto.",
+        input_schema: {
+          type: "object",
+          properties: {
+            personas: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  role: { type: "string" },
+                  goals: { type: "array", items: { type: "string" } },
+                  pain_points: { type: "array", items: { type: "string" } },
                 },
+                required: ["name"],
               },
             },
-            required: ["personas"],
-            additionalProperties: false,
           },
+          required: ["personas"],
         },
       },
       {
-        type: "function",
-        function: {
-          name: "create_document",
-          description: "Cria um documento de projeto (insight, plano de pesquisa, mapa de jornada, etc). Use quando o usuário pedir para documentar algo ou gerar documentação.",
-          parameters: {
-            type: "object",
-            properties: {
-              title: { type: "string", description: "Título do documento" },
-              doc_type: { type: "string", enum: ["research_plan", "journey_map", "insights_summary", "ds_foundation", "dev_handoff"], description: "Tipo de documento" },
-              content: { type: "string", description: "Conteúdo em Markdown" },
-            },
-            required: ["title", "doc_type", "content"],
-            additionalProperties: false,
+        name: "create_document",
+        description: "Cria um documento no projeto.",
+        input_schema: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            doc_type: { type: "string" },
+            content: { type: "string" },
           },
+          required: ["title", "doc_type", "content"],
         },
       },
     ];
 
-    // First AI call with tools
-    const firstResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // ── First call: non-streaming, check for tool use ─────────────────
+    const firstResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 2048,
+        system: systemPrompt,
         tools,
-        stream: false,
+        messages,
       }),
     });
 
     if (!firstResponse.ok) {
-      if (firstResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit excedido. Tente novamente em alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (firstResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes. Adicione créditos ao workspace." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await firstResponse.text();
-      console.error("AI gateway error:", firstResponse.status, t);
-      return new Response(JSON.stringify({ error: "Erro no gateway de IA" }), {
+      const errText = await firstResponse.text();
+      console.error("Anthropic error:", firstResponse.status, errText);
+      return new Response(JSON.stringify({ 
+        error: "Erro no serviço de IA", 
+        details: errText, 
+        status: firstResponse.status,
+        debug_tag: "v0.2.4"
+      }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const firstData = await firstResponse.json();
-    const choice = firstData.choices?.[0];
-    const toolCalls = choice?.message?.tool_calls;
+    const toolUseBlocks = firstData.content?.filter((b: { type: string }) => b.type === "tool_use") ?? [];
 
-    // If no tool calls, stream the response directly
-    if (!toolCalls || toolCalls.length === 0) {
-      // Re-do the call with streaming (no tools this time since it decided not to use them)
-      const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // ── No tool calls → stream the response directly ──────────────────
+    if (toolUseBlocks.length === 0) {
+      const streamResponse = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.0-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages,
-          ],
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages,
           stream: true,
         }),
       });
 
-      return new Response(streamResponse.body, {
+      if (!streamResponse.body) {
+        throw new Error("No response body from Anthropic stream");
+      }
+
+      const converted = await anthropicToOpenAIStream(streamResponse.body);
+      return new Response(converted, {
         headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
       });
     }
 
-    // Execute tool calls
-    const toolResults: { tool_call_id: string; role: "tool"; content: string }[] = [];
-    const actionsPerformed: string[] = [];
+    // ── Execute tool calls ────────────────────────────────────────────
+    const toolResults: { type: "tool_result"; tool_use_id: string; content: string }[] = [];
 
-    for (const tc of toolCalls) {
-      const fnName = tc.function.name;
-      let args: Record<string, unknown>;
-      try {
-        args = JSON.parse(tc.function.arguments);
-      } catch {
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Erro ao interpretar argumentos" });
-        continue;
-      }
+    for (const tc of toolUseBlocks) {
+      const fnName = tc.name as string;
+      const args = tc.input as Record<string, unknown>;
 
       if (!projectId) {
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Projeto não encontrado" });
+        toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: "Projeto não encontrado" });
         continue;
       }
 
@@ -227,10 +272,9 @@ Diretrizes:
         }));
         const { error } = await supabase.from("tasks").insert(toInsert);
         if (error) {
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
+          toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: `Erro: ${error.message}` });
         } else {
-          actionsPerformed.push(`✅ ${tasks.length} tarefa(s) criada(s)`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${tasks.length} tarefas criadas com sucesso: ${tasks.map((t) => t.title).join(", ")}` });
+          toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: `${tasks.length} tarefas criadas com sucesso` });
         }
       } else if (fnName === "create_personas") {
         const personas = (args.personas as { name: string; role?: string; goals?: string[]; pain_points?: string[] }[]) ?? [];
@@ -243,10 +287,9 @@ Diretrizes:
         }));
         const { error } = await supabase.from("personas").insert(toInsert);
         if (error) {
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
+          toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: `Erro: ${error.message}` });
         } else {
-          actionsPerformed.push(`✅ ${personas.length} persona(s) criada(s)`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `${personas.length} personas criadas: ${personas.map((p) => p.name).join(", ")}` });
+          toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: `${personas.length} personas criadas com sucesso` });
         }
       } else if (fnName === "create_document") {
         const { error } = await supabase.from("project_documents").insert({
@@ -258,82 +301,55 @@ Diretrizes:
           metadata: { generated_by: "mentor-ia", generated_at: new Date().toISOString() },
         });
         if (error) {
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Erro: ${error.message}` });
+          toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: `Erro: ${error.message}` });
         } else {
-          actionsPerformed.push(`✅ Documento "${args.title}" criado`);
-          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `Documento "${args.title}" criado com sucesso` });
+          toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: `Documento "${args.title}" criado com sucesso` });
         }
       } else {
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Ferramenta desconhecida" });
+        toolResults.push({ type: "tool_result", tool_use_id: tc.id, content: "Ferramenta desconhecida" });
       }
     }
 
-    // Second AI call: send tool results and stream final response
+    // ── Second call: send tool results and stream final response ──────
     const followUpMessages = [
-      { role: "system", content: systemPrompt },
       ...messages,
-      choice.message, // assistant message with tool_calls
-      ...toolResults,
+      { role: "assistant", content: firstData.content }, // assistant message with tool_use blocks
+      { role: "user", content: toolResults },             // tool results
     ];
 
-    const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const finalResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 2048,
+        system: systemPrompt,
         messages: followUpMessages,
         stream: true,
       }),
     });
 
-    if (!finalResponse.ok) {
-      // Return the actions summary as fallback
-      const summary = actionsPerformed.length > 0
-        ? `Ações realizadas:\n${actionsPerformed.join("\n")}`
-        : "Não foi possível gerar a resposta final.";
-      
-      const encoder = new TextEncoder();
-      const sseData = `data: ${JSON.stringify({ choices: [{ delta: { content: summary } }] })}\n\ndata: [DONE]\n\n`;
-      return new Response(encoder.encode(sseData), {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
+    if (!finalResponse.body) {
+      throw new Error("No response body from final Anthropic stream");
     }
 
-    // Prepend action badges to the stream
-    if (actionsPerformed.length > 0) {
-      const actionPrefix = actionsPerformed.join(" | ") + "\n\n";
-      const prefixSSE = `data: ${JSON.stringify({ choices: [{ delta: { content: actionPrefix } }] })}\n\n`;
-      const encoder = new TextEncoder();
-      const prefixBytes = encoder.encode(prefixSSE);
-
-      const reader = finalResponse.body!.getReader();
-      const stream = new ReadableStream({
-        async start(controller) {
-          controller.enqueue(prefixBytes);
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-          controller.close();
-        },
-      });
-
-      return new Response(stream, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-      });
-    }
-
-    return new Response(finalResponse.body, {
+    const converted = await anthropicToOpenAIStream(finalResponse.body);
+    return new Response(converted, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
+
   } catch (e) {
-    console.error("chat error:", e);
-    const errorMessage = e instanceof Error ? e.message : "Erro desconhecido";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    console.error("mentor-chat error:", e);
+    return new Response(JSON.stringify({ 
+      error: "Erro interno", 
+      details: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+      debug_tag: "v0.2.4"
+    }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

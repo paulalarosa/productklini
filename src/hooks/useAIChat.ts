@@ -48,12 +48,14 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
 
       try {
         const headers = await getAuthHeaders();
+        const projectId = await getProjectId();
         const resp = await fetch(CHAT_URL, {
           method: "POST",
           headers,
           body: JSON.stringify({
             messages: updatedMessages,
             projectContext,
+            project_id: projectId,
           }),
         });
 
