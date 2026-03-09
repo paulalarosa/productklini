@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { 
   Eye, Code, Lightbulb, TrendingUp, Users, Copy, ExternalLink,
-  Brain, Target, CheckCircle, Star, Clock 
+  Brain, Target, CheckCircle, Star, Clock, Smartphone 
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
