@@ -159,11 +159,11 @@ DIRETRIZES:
         type: "function",
         function: {
           name: "create_document",
-          description: "Cria um documento de projeto. Use para preencher painéis de Discovery, UX Writing, Strategy, etc.",
+          description: "Cria um documento de projeto (slugs: empathy_map, csd_matrix, jtbd, journey_map, etc).",
           parameters: {
             type: "object",
             properties: {
-              title: { type: "string", description: "Título do documento" },
+              title: { type: "string" },
               doc_type: { 
                 type: "string", 
                 enum: [
@@ -171,13 +171,79 @@ DIRETRIZES:
                   "empathy_map", "benchmark", "jtbd", "csd_matrix", "hmw", "affinity_diagram",
                   "tone_of_voice", "microcopy_library", "content_audit", "heuristic_evaluation",
                   "usability_test", "wcag_checklist", "prioritization_matrix", "sitemap", 
-                  "component_states", "task_flows"
-                ],
-                description: "Tipo de documento (slug)" 
+                  "component_states", "task_flows", "interview_analysis"
+                ] 
               },
-              content: { type: "string", description: "Conteúdo completo em Markdown" },
+              content: { type: "string", description: "Conteúdo Markdown" },
             },
             required: ["title", "doc_type", "content"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_bmc",
+          description: "Cria um Business Model Canvas estruturado.",
+          parameters: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              value_propositions: { type: "array", items: { type: "string" } },
+              customer_segments: { type: "array", items: { type: "string" } },
+              customer_relationships: { type: "array", items: { type: "string" } },
+              channels: { type: "array", items: { type: "string" } },
+              key_activities: { type: "array", items: { type: "string" } },
+              key_resources: { type: "array", items: { type: "string" } },
+              key_partners: { type: "array", items: { type: "string" } },
+              cost_structure: { type: "array", items: { type: "string" } },
+              revenue_streams: { type: "array", items: { type: "string" } },
+            },
+            required: ["name", "value_propositions", "customer_segments"]
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_ux_metrics",
+          description: "Define métricas de UX para o projeto.",
+          parameters: {
+            type: "object",
+            properties: {
+              metrics: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    metric_name: { type: "string" },
+                    score: { type: "number" },
+                    description: { type: "string" },
+                    category: { type: "string" },
+                  },
+                  required: ["metric_name", "score", "category"],
+                },
+              },
+            },
+            required: ["metrics"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_ux_research",
+          description: "Registra uma pesquisa de UX realizada.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              research_type: { type: "string" },
+              summary: { type: "string" },
+              participants: { type: "number" },
+              findings: { type: "array", items: { type: "string" } },
+            },
+            required: ["title", "research_type", "summary"],
           },
         },
       },
@@ -283,6 +349,47 @@ DIRETRIZES:
           ai_generated: true
         });
         actionsPerformed.push(`✅ Doc "${args.title}"`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_bmc") {
+        await supabase.from("business_model_canvas").insert({
+          project_id: projectId,
+          name: args.name,
+          value_propositions: args.value_propositions,
+          customer_segments: args.customer_segments,
+          customer_relationships: args.customer_relationships || [],
+          channels: args.channels || [],
+          key_activities: args.key_activities || [],
+          key_resources: args.key_resources || [],
+          key_partners: args.key_partners || [],
+          cost_structure: args.cost_structure || [],
+          revenue_streams: args.revenue_streams || [],
+          status: "draft"
+        });
+        actionsPerformed.push(`✅ BMC "${args.name}"`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_ux_metrics") {
+        const metrics = args.metrics ?? [];
+        const toInsert = metrics.map((m: any) => ({
+          project_id: projectId,
+          metric_name: m.metric_name,
+          score: m.score,
+          description: m.description,
+          category: m.category
+        }));
+        await supabase.from("ux_metrics").insert(toInsert);
+        actionsPerformed.push(`✅ ${metrics.length} métricas`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_ux_research") {
+        await supabase.from("ux_research").insert({
+          project_id: projectId,
+          title: args.title,
+          research_type: args.research_type,
+          summary: args.summary,
+          participants: args.participants || 0,
+          findings: args.findings || [],
+          conducted_at: new Date().toISOString()
+        });
+        actionsPerformed.push(`✅ Pesquisa "${args.title}"`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       }
     }
