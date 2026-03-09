@@ -32,6 +32,7 @@ const navGroups: NavGroup[] = [
       { label: "Matriz CSD", icon: Grid3X3, path: "/ux/csd" },
       { label: "How Might We", icon: HelpCircle, path: "/ux/hmw" },
       { label: "Afinidade", icon: Lightbulb, path: "/ux/affinity" },
+      { label: "Behavior Model", icon: BrainCircuit, path: "/ux/behavior-model" },
       { label: "Fluxos de Jornada", icon: Route, path: "/ux/fluxos" },
     ],
   },
