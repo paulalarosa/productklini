@@ -5,6 +5,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  current_phase?: string;
+  progress?: number;
+}
+
+interface Persona {
+  name: string;
+  role: string;
+  goals: string[];
+  pain_points: string[];
+}
+
+interface Task {
+  module: string;
+  phase: string;
+  title: string;
+  status: string;
+  priority: string;
+}
+
+interface UxMetric {
+  metric_name: string;
+  score: number;
+  previous_score?: number;
+}
+
+interface ProjectDoc {
+  doc_type: string;
+  title: string;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -36,30 +70,37 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { doc_type, project_id } = body;
 
-    if (!doc_type || !project_id) {
-      return new Response(JSON.stringify({ error: "Parâmetros ausentes: doc_type ou project_id" }), {
+    if (!doc_type) {
+      return new Response(JSON.stringify({ error: "Parâmetro ausente: doc_type" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch project context
+    if (!project_id || project_id.trim() === "") {
+      return new Response(JSON.stringify({ error: "Nenhum projeto selecionado", details: "Crie ou selecione um projeto no painel lateral antes de gerar documentos." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch project context - use .maybeSingle() to avoid PGRST116 when ID is invalid
     const [projectRes, personasRes, tasksRes, metricsRes, docsRes] = await Promise.all([
-      supabase.from("projects").select("*").eq("id", project_id).single(),
+      supabase.from("projects").select("*").eq("id", project_id).maybeSingle(),
       supabase.from("personas").select("*").eq("project_id", project_id),
       supabase.from("tasks").select("*").eq("project_id", project_id),
       supabase.from("ux_metrics").select("*").eq("project_id", project_id),
       supabase.from("project_documents").select("*").eq("project_id", project_id),
     ]);
 
-    const project = projectRes.data;
+    const project = projectRes.data as Project | null;
     const personas = personasRes.data ?? [];
     const tasks = tasksRes.data ?? [];
     const metrics = metricsRes.data ?? [];
     const docs = docsRes.data ?? [];
 
     if (!project) {
-      return new Response(JSON.stringify({ error: "Projeto não encontrado" }), {
+      return new Response(JSON.stringify({ error: "Projeto não encontrado", details: "O ID do projeto fornecido não existe ou você não tem permissão." }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -117,6 +158,10 @@ ${(docs || []).map((d: any) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`)
         title: "Jobs To Be Done",
         systemPrompt: `Você é um Product Strategist sênior. Gere um framework JTBD em PT-BR: 1. Contexto 2. Job Statements (5-8) 3. Job Map 4. Outcome Expectations 5. Underserved Needs 6. Switching Triggers 7. Hiring Criteria. Formate em Markdown.`,
       },
+      jtbd_v2: {
+        title: "Framework JTBD Progressivo",
+        systemPrompt: `Você é um estrategista de produto especializado em Clayton Christensen. Gere um framework JTBD em PT-BR focado em "Push & Pull forces". 1. Job Principal 2. Jobs Funcionais, Sociais e Emocionais 3. Job Map (da identificação à conclusão) 4. Circumstances of Use 5. Competition (Direct & Status Quo) 6. Progress Measures.`,
+      },
       csd_matrix: {
         title: "Matriz CSD",
         systemPrompt: `Você é um UX Researcher / Product Owner sênior. Gere uma Matriz CSD em PT-BR: 1. CERTEZAS (8-12) 2. SUPOSIÇÕES (8-12, por risco) 3. DÚVIDAS (8-12) 4. Plano de Validação 5. Priorização. Formate em Markdown com tabelas.`,
@@ -171,7 +216,7 @@ ${(docs || []).map((d: any) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`)
       },
       interview_analysis: {
         title: "Análise de Entrevista",
-        systemPrompt: `Você é um UX Researcher sênior. Gere um template de análise de entrevista em PT-BR com: Pain Points, Insights, Citações-Chave, Padrões Comportamentais, Oportunidades de Design, Bandeiras Vermelhas. Formate em Markdown.`,
+        systemPrompt: `Você é um UX Researcher sênior. Gere um template de análise de entrevista em PT-BR with: Pain Points, Insights, Citações-Chave, Padrões Comportamentais, Oportunidades de Design, Bandeiras Vermelhas. Formate em Markdown.`,
       },
     };
 
@@ -246,7 +291,7 @@ ${(docs || []).map((d: any) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`)
         metadata: { generated_at: new Date().toISOString(), model: "gemini-2.0-flash" },
       })
       .select()
-      .single();
+      .maybeSingle(); // maybeSingle is safer in case of unexpected count
 
     if (insertError) {
       console.error("Insert error:", insertError);
@@ -265,7 +310,7 @@ ${(docs || []).map((d: any) => `- [${d.doc_type || "N/A"}] ${d.title || "N/A"}`)
     return new Response(JSON.stringify({
       error: "Erro interno",
       details: e instanceof Error ? e.message : String(e),
-      debug_tag: "v0.3.0",
+      debug_tag: "v0.3.4",
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

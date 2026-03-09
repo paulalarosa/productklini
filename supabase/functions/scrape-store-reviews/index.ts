@@ -92,8 +92,8 @@ async function scrapeGooglePlay(appId: string): Promise<ParsedReview[]> {
     id: appId,
     reviewType: "0",
     pageNum: "0",
-    hl: "pt_BR",
-    gl: "BR",
+    hl: "en",
+    gl: "us",
   });
 
   const resp = await fetch(url, {
