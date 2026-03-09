@@ -60,6 +60,11 @@ export function DashboardLayout() {
         projectContext={projectContext}
       />
 
+      <GamificationPanel
+        isOpen={gamificationOpen}
+        onToggle={() => setGamificationOpen(!gamificationOpen)}
+      />
+
       {showSetup && (
         <ProjectSetupWizard onComplete={() => setShowSetup(false)} />
       )}
