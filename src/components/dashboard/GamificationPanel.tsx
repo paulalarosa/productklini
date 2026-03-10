@@ -75,7 +75,7 @@ export const GamificationPanel = forwardRef<HTMLDivElement, GamificationPanelPro
       <motion.div
         initial={{ x: "100%" }}
         animate={{ x: "calc(100% - 48px)" }}
-        className="fixed right-0 top-1/2 -translate-y-1/2 z-30 hidden md:block"
+        className="fixed right-0 top-1/2 -translate-y-1/2 z-30"
       >
         <Button
           onClick={onToggle}
@@ -104,7 +104,7 @@ export const GamificationPanel = forwardRef<HTMLDivElement, GamificationPanelPro
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ duration: 0.2, ease: "easeOut" }}
-        className="fixed right-0 top-0 h-[100dvh] w-full max-w-[320px] bg-background border-l shadow-2xl z-50 flex flex-col"
+        className="fixed right-0 top-0 h-[100dvh] w-full sm:w-[320px] max-w-full bg-background border-l shadow-2xl z-50 flex flex-col"
       >
         <div className="flex items-center justify-between p-3 md:p-4 border-b shrink-0">
           <div className="flex items-center gap-2">

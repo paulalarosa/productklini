@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -132,32 +133,29 @@ async function scrapeGooglePlayWithFirecrawl(appId: string): Promise<ParsedRevie
     },
     body: JSON.stringify({
       url: playUrl,
-      formats: [
-        "markdown",
-        {
-          type: "json",
-          prompt:
-            "Extract all user reviews from this Google Play Store app page. For each review, extract: the author name, the review text content, and the star rating (1-5). Return an array of objects with keys: author, text, stars.",
-          schema: {
-            type: "object",
-            properties: {
-              reviews: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    author: { type: "string" },
-                    text: { type: "string" },
-                    stars: { type: "number" },
-                  },
-                  required: ["author", "text", "stars"],
+      formats: ["markdown", "extract"],
+      extract: {
+        prompt:
+          "Extract all user reviews from this Google Play Store app page. For each review, extract: the author name, the review text content, and the star rating (1-5). Return an array of objects with keys: author, text, stars.",
+        schema: {
+          type: "object",
+          properties: {
+            reviews: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  author: { type: "string" },
+                  text: { type: "string" },
+                  stars: { type: "number" },
                 },
+                required: ["author", "text", "stars"],
               },
             },
-            required: ["reviews"],
           },
+          required: ["reviews"],
         },
-      ],
+      },
       waitFor: 5000,
     }),
   });
@@ -175,7 +173,7 @@ async function scrapeGooglePlayWithFirecrawl(appId: string): Promise<ParsedRevie
   console.log("Firecrawl response keys:", Object.keys(data?.data || data || {}));
 
   // Try JSON extraction first
-  const jsonData = data?.data?.json || data?.json;
+  const jsonData = data?.data?.extract || data?.extract || data?.data?.json || data?.json;
   if (jsonData?.reviews && Array.isArray(jsonData.reviews) && jsonData.reviews.length > 0) {
     console.log(`Found ${jsonData.reviews.length} reviews via JSON extraction`);
     return jsonData.reviews

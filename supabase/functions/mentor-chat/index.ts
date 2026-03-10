@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -129,18 +130,18 @@ DIRETRIZES:
   - Bug/QA → use create_qa_bug (insere na tabela qa_bugs)
 - Use create_document APENAS para documentos genéricos que não têm tabela própria.
 
-FORMATO DE AÇÃO OBRIGATÓRIO:
-Quando precisar usar uma ferramenta, você DEVE usar function calling. Se por algum motivo function calling não funcionar, use EXATAMENTE este formato no seu texto (uma chamada por bloco):
+FORMATO DE AÇÃO OBRIGATÓRIO E AUTONOMIA DENTRO DO PAINEL:
+Você tem acesso DIRETO aos painéis do cliente e deve inserir o conteúdo DIRETAMENTE neles.
+É ESTRITAMENTE PROIBIDO retornar o conteúdo do framework de UX (ex: JTBD, Personas, BMC) apenas como texto markdown nas suas mensagens.
+Você DEVE SEMPRE usar as ferramentas (function calling) necessárias para popular os painéis de forma estruturada.
+
+Se por algum motivo function calling nativo falhar, use EXATAMENTE este formato no seu texto (uma chamada por bloco) para processamento em fallback:
 
 <tool_call>
 {"name": "nome_da_ferramenta", "arguments": {"chave": "valor"}}
 </tool_call>
 
-Exemplo para JTBD:
-<tool_call>
-{"name": "create_jtbd", "arguments": {"job_statement": "...", "situation": "...", "motivation": "...", "expected_outcome": "..."}}
-</tool_call>
-
+Para documentos textuais gigantes (Planos de Pesquisa, Guias de Tom de Voz) você DEVE delegar a criação usando a ferramenta \`generate_document_with_ai\`.
 NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JTBDs, faça 3 chamadas separadas.
 - Sempre tente preencher o máximo de informações técnicas possíveis baseado no contexto que você tem.
 - Quando gerar benchmarks, inclua concorrentes reais do mercado com análises detalhadas.
@@ -647,6 +648,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
 
     // ── Fallback: parse tool calls from text if model didn't use function calling ──
     const validToolNames = new Set([
+      "update_task", "update_project_phase", "generate_document_with_ai",
       "create_tasks", "create_personas", "create_document", "create_bmc",
       "create_ux_metrics", "create_ux_research", "create_empathy_map",
       "create_benchmark", "create_jtbd", "create_csd_matrix", "create_hmw",
@@ -753,7 +755,47 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
         continue;
       }
 
-      if (fnName === "create_tasks") {
+      if (fnName === "update_task") {
+        const { error: dbErr } = await supabase.from("tasks")
+          .update({ status: args.status, priority: args.priority })
+          .eq("id", args.task_id);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro em update_task: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Status de tarefa (ID: ${args.task_id}) atualizado`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
+      } else if (fnName === "update_project_phase") {
+        const payload: any = { current_phase: args.current_phase };
+        if (args.progress !== undefined) payload.progress = args.progress;
+        const { error: dbErr } = await supabase.from("projects")
+          .update(payload)
+          .eq("id", projectId);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro em update_project_phase: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Fase do projeto avançada para: ${args.current_phase}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
+      } else if (fnName === "generate_document_with_ai") {
+        // Triggers the heavy generating endpoint asynchronously so we don't block chat streaming
+        fetch(`${supabaseUrl}/functions/v1/generate-docs`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${supabaseAnonKey}`, // Must dispatch as anon to trigger internal function, or forward standard auth
+          },
+          body: JSON.stringify({
+            doc_type: args.doc_type,
+            project_id: projectId
+          })
+        }).catch(err => console.error("Async trigger generate-docs err:", err));
+        
+        actionsPerformed.push(`✅ Solicitação despachada para gerar o documento extenso: ${args.doc_type}. (Vai demorar uns 15 segs e aparecerá no Drive automaticamente)`);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+      } else if (fnName === "create_tasks") {
         const tasks = (args.tasks as TaskArg[]) ?? [];
         const toInsert = tasks.map((t) => ({
           project_id: projectId,

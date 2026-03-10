@@ -185,7 +185,7 @@ function StagingArea({
                 Alterado via MCP
               </span>
             </div>
-            <div className="grid grid-cols-2 divide-x divide-border text-[11px]">
+            <div className="flex flex-col md:grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border text-[11px]">
               <div className="p-3">
                 <span className="text-[10px] font-semibold text-destructive/70 uppercase tracking-wider mb-1 block">Antigo</span>
                 <pre className="whitespace-pre-wrap text-muted-foreground font-mono leading-relaxed">{item.oldCode}</pre>

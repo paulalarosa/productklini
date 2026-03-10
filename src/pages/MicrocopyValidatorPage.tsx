@@ -42,11 +42,11 @@ export function MicrocopyValidatorPage() {
     <ModulePage title="Validador de Microcopy" subtitle="Cole textos da interface e a IA analisa e sugere melhorias" icon={<Type className="w-4 h-4 text-primary-foreground" />}>
       <div className="space-y-6">
         <div className="glass-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-foreground">Textos para Análise</h3>
             <button onClick={async () => {
               try { setText(await navigator.clipboard.readText()); toast.success("Colado!"); } catch { toast.error("Erro ao colar"); }
-            }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+            }} className="flex items-center justify-center sm:justify-start w-full sm:w-auto gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
               <ClipboardPaste className="w-3.5 h-3.5" /> Colar
             </button>
           </div>
@@ -60,9 +60,9 @@ export function MicrocopyValidatorPage() {
             rows={10}
             className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-y font-mono leading-relaxed"
           />
-          <div className="flex justify-end">
+          <div className="flex justify-end w-full">
             <button onClick={handleAnalyze} disabled={analyzing || text.trim().length < 10}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-50">
+              className="flex items-center justify-center w-full sm:w-auto gap-2 px-5 py-2.5 rounded-xl gradient-primary text-primary-foreground text-xs font-semibold hover:opacity-90 disabled:opacity-50">
               {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               {analyzing ? "Analisando..." : "Validar Microcopy"}
             </button>

@@ -141,7 +141,7 @@ export default function BusinessModelCanvasPage() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-lg font-semibold text-foreground">Meus Canvas</h3>
           <p className="text-sm text-muted-foreground">Gerencie seus modelos de negócio</p>

@@ -412,13 +412,13 @@ export function VoiceOfCustomerPage() {
       )}
 
       {/* ── Three-column body ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 lg:overflow-hidden overflow-y-auto">
 
         {/* ── Left: Filters (20%) ── */}
-        <aside className="w-56 shrink-0 border-r border-border overflow-y-auto p-4 space-y-5">
+        <aside className="w-full lg:w-56 shrink-0 border-b lg:border-b-0 lg:border-r border-border lg:overflow-y-auto p-4 flex flex-row lg:flex-col gap-4 overflow-x-auto items-start">
 
           {/* Platform */}
-          <div>
+          <div className="shrink-0 min-w-[140px] lg:min-w-0">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Loja</p>
             {(["all", "ios", "android"] as const).map((p) => (
               <button
@@ -436,7 +436,7 @@ export function VoiceOfCustomerPage() {
           </div>
 
           {/* Stars */}
-          <div>
+          <div className="shrink-0 min-w-[140px] lg:min-w-0">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Estrelas</p>
             <button
               onClick={() => setStarsFilter(null)}
@@ -462,7 +462,7 @@ export function VoiceOfCustomerPage() {
           </div>
 
           {/* Sentiment */}
-          <div>
+          <div className="shrink-0 min-w-[140px] lg:min-w-0">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Sentimento</p>
             {(["all", "positive", "neutral", "negative"] as const).map((s) => (
               <button
@@ -477,7 +477,7 @@ export function VoiceOfCustomerPage() {
           </div>
 
           {/* Tags */}
-          <div>
+          <div className="shrink-0 min-w-[140px] lg:min-w-0">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tag IA</p>
             <button
               onClick={() => setTagFilter("all")}
@@ -501,7 +501,7 @@ export function VoiceOfCustomerPage() {
         </aside>
 
         {/* ── Center: Review feed (45%) ── */}
-        <main className="flex-1 overflow-y-auto p-4 space-y-3 min-w-0">
+        <main className="flex-1 overflow-y-visible lg:overflow-y-auto p-4 space-y-3 min-w-0">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="rounded-xl border border-border p-4 space-y-2">
@@ -561,7 +561,7 @@ export function VoiceOfCustomerPage() {
         </main>
 
         {/* ── Right: Action panel (35%) ── */}
-        <aside className="w-80 shrink-0 border-l border-border overflow-y-auto flex flex-col">
+        <aside className="w-full lg:w-80 shrink-0 border-t lg:border-t-0 lg:border-l border-border lg:overflow-y-auto flex flex-col">
           {selected ? (
             <div className="flex-1 flex flex-col p-5 space-y-5">
 

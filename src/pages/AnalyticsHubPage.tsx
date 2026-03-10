@@ -705,8 +705,8 @@ export function AnalyticsHubPage() {
           <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
             {filteredReviews.map((review) => (
               <div key={review.id} className="p-3 md:p-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/30 transition-colors">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0 w-full">
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -721,13 +721,13 @@ export function AnalyticsHubPage() {
                     <p className="text-sm text-foreground/90 leading-relaxed">{review.text}</p>
                   </div>
                   {review.stars <= 3 && (
-                    <div className="flex flex-col gap-1.5 shrink-0">
+                    <div className="flex flex-row sm:flex-col gap-1.5 shrink-0 w-full sm:w-auto">
                       <button onClick={() => handleCreateCard(review, "ux")}
-                        className="text-[10px] px-2.5 py-1.5 rounded-lg bg-status-discovery/10 text-status-discovery border border-status-discovery/20 hover:bg-status-discovery/20 transition-colors whitespace-nowrap">
+                        className="flex-1 sm:flex-none text-[10px] px-2.5 py-1.5 rounded-lg bg-status-discovery/10 text-status-discovery border border-status-discovery/20 hover:bg-status-discovery/20 transition-colors whitespace-nowrap">
                         Criar Card UX
                       </button>
                       <button onClick={() => handleCreateCard(review, "dev")}
-                        className="text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors whitespace-nowrap">
+                        className="flex-1 sm:flex-none text-[10px] px-2.5 py-1.5 rounded-lg bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors whitespace-nowrap">
                         Criar Bug Dev
                       </button>
                     </div>
