@@ -2,7 +2,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type EmpathyMap = any;
 export type EmpathyMapInsert = any;
@@ -15,14 +14,14 @@ export function useEmpathyMaps(projectId?: string) {
     queryKey: ["empathy-maps", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const { data, error } = await supabase
-        .from("empathy_maps")
+      const { data, error } = await (supabase
+        .from("empathy_maps" as any)
         .select("*")
         .eq("project_id", projectId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }) as any);
 
       if (error) throw error;
-      return data;
+      return data as EmpathyMap[];
     },
     enabled: !!projectId,
   });
@@ -54,16 +53,16 @@ export function useCreateEmpathyMap() {
 
   return useMutation({
     mutationFn: async (map: EmpathyMapInsert) => {
-      const { data, error } = await supabase
-        .from("empathy_maps")
+      const { data, error } = await (supabase
+        .from("empathy_maps" as any)
         .insert(map)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-      return data;
+      return data as EmpathyMap;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["empathy-maps", data.project_id] });
     },
   });
@@ -74,17 +73,17 @@ export function useUpdateEmpathyMap() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: EmpathyMapUpdate }) => {
-      const { data, error } = await supabase
-        .from("empathy_maps")
+      const { data, error } = await (supabase
+        .from("empathy_maps" as any)
         .update(updates)
         .eq("id", id)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-      return data;
+      return data as EmpathyMap;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["empathy-maps", data.project_id] });
     },
   });
@@ -95,10 +94,10 @@ export function useDeleteEmpathyMap() {
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase
-        .from("empathy_maps")
+      const { error } = await (supabase
+        .from("empathy_maps" as any)
         .delete()
-        .eq("id", id);
+        .eq("id", id) as any);
 
       if (error) throw error;
     },

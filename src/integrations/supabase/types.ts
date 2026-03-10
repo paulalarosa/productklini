@@ -381,6 +381,47 @@ export type Database = {
         }
         Relationships: []
       }
+      benchmarks: {
+        Row: {
+          competitors: Json | null
+          created_at: string | null
+          features: Json | null
+          id: string
+          insights: Json | null
+          name: string
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          competitors?: Json | null
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          insights?: Json | null
+          name: string
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          competitors?: Json | null
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          insights?: Json | null
+          name?: string
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benchmarks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_model_canvas: {
         Row: {
           channels: Json
@@ -510,6 +551,79 @@ export type Database = {
             columns: ["design_id"]
             isOneToOne: false
             referencedRelation: "canvas_designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      card_sorting: {
+        Row: {
+          category_name: string
+          created_at: string | null
+          id: string
+          items: string[] | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_name: string
+          created_at?: string | null
+          id?: string
+          items?: string[] | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_name?: string
+          created_at?: string | null
+          id?: string
+          items?: string[] | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_sorting_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      csd_matrices: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string
+          id: string
+          impact_level: string | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          description: string
+          id?: string
+          impact_level?: string | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          impact_level?: string | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csd_matrices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -647,6 +761,135 @@ export type Database = {
         }
         Relationships: []
       }
+      empathy_maps: {
+        Row: {
+          created_at: string | null
+          gains: Json | null
+          hears: Json | null
+          id: string
+          pains: Json | null
+          persona_name: string | null
+          project_id: string
+          says_and_does: Json | null
+          sees: Json | null
+          thinks_and_feels: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          gains?: Json | null
+          hears?: Json | null
+          id?: string
+          pains?: Json | null
+          persona_name?: string | null
+          project_id: string
+          says_and_does?: Json | null
+          sees?: Json | null
+          thinks_and_feels?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          gains?: Json | null
+          hears?: Json | null
+          id?: string
+          pains?: Json | null
+          persona_name?: string | null
+          project_id?: string
+          says_and_does?: Json | null
+          sees?: Json | null
+          thinks_and_feels?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empathy_maps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hmw_questions: {
+        Row: {
+          created_at: string | null
+          hmw_question: string
+          id: string
+          priority: string | null
+          problem_statement: string | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          hmw_question: string
+          id?: string
+          priority?: string | null
+          problem_statement?: string | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          hmw_question?: string
+          id?: string
+          priority?: string | null
+          problem_statement?: string | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hmw_questions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jtbd_frameworks: {
+        Row: {
+          created_at: string | null
+          expected_outcome: string | null
+          id: string
+          job_statement: string
+          motivation: string | null
+          project_id: string
+          situation: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expected_outcome?: string | null
+          id?: string
+          job_statement: string
+          motivation?: string | null
+          project_id: string
+          situation?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expected_outcome?: string | null
+          id?: string
+          job_statement?: string
+          motivation?: string | null
+          project_id?: string
+          situation?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jtbd_frameworks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mcp_sync_logs: {
         Row: {
           ai_insights: Json
@@ -672,6 +915,91 @@ export type Database = {
             columns: ["component_id"]
             isOneToOne: false
             referencedRelation: "ui_components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      microcopy_inventory: {
+        Row: {
+          component_type: string
+          context: string | null
+          created_at: string | null
+          id: string
+          original_text: string | null
+          project_id: string
+          suggested_copy: string
+          tone_applied: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          component_type: string
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          original_text?: string | null
+          project_id: string
+          suggested_copy: string
+          tone_applied?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          component_type?: string
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          original_text?: string | null
+          project_id?: string
+          suggested_copy?: string
+          tone_applied?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microcopy_inventory_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nielsen_heuristics: {
+        Row: {
+          created_at: string | null
+          evaluation_notes: string | null
+          heuristic_name: string
+          id: string
+          project_id: string
+          recommendation: string | null
+          severity_level: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          evaluation_notes?: string | null
+          heuristic_name: string
+          id?: string
+          project_id: string
+          recommendation?: string | null
+          severity_level?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          evaluation_notes?: string | null
+          heuristic_name?: string
+          id?: string
+          project_id?: string
+          recommendation?: string | null
+          severity_level?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nielsen_heuristics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -705,47 +1033,6 @@ export type Database = {
           type?: string
         }
         Relationships: []
-      }
-      nielsen_heuristics: {
-        Row: {
-          id: string
-          project_id: string
-          heuristic_name: string
-          evaluation_notes: string | null
-          severity_level: number
-          recommendation: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          project_id: string
-          heuristic_name: string
-          evaluation_notes?: string | null
-          severity_level: number
-          recommendation?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          project_id?: string
-          heuristic_name?: string
-          evaluation_notes?: string | null
-          severity_level?: number
-          recommendation?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nielsen_heuristics_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
-        ]
       }
       personas: {
         Row: {
@@ -925,6 +1212,47 @@ export type Database = {
           },
         ]
       }
+      qa_bugs: {
+        Row: {
+          bug_title: string
+          created_at: string | null
+          id: string
+          project_id: string
+          severity: string | null
+          status: string | null
+          steps_to_reproduce: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          bug_title: string
+          created_at?: string | null
+          id?: string
+          project_id: string
+          severity?: string | null
+          status?: string | null
+          steps_to_reproduce?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          bug_title?: string
+          created_at?: string | null
+          id?: string
+          project_id?: string
+          severity?: string | null
+          status?: string | null
+          steps_to_reproduce?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qa_bugs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_links: {
         Row: {
           created_at: string
@@ -959,6 +1287,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "share_links_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sitemaps: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          hierarchy_level: number | null
+          id: string
+          node_name: string
+          parent_id: string | null
+          project_id: string
+          updated_at: string | null
+          url_path: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          hierarchy_level?: number | null
+          id?: string
+          node_name: string
+          parent_id?: string | null
+          project_id: string
+          updated_at?: string | null
+          url_path?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          hierarchy_level?: number | null
+          id?: string
+          node_name?: string
+          parent_id?: string | null
+          project_id?: string
+          updated_at?: string | null
+          url_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sitemaps_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "sitemaps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sitemaps_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1057,6 +1436,47 @@ export type Database = {
           },
         ]
       }
+      tone_of_voice: {
+        Row: {
+          brand_archetype: string | null
+          created_at: string | null
+          do_say: string[] | null
+          dont_say: string[] | null
+          id: string
+          personality_traits: Json | null
+          project_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          brand_archetype?: string | null
+          created_at?: string | null
+          do_say?: string[] | null
+          dont_say?: string[] | null
+          id?: string
+          personality_traits?: Json | null
+          project_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          brand_archetype?: string | null
+          created_at?: string | null
+          do_say?: string[] | null
+          dont_say?: string[] | null
+          id?: string
+          personality_traits?: Json | null
+          project_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tone_of_voice_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ui_components: {
         Row: {
           component_name: string
@@ -1103,34 +1523,34 @@ export type Database = {
       }
       usability_tests: {
         Row: {
+          created_at: string | null
           id: string
-          project_id: string
-          task_description: string
-          success_rate_percentage: number
-          user_feedback: string | null
           key_observations: string | null
-          created_at: string
-          updated_at: string
+          project_id: string
+          success_rate_percentage: number | null
+          task_description: string
+          updated_at: string | null
+          user_feedback: string | null
         }
         Insert: {
+          created_at?: string | null
           id?: string
-          project_id: string
-          task_description: string
-          success_rate_percentage: number
-          user_feedback?: string | null
           key_observations?: string | null
-          created_at?: string
-          updated_at?: string
+          project_id: string
+          success_rate_percentage?: number | null
+          task_description: string
+          updated_at?: string | null
+          user_feedback?: string | null
         }
         Update: {
+          created_at?: string | null
           id?: string
-          project_id?: string
-          task_description?: string
-          success_rate_percentage?: number
-          user_feedback?: string | null
           key_observations?: string | null
-          created_at?: string
-          updated_at?: string
+          project_id?: string
+          success_rate_percentage?: number | null
+          task_description?: string
+          updated_at?: string | null
+          user_feedback?: string | null
         }
         Relationships: [
           {
@@ -1139,48 +1559,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
-          }
-        ]
-      }
-      qa_bugs: {
-        Row: {
-          id: string
-          project_id: string
-          bug_title: string
-          steps_to_reproduce: string | null
-          severity: string
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          project_id: string
-          bug_title: string
-          steps_to_reproduce?: string | null
-          severity: string
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          project_id?: string
-          bug_title?: string
-          steps_to_reproduce?: string | null
-          severity?: string
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "qa_bugs_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          }
+          },
         ]
       }
       user_achievements: {
@@ -1434,34 +1813,34 @@ export type Database = {
       }
       wcag_audits: {
         Row: {
-          id: string
-          project_id: string
-          guideline_reference: string
-          compliance_status: string
-          issue_description: string | null
+          compliance_status: string | null
+          created_at: string | null
           fix_suggestion: string | null
-          created_at: string
-          updated_at: string
+          guideline_reference: string
+          id: string
+          issue_description: string | null
+          project_id: string
+          updated_at: string | null
         }
         Insert: {
-          id?: string
-          project_id: string
-          guideline_reference: string
-          compliance_status: string
-          issue_description?: string | null
+          compliance_status?: string | null
+          created_at?: string | null
           fix_suggestion?: string | null
-          created_at?: string
-          updated_at?: string
+          guideline_reference: string
+          id?: string
+          issue_description?: string | null
+          project_id: string
+          updated_at?: string | null
         }
         Update: {
-          id?: string
-          project_id?: string
-          guideline_reference?: string
-          compliance_status?: string
-          issue_description?: string | null
+          compliance_status?: string | null
+          created_at?: string | null
           fix_suggestion?: string | null
-          created_at?: string
-          updated_at?: string
+          guideline_reference?: string
+          id?: string
+          issue_description?: string | null
+          project_id?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -1470,7 +1849,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
     }
