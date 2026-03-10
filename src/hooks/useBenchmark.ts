@@ -14,14 +14,14 @@ export function useBenchmarks(projectId?: string) {
     queryKey: ["benchmarks", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const { data, error } = await supabase
-        .from("benchmarks")
+      const { data, error } = await (supabase
+        .from("benchmarks" as any)
         .select("*")
         .eq("project_id", projectId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }) as any);
 
       if (error) throw error;
-      return data;
+      return data as Benchmark[];
     },
     enabled: !!projectId,
   });
@@ -53,16 +53,16 @@ export function useCreateBenchmark() {
 
   return useMutation({
     mutationFn: async (benchmark: BenchmarkInsert) => {
-      const { data, error } = await supabase
-        .from("benchmarks")
+      const { data, error } = await (supabase
+        .from("benchmarks" as any)
         .insert(benchmark)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-      return data;
+      return data as Benchmark;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["benchmarks", data.project_id] });
     },
   });
@@ -73,17 +73,17 @@ export function useUpdateBenchmark() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: BenchmarkUpdate }) => {
-      const { data, error } = await supabase
-        .from("benchmarks")
+      const { data, error } = await (supabase
+        .from("benchmarks" as any)
         .update(updates)
         .eq("id", id)
         .select()
-        .single();
+        .single() as any);
 
       if (error) throw error;
-      return data;
+      return data as Benchmark;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["benchmarks", data.project_id] });
     },
   });
@@ -94,10 +94,10 @@ export function useDeleteBenchmark() {
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase
-        .from("benchmarks")
+      const { error } = await (supabase
+        .from("benchmarks" as any)
         .delete()
-        .eq("id", id);
+        .eq("id", id) as any);
 
       if (error) throw error;
     },

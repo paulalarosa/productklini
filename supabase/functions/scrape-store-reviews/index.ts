@@ -156,9 +156,9 @@ async function scrapeGooglePlay(appId: string): Promise<ParsedReview[]> {
 
   for (const item of reviewsArray) {
     try {
-      const arr = item as unknown[];
+      const arr = item as any[];
       // Try multiple known positions for author/stars/text
-      const author = String(arr?.[1]?.[4]?.[0] ?? arr?.[1]?.[0] ?? "Anônimo").slice(0, 80);
+      const author = String((arr as any)?.[1]?.[4]?.[0] ?? (arr as any)?.[1]?.[0] ?? "Anônimo").slice(0, 80);
       const stars = Math.min(5, Math.max(1, Number(arr?.[2] ?? 3)));
       const text = String(arr?.[4] ?? arr?.[3] ?? "").trim();
 
