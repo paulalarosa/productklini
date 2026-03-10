@@ -140,7 +140,7 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento.
 
     const { data: doc, error: insertError } = await supabase
       .from("project_documents")
-      .insert({ project_id, doc_type, title: config.title, content, ai_generated: true, metadata: { generated_at: new Date().toISOString(), model: "gemini-2.0-flash" } })
+      .insert({ project_id, doc_type, title: config.title, content, ai_generated: true, metadata: { generated_at: new Date().toISOString(), model: "gemini-2.5-flash" } })
       .select()
       .maybeSingle();
 

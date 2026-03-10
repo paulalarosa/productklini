@@ -6740,10 +6740,6 @@ createRoot(document.getElementById("root")!).render(<App />);
 /// <reference types="vite/client" />
 </file>
 
-<file path="supabase/.temp/cli-latest">
-v2.75.0
-</file>
-
 <file path="supabase/migrations/20260308135209_d6b74f08-2efb-4813-b59f-de61b4319817.sql">
 -- Function for auto-updating timestamps
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -15454,6 +15450,10 @@ export function WCAGAuditorPage() {
 }
 </file>
 
+<file path="supabase/.temp/cli-latest">
+v2.75.0
+</file>
+
 <file path="supabase/functions/analyze-figma-mcp/index.ts">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -17846,6 +17846,85 @@ export function DashboardHeader({ onToggleAI, onCreateProject }: DashboardHeader
         </button>
       </div>
     </header>
+  );
+}
+</file>
+
+<file path="src/components/dashboard/DashboardLayout.tsx">
+import { useState, useEffect } from "react";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
+import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
+import { GamificationPanel } from "@/components/dashboard/GamificationPanel";
+import { Outlet } from "react-router-dom";
+import { useProject, useTasks } from "@/hooks/useProjectData";
+
+export function DashboardLayout() {
+  const [aiOpen, setAiOpen] = useState(false);
+  const [gamificationOpen, setGamificationOpen] = useState(false);
+  const [showSetup, setShowSetup] = useState(false);
+  const { data: project, isLoading } = useProject();
+  const { data: tasks } = useTasks();
+
+  // Show setup wizard only if no project exists (project is null after loading)
+  useEffect(() => {
+    if (!isLoading && !project) {
+      setShowSetup(true);
+    }
+  }, [project, isLoading]);
+
+  const projectContext = {
+    project: project ?? {},
+    tasksSummary: {
+      total: tasks?.length ?? 0,
+      blocked: tasks?.filter((t) => t.status === "blocked").length ?? 0,
+      urgent: tasks?.filter((t) => t.priority === "urgent" && t.status !== "done").length ?? 0,
+      inProgress: tasks?.filter((t) => t.status === "in_progress").length ?? 0,
+      done: tasks?.filter((t) => t.status === "done").length ?? 0,
+    },
+    tasks: tasks?.map((t) => ({
+      title: t.title,
+      module: t.module,
+      phase: t.phase,
+      status: t.status,
+      assignee: t.assignee,
+      daysInPhase: t.days_in_phase,
+      estimatedDays: t.estimated_days,
+      priority: t.priority,
+    })) ?? [],
+  };
+
+  return (
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
+      <DashboardSidebar />
+
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <DashboardHeader
+          onToggleAI={() => setAiOpen(!aiOpen)}
+          onCreateProject={() => setShowSetup(true)}
+        />
+
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">
+          <Outlet />
+        </main>
+      </div>
+
+      <AIMentorPanel
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        projectContext={projectContext}
+      />
+
+      <GamificationPanel
+        isOpen={gamificationOpen}
+        onToggle={() => setGamificationOpen(!gamificationOpen)}
+      />
+
+      {showSetup && (
+        <ProjectSetupWizard onComplete={() => setShowSetup(false)} />
+      )}
+    </div>
   );
 }
 </file>
@@ -23183,85 +23262,6 @@ export function AIGenerateButton({
 }
 </file>
 
-<file path="src/components/dashboard/DashboardLayout.tsx">
-import { useState, useEffect } from "react";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
-import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
-import { GamificationPanel } from "@/components/dashboard/GamificationPanel";
-import { Outlet } from "react-router-dom";
-import { useProject, useTasks } from "@/hooks/useProjectData";
-
-export function DashboardLayout() {
-  const [aiOpen, setAiOpen] = useState(false);
-  const [gamificationOpen, setGamificationOpen] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const { data: project, isLoading } = useProject();
-  const { data: tasks } = useTasks();
-
-  // Show setup wizard only if no project exists (project is null after loading)
-  useEffect(() => {
-    if (!isLoading && !project) {
-      setShowSetup(true);
-    }
-  }, [project, isLoading]);
-
-  const projectContext = {
-    project: project ?? {},
-    tasksSummary: {
-      total: tasks?.length ?? 0,
-      blocked: tasks?.filter((t) => t.status === "blocked").length ?? 0,
-      urgent: tasks?.filter((t) => t.priority === "urgent" && t.status !== "done").length ?? 0,
-      inProgress: tasks?.filter((t) => t.status === "in_progress").length ?? 0,
-      done: tasks?.filter((t) => t.status === "done").length ?? 0,
-    },
-    tasks: tasks?.map((t) => ({
-      title: t.title,
-      module: t.module,
-      phase: t.phase,
-      status: t.status,
-      assignee: t.assignee,
-      daysInPhase: t.days_in_phase,
-      estimatedDays: t.estimated_days,
-      priority: t.priority,
-    })) ?? [],
-  };
-
-  return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
-      <DashboardSidebar />
-
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashboardHeader
-          onToggleAI={() => setAiOpen(!aiOpen)}
-          onCreateProject={() => setShowSetup(true)}
-        />
-
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">
-          <Outlet />
-        </main>
-      </div>
-
-      <AIMentorPanel
-        open={aiOpen}
-        onClose={() => setAiOpen(false)}
-        projectContext={projectContext}
-      />
-
-      <GamificationPanel
-        isOpen={gamificationOpen}
-        onToggle={() => setGamificationOpen(!gamificationOpen)}
-      />
-
-      {showSetup && (
-        <ProjectSetupWizard onComplete={() => setShowSetup(false)} />
-      )}
-    </div>
-  );
-}
-</file>
-
 <file path="src/components/dashboard/GamificationPanel.tsx">
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24872,257 +24872,6 @@ export function VisualSitemapPage() {
     </ModulePage>
   );
 }
-</file>
-
-<file path="supabase/functions/design-studio/index.ts">
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-
-  try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // ✅ Fix: usar getUser() em vez de getClaims() que não existe no supabase-js v2
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const { prompt, mode, context } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    let systemPrompt = "";
-    let tools: { type: string; function: unknown }[] = [];
-    let toolChoice: { type: string; function: { name: string } } | undefined = undefined;
-
-    if (mode === "ux-pilot") {
-      systemPrompt = `Você é o UX Pilot, um assistente de ideação de UX especializado. Gere artefatos de UX como personas, mapas de jornada, fluxos de usuário e wireframes conceituais.
-
-REGRAS:
-- Retorne dados estruturados via tool call
-- Gere conteúdo realista e detalhado em português
-- Para jornadas: inclua 4-8 steps com emoções e touchpoints
-- Para personas: dados demográficos, goals, pain_points, behaviors
-- Para fluxos: steps de navegação com decisões
-
-${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
-
-      tools = [{
-        type: "function",
-        function: {
-          name: "generate_ux_artifact",
-          description: "Generate a UX artifact (persona, journey map, user flow, wireframe concept)",
-          parameters: {
-            type: "object",
-            properties: {
-              artifact_type: { type: "string", enum: ["persona", "journey_map", "user_flow", "wireframe_concept", "sitemap"] },
-              title: { type: "string" },
-              description: { type: "string" },
-              data: {
-                type: "object",
-                properties: {
-                  name: { type: "string" },
-                  age: { type: "number" },
-                  role: { type: "string" },
-                  bio: { type: "string" },
-                  goals: { type: "array", items: { type: "string" } },
-                  pain_points: { type: "array", items: { type: "string" } },
-                  behaviors: { type: "array", items: { type: "string" } },
-                  stages: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string" },
-                        description: { type: "string" },
-                        emotion: { type: "string", enum: ["happy", "neutral", "frustrated", "confused", "satisfied"] },
-                        touchpoint: { type: "string" },
-                        action: { type: "string" },
-                        opportunity: { type: "string" },
-                      },
-                      required: ["name", "description", "emotion", "touchpoint", "action"],
-                      additionalProperties: false,
-                    },
-                  },
-                  steps: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        label: { type: "string" },
-                        type: { type: "string", enum: ["start", "action", "decision", "end", "screen"] },
-                        connections: { type: "array", items: { type: "string" } },
-                      },
-                      required: ["id", "label", "type", "connections"],
-                      additionalProperties: false,
-                    },
-                  },
-                  pages: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        name: { type: "string" },
-                        path: { type: "string" },
-                        children: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              name: { type: "string" },
-                              path: { type: "string" },
-                            },
-                            required: ["name", "path"],
-                            additionalProperties: false,
-                          },
-                        },
-                      },
-                      required: ["name", "path"],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                additionalProperties: false,
-              },
-            },
-            required: ["artifact_type", "title", "description", "data"],
-            additionalProperties: false,
-          },
-        },
-      }];
-      toolChoice = { type: "function", function: { name: "generate_ux_artifact" } };
-
-    } else if (mode === "ui-make") {
-      systemPrompt = `Você é o UI Make, um gerador de componentes de UI. Dado uma descrição, gere código React + Tailwind funcional para o componente.
-
-REGRAS:
-- Gere código React com Tailwind CSS válido
-- Use design moderno, minimalista, estilo SaaS
-- Componentes devem ser auto-contidos
-- Use cores via variáveis CSS (hsl) e classes Tailwind semânticas
-- Gere dados mock realistas quando necessário
-- O código deve ser funcional e renderizável
-
-${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
-
-      tools = [{
-        type: "function",
-        function: {
-          name: "generate_ui_component",
-          description: "Generate a UI component with React + Tailwind code",
-          parameters: {
-            type: "object",
-            properties: {
-              component_name: { type: "string" },
-              description: { type: "string" },
-              code: { type: "string", description: "Full React + Tailwind component code as JSX string" },
-              preview_elements: {
-                type: "array",
-                description: "SVG-like elements for canvas preview",
-                items: {
-                  type: "object",
-                  properties: {
-                    type: { type: "string", enum: ["rect", "circle", "text", "line"] },
-                    x: { type: "number" },
-                    y: { type: "number" },
-                    width: { type: "number" },
-                    height: { type: "number" },
-                    fill: { type: "string" },
-                    text: { type: "string" },
-                    fontSize: { type: "number" },
-                  },
-                  required: ["type", "x", "y", "width", "height", "fill"],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ["component_name", "description", "code", "preview_elements"],
-            additionalProperties: false,
-          },
-        },
-      }];
-      toolChoice = { type: "function", function: { name: "generate_ui_component" } };
-    }
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
-        tools,
-        tool_choice: toolChoice,
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit excedido. Tente novamente em alguns segundos." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos insuficientes." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Erro no gateway de IA" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const data2 = await response.json();
-    const toolCall = data2.choices?.[0]?.message?.tool_calls?.[0];
-
-    if (toolCall?.function?.arguments) {
-      const args = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify({ mode, result: args }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const content = data2.choices?.[0]?.message?.content;
-    if (content) {
-      return new Response(JSON.stringify({ mode, result: { raw: content } }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    return new Response(JSON.stringify({ error: "Resposta inesperada da IA" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
-  } catch (e) {
-    console.error("design-studio error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-});
 </file>
 
 <file path="package.json">
@@ -29307,7 +29056,7 @@ export function VoiceOfCustomerPage() {
 }
 </file>
 
-<file path="supabase/functions/generate-wireframe/index.ts">
+<file path="supabase/functions/design-studio/index.ts">
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -29335,35 +29084,163 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { prompt, screenType, existingElements } = await req.json();
+    const { prompt, mode, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `Você é um gerador de wireframes AI. Dado um prompt descrevendo uma tela ou fluxo de app, gere uma lista de elementos visuais SVG para um canvas de wireframe.
+    let systemPrompt = "";
+    let tools: { type: string; function: unknown }[] = [];
+    let toolChoice: { type: string; function: { name: string } } | undefined = undefined;
 
-REGRAS IMPORTANTES:
-- Retorne APENAS o JSON, sem markdown, sem code blocks
-- Gere wireframes low-fidelity com formas simples
-- Use cores em tons de cinza para wireframes (hsl com saturação 0-10%)
-- Posicione elementos de forma realista para o tipo de tela
-- O canvas tem 1440x900 pixels
-- Tipos de elementos: rect, circle, text, line
-- Para cada elemento: id (string única), type, x, y, width, height, fill (hsl), text (se type=text), rotation (0)
+    if (mode === "ux-pilot") {
+      systemPrompt = `Você é o UX Pilot, um assistente de ideação de UX especializado. Gere artefatos de UX como personas, mapas de jornada, fluxos de usuário e wireframes conceituais.
 
-Tipo de tela: ${screenType || "mobile app"}
-${existingElements ? `Elementos existentes (refine, não substitua): ${JSON.stringify(existingElements)}` : ""}
+REGRAS:
+- Retorne dados estruturados via tool call
+- Gere conteúdo realista e detalhado em português
+- Para jornadas: inclua 4-8 steps com emoções e touchpoints
+- Para personas: dados demográficos, goals, pain_points, behaviors
+- Para fluxos: steps de navegação com decisões
 
-Padrões de wireframe:
-- Header/Navbar: rect no topo, largura total, altura ~60px
-- Botões: rect com bordas arredondadas, ~120x40px  
-- Inputs: rect com borda, ~280x44px
-- Cards: rect maior ~300x200px
-- Textos: use type "text" com textos descritivos
-- Ícones: circle pequenos ~24x24px
-- Imagens placeholder: rect com X diagonal (use 2 linhas)
-- Tab bar: rect no bottom para mobile
+${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
 
-Gere entre 8-20 elementos dependendo da complexidade.`;
+      tools = [{
+        type: "function",
+        function: {
+          name: "generate_ux_artifact",
+          description: "Generate a UX artifact (persona, journey map, user flow, wireframe concept)",
+          parameters: {
+            type: "object",
+            properties: {
+              artifact_type: { type: "string", enum: ["persona", "journey_map", "user_flow", "wireframe_concept", "sitemap"] },
+              title: { type: "string" },
+              description: { type: "string" },
+              data: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  age: { type: "number" },
+                  role: { type: "string" },
+                  bio: { type: "string" },
+                  goals: { type: "array", items: { type: "string" } },
+                  pain_points: { type: "array", items: { type: "string" } },
+                  behaviors: { type: "array", items: { type: "string" } },
+                  stages: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        description: { type: "string" },
+                        emotion: { type: "string", enum: ["happy", "neutral", "frustrated", "confused", "satisfied"] },
+                        touchpoint: { type: "string" },
+                        action: { type: "string" },
+                        opportunity: { type: "string" },
+                      },
+                      required: ["name", "description", "emotion", "touchpoint", "action"],
+                      additionalProperties: false,
+                    },
+                  },
+                  steps: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        label: { type: "string" },
+                        type: { type: "string", enum: ["start", "action", "decision", "end", "screen"] },
+                        connections: { type: "array", items: { type: "string" } },
+                      },
+                      required: ["id", "label", "type", "connections"],
+                      additionalProperties: false,
+                    },
+                  },
+                  pages: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string" },
+                        path: { type: "string" },
+                        children: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              path: { type: "string" },
+                            },
+                            required: ["name", "path"],
+                            additionalProperties: false,
+                          },
+                        },
+                      },
+                      required: ["name", "path"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                additionalProperties: false,
+              },
+            },
+            required: ["artifact_type", "title", "description", "data"],
+            additionalProperties: false,
+          },
+        },
+      }];
+      toolChoice = { type: "function", function: { name: "generate_ux_artifact" } };
+
+    } else if (mode === "ui-make") {
+      systemPrompt = `Você é o UI Make, um gerador de componentes de UI. Dado uma descrição, gere código React + Tailwind funcional para o componente.
+
+REGRAS:
+- Gere código React com Tailwind CSS válido
+- Use design moderno, minimalista, estilo SaaS
+- Componentes devem ser auto-contidos
+- Use cores via variáveis CSS (hsl) e classes Tailwind semânticas
+- Gere dados mock realistas quando necessário
+- O código deve ser funcional e renderizável
+
+${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
+
+      tools = [{
+        type: "function",
+        function: {
+          name: "generate_ui_component",
+          description: "Generate a UI component with React + Tailwind code",
+          parameters: {
+            type: "object",
+            properties: {
+              component_name: { type: "string" },
+              description: { type: "string" },
+              code: { type: "string", description: "Full React + Tailwind component code as JSX string" },
+              preview_elements: {
+                type: "array",
+                description: "SVG-like elements for canvas preview",
+                items: {
+                  type: "object",
+                  properties: {
+                    type: { type: "string", enum: ["rect", "circle", "text", "line"] },
+                    x: { type: "number" },
+                    y: { type: "number" },
+                    width: { type: "number" },
+                    height: { type: "number" },
+                    fill: { type: "string" },
+                    text: { type: "string" },
+                    fontSize: { type: "number" },
+                  },
+                  required: ["type", "x", "y", "width", "height", "fill"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["component_name", "description", "code", "preview_elements"],
+            additionalProperties: false,
+          },
+        },
+      }];
+      toolChoice = { type: "function", function: { name: "generate_ui_component" } };
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -29372,48 +29249,13 @@ Gere entre 8-20 elementos dependendo da complexidade.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_wireframe",
-              description: "Generate wireframe elements for a canvas",
-              parameters: {
-                type: "object",
-                properties: {
-                  elements: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        type: { type: "string", enum: ["rect", "circle", "text", "line"] },
-                        x: { type: "number" },
-                        y: { type: "number" },
-                        width: { type: "number" },
-                        height: { type: "number" },
-                        fill: { type: "string" },
-                        text: { type: "string" },
-                        rotation: { type: "number" },
-                      },
-                      required: ["id", "type", "x", "y", "width", "height", "fill", "rotation"],
-                      additionalProperties: false,
-                    },
-                  },
-                  description: { type: "string" },
-                },
-                required: ["elements", "description"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "generate_wireframe" } },
+        tools,
+        tool_choice: toolChoice,
       }),
     });
 
@@ -29440,7 +29282,14 @@ Gere entre 8-20 elementos dependendo da complexidade.`;
 
     if (toolCall?.function?.arguments) {
       const args = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify(args), {
+      return new Response(JSON.stringify({ mode, result: args }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const content = data2.choices?.[0]?.message?.content;
+    if (content) {
+      return new Response(JSON.stringify({ mode, result: { raw: content } }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -29450,7 +29299,7 @@ Gere entre 8-20 elementos dependendo da complexidade.`;
     });
 
   } catch (e) {
-    console.error("wireframe error:", e);
+    console.error("design-studio error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -29945,75 +29794,63 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
 DocumentManager.displayName = "DocumentManager";
 </file>
 
-<file path="supabase/functions/analyze-reviews/index.ts">
+<file path="supabase/functions/generate-wireframe/index.ts">
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface ReviewInput {
-  id: string;
-  text: string;
-  stars: number;
-}
-
-interface TaggedResult {
-  index: number;
-  ai_tag: string;
-  ai_tag_type: "bug" | "performance" | "praise" | "ux" | "crash" | "feature" | "security" | "accessibility";
-  sentiment: "positive" | "neutral" | "negative";
-}
-
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
+    // ✅ Fix: usar getUser() em vez de getClaims() que não existe no supabase-js v2
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const { prompt, screenType, existingElements } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { reviews } = await req.json();
-    if (!reviews || !Array.isArray(reviews) || reviews.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "reviews array is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const systemPrompt = `Você é um gerador de wireframes AI. Dado um prompt descrevendo uma tela ou fluxo de app, gere uma lista de elementos visuais SVG para um canvas de wireframe.
 
-    // Build prompt with reviews
-    const reviewsList = reviews
-      .map((r: ReviewInput, i: number) => `[${i}] (${r.stars}★) "${r.text}"`)
-      .join("\n");
+REGRAS IMPORTANTES:
+- Retorne APENAS o JSON, sem markdown, sem code blocks
+- Gere wireframes low-fidelity com formas simples
+- Use cores em tons de cinza para wireframes (hsl com saturação 0-10%)
+- Posicione elementos de forma realista para o tipo de tela
+- O canvas tem 1440x900 pixels
+- Tipos de elementos: rect, circle, text, line
+- Para cada elemento: id (string única), type, x, y, width, height, fill (hsl), text (se type=text), rotation (0)
+
+Tipo de tela: ${screenType || "mobile app"}
+${existingElements ? `Elementos existentes (refine, não substitua): ${JSON.stringify(existingElements)}` : ""}
+
+Padrões de wireframe:
+- Header/Navbar: rect no topo, largura total, altura ~60px
+- Botões: rect com bordas arredondadas, ~120x40px  
+- Inputs: rect com borda, ~280x44px
+- Cards: rect maior ~300x200px
+- Textos: use type "text" com textos descritivos
+- Ícones: circle pequenos ~24x24px
+- Imagens placeholder: rect com X diagonal (use 2 linhas)
+- Tab bar: rect no bottom para mobile
+
+Gere entre 8-20 elementos dependendo da complexidade.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -30022,111 +29859,88 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
-          {
-            role: "system",
-            content: `You are a UX research analyst. Analyze app store reviews and categorize each one.
-For each review, determine:
-- ai_tag: A short label in Portuguese (e.g., "Bug de UI", "Performance", "Elogio", "UX Sugestão", "Onboarding", "Acessibilidade", "Crash", "Design Visual", "Funcionalidade", "Segurança")
-- ai_tag_type: One of: "bug", "performance", "praise", "ux", "crash", "feature", "security", "accessibility"
-- sentiment: One of: "positive", "neutral", "negative"
-
-Be precise. A 5★ review praising the app is "praise/positive". A 1★ about crashes is "crash/negative". A 3★ suggesting dark mode is "ux/neutral".`,
-          },
-          {
-            role: "user",
-            content: `Analyze these ${reviews.length} app reviews and return categorization:\n\n${reviewsList}`,
-          },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt },
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "categorize_reviews",
-              description: "Return categorization for each review",
+              name: "generate_wireframe",
+              description: "Generate wireframe elements for a canvas",
               parameters: {
                 type: "object",
                 properties: {
-                  results: {
+                  elements: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        index: { type: "number", description: "Review index from input" },
-                        ai_tag: { type: "string", description: "Short Portuguese label for the category" },
-                        ai_tag_type: {
-                          type: "string",
-                          enum: ["bug", "performance", "praise", "ux", "crash", "feature", "security", "accessibility"],
-                        },
-                        sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
+                        id: { type: "string" },
+                        type: { type: "string", enum: ["rect", "circle", "text", "line"] },
+                        x: { type: "number" },
+                        y: { type: "number" },
+                        width: { type: "number" },
+                        height: { type: "number" },
+                        fill: { type: "string" },
+                        text: { type: "string" },
+                        rotation: { type: "number" },
                       },
-                      required: ["index", "ai_tag", "ai_tag_type", "sentiment"],
+                      required: ["id", "type", "x", "y", "width", "height", "fill", "rotation"],
                       additionalProperties: false,
                     },
                   },
+                  description: { type: "string" },
                 },
-                required: ["results"],
+                required: ["elements", "description"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "categorize_reviews" } },
+        tool_choice: { type: "function", function: { name: "generate_wireframe" } },
       }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Tente novamente em alguns segundos." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Rate limit excedido. Tente novamente em alguns segundos." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos no workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Créditos insuficientes." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error("AI error:", response.status, t);
+      return new Response(JSON.stringify({ error: "Erro no gateway de IA" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const aiData = await response.json();
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    const data2 = await response.json();
+    const toolCall = data2.choices?.[0]?.message?.tool_calls?.[0];
 
-    if (!toolCall?.function?.arguments) {
-      throw new Error("No tool call response from AI");
+    if (toolCall?.function?.arguments) {
+      const args = JSON.parse(toolCall.function.arguments);
+      return new Response(JSON.stringify(args), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const parsed = JSON.parse(toolCall.function.arguments);
-    const results = parsed.results || [];
+    return new Response(JSON.stringify({ error: "Resposta inesperada da IA" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
 
-    // Map back to review IDs
-    const taggedReviews = results.map((r: TaggedResult) => ({
-      id: reviews[r.index]?.id,
-      ai_tag: r.ai_tag,
-      ai_tag_type: r.ai_tag_type,
-      sentiment: r.sentiment,
-    })).filter((r: { id: string | undefined }) => r.id);
-
-    return new Response(
-      JSON.stringify({ success: true, results: taggedReviews }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   } catch (e) {
-    console.error("analyze-reviews error:", e);
-    return new Response(
-      JSON.stringify({ 
-        error: "Erro interno", 
-        details: e instanceof Error ? e.message : String(e),
-        stack: e instanceof Error ? e.stack : undefined,
-        debug_tag: "v0.2.3"
-      }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("wireframe error:", e);
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 </file>
@@ -30785,6 +30599,192 @@ export function AffinityDiagramPage() {
 }
 </file>
 
+<file path="supabase/functions/analyze-reviews/index.ts">
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+interface ReviewInput {
+  id: string;
+  text: string;
+  stars: number;
+}
+
+interface TaggedResult {
+  index: number;
+  ai_tag: string;
+  ai_tag_type: "bug" | "performance" | "praise" | "ux" | "crash" | "feature" | "security" | "accessibility";
+  sentiment: "positive" | "neutral" | "negative";
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    const { reviews } = await req.json();
+    if (!reviews || !Array.isArray(reviews) || reviews.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "reviews array is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Build prompt with reviews
+    const reviewsList = reviews
+      .map((r: ReviewInput, i: number) => `[${i}] (${r.stars}★) "${r.text}"`)
+      .join("\n");
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content: `You are a UX research analyst. Analyze app store reviews and categorize each one.
+For each review, determine:
+- ai_tag: A short label in Portuguese (e.g., "Bug de UI", "Performance", "Elogio", "UX Sugestão", "Onboarding", "Acessibilidade", "Crash", "Design Visual", "Funcionalidade", "Segurança")
+- ai_tag_type: One of: "bug", "performance", "praise", "ux", "crash", "feature", "security", "accessibility"
+- sentiment: One of: "positive", "neutral", "negative"
+
+Be precise. A 5★ review praising the app is "praise/positive". A 1★ about crashes is "crash/negative". A 3★ suggesting dark mode is "ux/neutral".`,
+          },
+          {
+            role: "user",
+            content: `Analyze these ${reviews.length} app reviews and return categorization:\n\n${reviewsList}`,
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "categorize_reviews",
+              description: "Return categorization for each review",
+              parameters: {
+                type: "object",
+                properties: {
+                  results: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        index: { type: "number", description: "Review index from input" },
+                        ai_tag: { type: "string", description: "Short Portuguese label for the category" },
+                        ai_tag_type: {
+                          type: "string",
+                          enum: ["bug", "performance", "praise", "ux", "crash", "feature", "security", "accessibility"],
+                        },
+                        sentiment: { type: "string", enum: ["positive", "neutral", "negative"] },
+                      },
+                      required: ["index", "ai_tag", "ai_tag_type", "sentiment"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["results"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "categorize_reviews" } },
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Tente novamente em alguns segundos." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Créditos insuficientes. Adicione créditos no workspace." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const t = await response.text();
+      console.error("AI gateway error:", response.status, t);
+      throw new Error(`AI gateway error: ${response.status}`);
+    }
+
+    const aiData = await response.json();
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+
+    if (!toolCall?.function?.arguments) {
+      throw new Error("No tool call response from AI");
+    }
+
+    const parsed = JSON.parse(toolCall.function.arguments);
+    const results = parsed.results || [];
+
+    // Map back to review IDs
+    const taggedReviews = results.map((r: TaggedResult) => ({
+      id: reviews[r.index]?.id,
+      ai_tag: r.ai_tag,
+      ai_tag_type: r.ai_tag_type,
+      sentiment: r.sentiment,
+    })).filter((r: { id: string | undefined }) => r.id);
+
+    return new Response(
+      JSON.stringify({ success: true, results: taggedReviews }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("analyze-reviews error:", e);
+    return new Response(
+      JSON.stringify({ 
+        error: "Erro interno", 
+        details: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
+        debug_tag: "v0.2.3"
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
+</file>
+
 <file path="src/App.tsx">
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -31172,7 +31172,7 @@ Contexto: ${projectContext}`;
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "google/gemini-2.5-flash",
           messages: [{ role: "system", content: visualPrompt }, { role: "user", content: `Paleta: ${colors.join(", ")}` }],
           tools: [{
             type: "function",
@@ -31229,7 +31229,7 @@ Contexto: ${projectContext}`;
         Authorization: `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: content },
@@ -31394,7 +31394,7 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento.
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: config.systemPrompt },
           { role: "user", content: `Contexto do projeto:\n\n${contextStr}\n\nGere o documento "${config.title}" com base neste contexto.` },
@@ -33102,7 +33102,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -33195,7 +33195,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
@@ -33541,7 +33541,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
