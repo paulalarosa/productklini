@@ -129,7 +129,7 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento.
       console.error("AI error:", aiResponse.status, errText);
       if (aiResponse.status === 429) return new Response(JSON.stringify({ error: "Rate limit excedido. Aguarde alguns segundos." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       if (aiResponse.status === 402) return new Response(JSON.stringify({ error: "Créditos insuficientes no gateway de IA." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      return new Response(JSON.stringify({ error: `Erro no gateway de IA (${aiResponse.status})` }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: `Erro no gateway de IA (${aiResponse.status})`, details: errText }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const aiData = await aiResponse.json();
