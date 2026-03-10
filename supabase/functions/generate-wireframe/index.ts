@@ -62,7 +62,7 @@ Gere entre 8-20 elementos dependendo da complexidade.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
