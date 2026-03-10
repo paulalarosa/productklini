@@ -626,9 +626,14 @@ DIRETRIZES:
           priority: t.priority || "medium",
           status: "todo"
         }));
-        await supabase.from("tasks").insert(toInsert);
-        actionsPerformed.push(`✅ ${tasks.length} tarefa(s)`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        const { error: dbErr } = await supabase.from("tasks").insert(toInsert);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar tarefas: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ ${tasks.length} tarefa(s)`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_personas") {
         const personas = (args.personas as PersonaArg[]) ?? [];
         const toInsert = personas.map((p) => ({
@@ -638,21 +643,31 @@ DIRETRIZES:
           goals: p.goals || [],
           pain_points: p.pain_points || []
         }));
-        await supabase.from("personas").insert(toInsert);
-        actionsPerformed.push(`✅ ${personas.length} persona(s)`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        const { error: dbErr } = await supabase.from("personas").insert(toInsert);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar personas: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ ${personas.length} persona(s)`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_document") {
-        await supabase.from("project_documents").insert({
+        const { error: dbErr } = await supabase.from("project_documents").insert({
           project_id: projectId,
           title: args.title,
           doc_type: args.doc_type,
           content: args.content,
           ai_generated: true
         });
-        actionsPerformed.push(`✅ Doc "${args.title}"`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar doc: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Doc "${args.title}"`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_bmc") {
-        await supabase.from("business_model_canvas").insert({
+        const { error: dbErr } = await supabase.from("business_model_canvas").insert({
           project_id: projectId,
           name: args.name,
           value_propositions: args.value_propositions,
@@ -666,8 +681,13 @@ DIRETRIZES:
           revenue_streams: args.revenue_streams || [],
           status: "draft"
         });
-        actionsPerformed.push(`✅ BMC "${args.name}"`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar BMC: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ BMC "${args.name}"`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_ux_metrics") {
         const metrics = (args.metrics as MetricArg[]) ?? [];
         const toInsert = metrics.map((m) => ({
@@ -677,11 +697,16 @@ DIRETRIZES:
           description: m.description,
           category: m.category
         }));
-        await supabase.from("ux_metrics").insert(toInsert);
-        actionsPerformed.push(`✅ ${metrics.length} métricas`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        const { error: dbErr } = await supabase.from("ux_metrics").insert(toInsert);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar métricas: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ ${metrics.length} métricas`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_ux_research") {
-        await supabase.from("ux_research").insert({
+        const { error: dbErr } = await supabase.from("ux_research").insert({
           project_id: projectId,
           title: args.title,
           research_type: args.research_type,
@@ -690,10 +715,15 @@ DIRETRIZES:
           findings: args.findings || [],
           conducted_at: new Date().toISOString()
         });
-        actionsPerformed.push(`✅ Pesquisa "${args.title}"`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar pesquisa: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Pesquisa "${args.title}"`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_empathy_map") {
-        await supabase.from("empathy_maps").insert({
+        const { error: dbErr } = await supabase.from("empathy_maps").insert({
           project_id: projectId,
           persona_name: args.persona_name,
           thinks_and_feels: args.thinks_and_feels,
@@ -703,72 +733,112 @@ DIRETRIZES:
           pains: args.pains,
           gains: args.gains
         });
-        actionsPerformed.push(`✅ Mapa de Empatia "${args.persona_name}"`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Mapa de Empatia: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Mapa de Empatia "${args.persona_name}"`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_benchmark") {
-        await supabase.from("benchmarks").insert({
+        const { error: dbErr } = await supabase.from("benchmarks").insert({
           project_id: projectId,
           name: args.name,
           competitors: args.competitors,
           features: args.features,
           insights: args.insights
         });
-        actionsPerformed.push(`✅ Benchmark "${args.name}"`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Benchmark: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Benchmark "${args.name}"`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_jtbd") {
-        await supabase.from("jtbd_frameworks").insert({
+        const { error: dbErr } = await supabase.from("jtbd_frameworks").insert({
           project_id: projectId,
           job_statement: args.job_statement,
           situation: args.situation,
           motivation: args.motivation,
           expected_outcome: args.expected_outcome
         });
-        actionsPerformed.push(`✅ JTBD Framework`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar JTBD: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ JTBD Framework`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_csd_matrix") {
         const itemsToInsert = (args.items as CSDArg[]).map((item) => ({
           project_id: projectId,
           ...item
         }));
-        await supabase.from("csd_matrices").insert(itemsToInsert);
-        actionsPerformed.push(`✅ Matriz CSD (${(args.items as CSDArg[]).length} itens)`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        const { error: dbErr } = await supabase.from("csd_matrices").insert(itemsToInsert);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Matriz CSD: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Matriz CSD (${(args.items as CSDArg[]).length} itens)`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_hmw") {
         const questionsToInsert = (args.questions as HMWArg[]).map((q) => ({
           project_id: projectId,
           ...q
         }));
-        await supabase.from("hmw_questions").insert(questionsToInsert);
-        actionsPerformed.push(`✅ How Might We (${(args.questions as HMWArg[]).length} perguntas)`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        const { error: dbErr } = await supabase.from("hmw_questions").insert(questionsToInsert);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar HMW: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ How Might We (${(args.questions as HMWArg[]).length} perguntas)`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_sitemap") {
         const nodes = (args.nodes as SitemapArg[]).map((n) => ({
           project_id: projectId,
           ...n
         }));
-        await supabase.from("sitemaps").insert(nodes);
-        actionsPerformed.push(`✅ Sitemap (${(args.nodes as SitemapArg[]).length} nós)`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        const { error: dbErr } = await supabase.from("sitemaps").insert(nodes);
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Sitemap: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Sitemap (${(args.nodes as SitemapArg[]).length} nós)`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_card_sorting") {
-        await supabase.from("card_sorting").insert({
+        const { error: dbErr } = await supabase.from("card_sorting").insert({
           project_id: projectId,
           category_name: args.category_name,
           items: args.items
         });
-        actionsPerformed.push(`✅ Card Sorting ("${args.category_name}")`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Card Sorting: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Card Sorting ("${args.category_name}")`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_tone_of_voice") {
-        await supabase.from("tone_of_voice").insert({
+        const { error: dbErr } = await supabase.from("tone_of_voice").insert({
           project_id: projectId,
           personality_traits: args.personality_traits,
           do_say: args.do_say,
           dont_say: args.dont_say,
           brand_archetype: args.brand_archetype
         });
-        actionsPerformed.push(`✅ Tom de Voz`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Tom de Voz: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Tom de Voz`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_microcopy") {
-        await supabase.from("microcopy_inventory").insert({
+        const { error: dbErr } = await supabase.from("microcopy_inventory").insert({
           project_id: projectId,
           component_type: args.component_type,
           context: args.context,
@@ -776,48 +846,73 @@ DIRETRIZES:
           suggested_copy: args.suggested_copy,
           tone_applied: args.tone_applied
         });
-        actionsPerformed.push(`✅ Microcopy ("${args.component_type}")`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Microcopy: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Microcopy ("${args.component_type}")`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_nielsen_evaluation") {
-        await supabase.from("nielsen_heuristics").insert({
+        const { error: dbErr } = await supabase.from("nielsen_heuristics").insert({
           project_id: projectId,
           heuristic_name: args.heuristic_name,
           evaluation_notes: args.evaluation_notes,
           severity_level: args.severity_level,
           recommendation: args.recommendation
         });
-        actionsPerformed.push(`✅ Heurística "${args.heuristic_name}" (Nível ${args.severity_level})`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Heurística: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Heurística "${args.heuristic_name}" (Nível ${args.severity_level})`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_usability_result") {
-        await supabase.from("usability_tests").insert({
+        const { error: dbErr } = await supabase.from("usability_tests").insert({
           project_id: projectId,
           task_description: args.task_description,
           success_rate_percentage: args.success_rate_percentage,
           user_feedback: args.user_feedback,
           key_observations: args.key_observations
         });
-        actionsPerformed.push(`✅ Teste "${args.task_description}" (${args.success_rate_percentage}%)`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Teste: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Teste "${args.task_description}" (${args.success_rate_percentage}%)`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_wcag_audit") {
-        await supabase.from("wcag_audits").insert({
+        const { error: dbErr } = await supabase.from("wcag_audits").insert({
           project_id: projectId,
           guideline_reference: args.guideline_reference,
           compliance_status: args.compliance_status,
           issue_description: args.issue_description,
           fix_suggestion: args.fix_suggestion
         });
-        actionsPerformed.push(`✅ WCAG Audit: ${args.guideline_reference} (${args.compliance_status})`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar WCAG Audit: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ WCAG Audit: ${args.guideline_reference} (${args.compliance_status})`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       } else if (fnName === "create_qa_bug") {
-        await supabase.from("qa_bugs").insert({
+        const { error: dbErr } = await supabase.from("qa_bugs").insert({
           project_id: projectId,
           bug_title: args.bug_title,
           steps_to_reproduce: args.steps_to_reproduce,
           severity: args.severity,
           status: args.status || "Aberto"
         });
-        actionsPerformed.push(`✅ Bug: "${args.bug_title}" (${args.severity})`);
-        toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        if (dbErr) {
+          actionsPerformed.push(`❌ Erro ao criar Bug: ${dbErr.message}`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: ${dbErr.message}` });
+        } else {
+          actionsPerformed.push(`✅ Bug: "${args.bug_title}" (${args.severity})`);
+          toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
+        }
       }
     }
 
