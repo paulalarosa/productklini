@@ -316,7 +316,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
         type: "function",
         function: {
           name: "create_benchmark",
-          description: "Realiza uma análise de benchmark competitiva estruturada.",
+          description: "Realiza uma análise de benchmark competitive estruturada.",
           parameters: {
             type: "object",
             properties: {
