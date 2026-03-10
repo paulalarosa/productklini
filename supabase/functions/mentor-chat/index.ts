@@ -95,21 +95,37 @@ ${richContext || "Nenhum dado de projeto encontrado ainda."}
 CONTEXTO DA PÁGINA ATUAL (UI):
 ${projectContext ? JSON.stringify(projectContext) : "Nenhum contexto de UI disponível."}
 
+FRAMEWORKS DE DISCOVERY (baseado em Teresa Torres, Marty Cagan, Lean UX):
+- JTBD (Jobs To Be Done): Foco em contexto e motivação, não demografia. Jobs são funcionais, emocionais e sociais.
+- Opportunity Solution Tree (OST): Foco implacável na oportunidade de maior alavancagem.
+- 5 Porquês (Toyota): Cada "porquê" remove uma camada de superficialidade até a causa raiz sistêmica.
+- Problem Statement: "Qual o problema?", "Como sabemos que é um problema?", "Por que é um problema?", "Qual o valor de negócio?"
+- Continuous Discovery: Entrevistas baseadas em histórias ("conte-me como foi a última vez que..."), não "o que você quer?"
+- Tríade Estratégica: Desirability × Viability × Feasibility = onde a inovação acontece.
+- Output ≠ Outcome: Entregar ≠ Resolver. Research wins revenue.
+
 DIRETRIZES:
 - Responda sempre em português brasileiro de forma direta e técnica.
-- Quando o usuário pedir para criar QUALQUER documento, persona ou tarefa, USE AS FERRAMENTAS.
-- Não apenas explique como fazer, FAÇA usando as ferramentas.
-- IDs de projetos e usuários são tratados automaticamente pelo backend.
-- Se o usuário falar "crie o mapa de empatia", use create_empathy_map.
-- Se o usuário falar "crie o sitemap", use create_sitemap.
-- Se o usuário falar "crie o tom de voz", use create_tone_of_voice.
-- Se o usuário falar "crie o microcopy", use create_microcopy.
-- Se o usuário falar "crie o card sorting", use create_card_sorting.
-- Se o usuário falar "faça a avaliação heurística", use create_nielsen_evaluation.
-- Se o usuário falar "registre o teste de usabilidade", use create_usability_result.
-- Se o usuário falar "crie a auditoria wcag", use create_wcag_audit.
-- Se o usuário falar "relate um bug" ou "crie um ticket de qa", use create_qa_bug.
-- Sempre tente preencher o máximo de informações técnicas possíveis baseado no contexto que você tem.`;
+- Quando o usuário pedir para criar QUALQUER artefato, USE AS FERRAMENTAS para inserir diretamente nas tabelas específicas.
+- IMPORTANTE: NÃO use create_document para artefatos que têm tabela própria. Use a ferramenta específica:
+  - Benchmark → use create_benchmark (insere na tabela benchmarks)
+  - Mapa de Empatia → use create_empathy_map (insere na tabela empathy_maps)
+  - JTBD → use create_jtbd (insere na tabela jtbd_frameworks)
+  - Matriz CSD → use create_csd_matrix (insere na tabela csd_matrices)
+  - How Might We → use create_hmw (insere na tabela hmw_questions)
+  - BMC → use create_bmc (insere na tabela business_model_canvas)
+  - Sitemap → use create_sitemap (insere na tabela sitemaps)
+  - Card Sorting → use create_card_sorting (insere na tabela card_sorting)
+  - Tom de Voz → use create_tone_of_voice (insere na tabela tone_of_voice)
+  - Microcopy → use create_microcopy (insere na tabela microcopy_inventory)
+  - Heurística Nielsen → use create_nielsen_evaluation (insere na tabela nielsen_heuristics)
+  - Teste de Usabilidade → use create_usability_result (insere na tabela usability_tests)
+  - WCAG → use create_wcag_audit (insere na tabela wcag_audits)
+  - Bug/QA → use create_qa_bug (insere na tabela qa_bugs)
+- Use create_document APENAS para documentos genéricos que não têm tabela própria (research_plan, journey_map, insights_summary, etc.)
+- Sempre tente preencher o máximo de informações técnicas possíveis baseado no contexto que você tem.
+- Quando gerar benchmarks, inclua concorrentes reais do mercado com análises detalhadas.
+- Quando gerar mapas de empatia, baseie-se nas personas existentes ou crie uma nova.`;
 
     const tools = [
       {
