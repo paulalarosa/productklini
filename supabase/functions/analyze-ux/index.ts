@@ -68,7 +68,7 @@ interface ToneData {
     let projectContext = "";
     if (project_id) {
       const [pRes, persRes, toneRes] = await Promise.all([
-        supabase.from("projects").select("name, description").eq("id", project_id).single(),
+        supabase.from("projects").select("name, description").eq("id", project_id).maybeSingle(),
         supabase.from("personas").select("name, role, goals, pain_points").eq("project_id", project_id),
         supabase.from("tone_of_voice").select("*").eq("project_id", project_id).maybeSingle(),
       ]);

@@ -147,6 +147,60 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
 - Quando gerar mapas de empatia, baseie-se nas personas existentes do projeto.`;
 
     const tools = [
+      {
+        type: "function",
+        function: {
+          name: "update_task",
+          description: "Atualiza o status ou prioridade de uma tarefa existente.",
+          parameters: {
+            type: "object",
+            properties: {
+              task_id: { type: "string", description: "O ID da tarefa a ser atualizada." },
+              status: { type: "string", enum: ["todo", "in_progress", "review", "done"] },
+              priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+            },
+            required: ["task_id"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "update_project_phase",
+          description: "Atualiza a fase atual do projeto e seu progresso.",
+          parameters: {
+            type: "object",
+            properties: {
+              current_phase: { type: "string" },
+              progress: { type: "number", description: "Percentual de progresso (0-100)" },
+            },
+            required: ["current_phase"],
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "generate_document_with_ai",
+          description: "Gera um documento extenso usando o endpoint dedicado generate-docs. Use isso para documentos densos como Plano de Pesquisa, Handoff, Guia de Tom de Voz, etc. Não requer passar o conteúdo inteiro, apenas o tipo e projeto.",
+          parameters: {
+            type: "object",
+            properties: {
+              doc_type: { 
+                type: "string", 
+                enum: [
+                  "research_plan", "journey_map", "insights_summary", "ds_foundation", "dev_handoff",
+                  "empathy_map", "benchmark", "jtbd", "csd_matrix", "hmw", "affinity_diagram",
+                  "tone_of_voice", "microcopy_library", "content_audit", "heuristic_evaluation",
+                  "usability_test", "wcag_checklist", "prioritization_matrix", "sitemap", 
+                  "component_states", "task_flows", "interview_analysis"
+                ] 
+              },
+            },
+            required: ["doc_type"],
+          },
+        },
+      },
 
       {
         type: "function",

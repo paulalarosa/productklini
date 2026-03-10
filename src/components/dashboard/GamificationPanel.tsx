@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,7 @@ interface GamificationPanelProps {
   onToggle: () => void;
 }
 
-export function GamificationPanel({ isOpen, onToggle }: GamificationPanelProps) {
+export const GamificationPanel = forwardRef<HTMLDivElement, GamificationPanelProps>(({ isOpen, onToggle }, ref) => {
   const { data: project } = useProject();
   const { data: userPoints } = useUserPoints(project?.id);
   const { data: userAchievements } = useUserAchievements(project?.id);
@@ -247,4 +247,4 @@ export function GamificationPanel({ isOpen, onToggle }: GamificationPanelProps) 
       </motion.div>
     </>
   );
-}
+});
