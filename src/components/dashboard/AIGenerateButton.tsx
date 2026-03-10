@@ -72,9 +72,10 @@ export function AIGenerateButton({
       queryClient.invalidateQueries({ queryKey: ["documents"] });
 
       toast.success("Conteúdo gerado com sucesso!");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("AI generate error:", e);
-      toast.error(e.message || "Erro ao gerar conteúdo");
+      const error = e as Error;
+      toast.error(error.message || "Erro ao gerar conteúdo");
     } finally {
       setIsLoading(false);
     }

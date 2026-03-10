@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Smartphone, ShoppingCart, LayoutDashboard, LogIn, MessageSquare, UserPlus, Settings, ListTodo, Search } from "lucide-react";
 
 interface CanvasElement {

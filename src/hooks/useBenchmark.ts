@@ -16,11 +16,11 @@ export function useBenchmarks(projectId?: string) {
     queryKey: ["benchmarks", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const { data, error } = await (supabase
-        .from("benchmarks" as any)
+      const { data, error } = await supabase
+        .from("benchmarks")
         .select("*")
         .eq("project_id", projectId)
-        .order("created_at", { ascending: false }) as any);
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data as Benchmark[];
@@ -55,16 +55,16 @@ export function useCreateBenchmark() {
 
   return useMutation({
     mutationFn: async (benchmark: BenchmarkInsert) => {
-      const { data, error } = await (supabase
-        .from("benchmarks" as any)
+      const { data, error } = await supabase
+        .from("benchmarks")
         .insert(benchmark)
         .select()
-        .single() as any);
+        .single();
 
       if (error) throw error;
       return data as Benchmark;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: Benchmark) => {
       queryClient.invalidateQueries({ queryKey: ["benchmarks", data.project_id] });
     },
   });
@@ -75,17 +75,17 @@ export function useUpdateBenchmark() {
 
   return useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: BenchmarkUpdate }) => {
-      const { data, error } = await (supabase
-        .from("benchmarks" as any)
+      const { data, error } = await supabase
+        .from("benchmarks")
         .update(updates)
         .eq("id", id)
         .select()
-        .single() as any);
+        .single();
 
       if (error) throw error;
       return data as Benchmark;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: Benchmark) => {
       queryClient.invalidateQueries({ queryKey: ["benchmarks", data.project_id] });
     },
   });
@@ -96,10 +96,10 @@ export function useDeleteBenchmark() {
 
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await (supabase
-        .from("benchmarks" as any)
+      const { error } = await supabase
+        .from("benchmarks")
         .delete()
-        .eq("id", id) as any);
+        .eq("id", id);
 
       if (error) throw error;
     },
