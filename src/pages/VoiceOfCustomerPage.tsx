@@ -159,23 +159,24 @@ export function VoiceOfCustomerPage() {
   const handleScrape = async () => {
     if (!storeUrl.trim()) return;
     setScraping(true);
+    toast.info("Buscando reviews da loja... Isso pode levar alguns segundos.");
     try {
       const { reviews: scraped } = await scrapeStoreReviews(storeUrl.trim());
+      if (!scraped || scraped.length === 0) {
+        toast.warning("Nenhum review encontrado para este app. Verifique a URL e tente novamente.");
+        return;
+      }
       const toInsert = scraped.map((r) => ({
         stars: r.stars, text: r.text, author: r.author, platform: r.platform, ai_tag: "", ai_tag_type: "",
       }));
       await insertAppReviews(toInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
-      toast.success(`${toInsert.length} reviews importados da loja!`);
+      toast.success(`${toInsert.length} reviews importados! Clique em "Analisar com IA" para classificá-los.`);
       setStoreUrl("");
       setShowImportBar(false);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Erro ao importar";
-      if (msg.toLowerCase().includes("firecrawl") || msg.toLowerCase().includes("not configured")) {
-        toast.error("Importação via URL requer FIRECRAWL_API_KEY nos secrets do Supabase. Use a importação por CSV como alternativa.");
-      } else {
-        toast.error(msg);
-      }
+      toast.error(msg);
     } finally {
       setScraping(false);
     }
