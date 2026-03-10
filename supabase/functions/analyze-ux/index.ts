@@ -260,7 +260,7 @@ Contexto: ${projectContext}`;
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
         body: JSON.stringify({
-          model: "google/gemini-2.0-flash",
+          model: "gpt-4o-mini",
           messages: [{ role: "system", content: visualPrompt }, { role: "user", content: `Paleta: ${colors.join(", ")}` }],
           tools: [{
             type: "function",
@@ -317,7 +317,7 @@ Contexto: ${projectContext}`;
         Authorization: `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: content },

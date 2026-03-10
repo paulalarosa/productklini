@@ -571,7 +571,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
@@ -664,7 +664,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
+          model: "gpt-4o-mini",
           messages: [
             { role: "system", content: systemPrompt },
             ...messages,
@@ -1010,7 +1010,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,

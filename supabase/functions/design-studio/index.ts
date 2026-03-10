@@ -190,7 +190,7 @@ ${context ? `Contexto do projeto: ${JSON.stringify(context)}` : ""}`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: prompt },

@@ -115,7 +115,7 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento.
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: config.systemPrompt },
           { role: "user", content: `Contexto do projeto:\n\n${contextStr}\n\nGere o documento "${config.title}" com base neste contexto.` },
