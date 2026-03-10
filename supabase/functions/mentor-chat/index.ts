@@ -577,7 +577,6 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           ...messages,
         ],
         tools,
-        stream: false,
       }),
     });
 

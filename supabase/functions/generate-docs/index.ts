@@ -120,7 +120,6 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento.
           { role: "system", content: config.systemPrompt },
           { role: "user", content: `Contexto do projeto:\n\n${contextStr}\n\nGere o documento "${config.title}" com base neste contexto.` },
         ],
-        stream: false,
       }),
     });
 
@@ -140,7 +139,7 @@ ${docs.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento.
 
     const { data: doc, error: insertError } = await supabase
       .from("project_documents")
-      .insert({ project_id, doc_type, title: config.title, content, ai_generated: true, metadata: { generated_at: new Date().toISOString(), model: "gemini-2.5-flash" } })
+      .insert({ project_id, doc_type, title: config.title, content, ai_generated: true, metadata: { generated_at: new Date().toISOString(), model: "google/gemini-2.5-flash" } })
       .select()
       .maybeSingle();
 

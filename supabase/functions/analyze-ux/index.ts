@@ -322,7 +322,6 @@ Contexto: ${projectContext}`;
           { role: "system", content: systemPrompt },
           { role: "user", content: content },
         ],
-        stream: false,
       }),
     });
 
