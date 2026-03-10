@@ -32,19 +32,19 @@ export function AnalyticsCharts() {
 
   const moduleDistribution = useMemo(() => {
     const counts = { ux: 0, ui: 0, dev: 0 };
-    allTasks.forEach((t) => { if (t.module in counts) counts[t.module as keyof typeof counts]++; });
+    (tasks ?? []).forEach((t) => { if (t.module in counts) counts[t.module as keyof typeof counts]++; });
     return Object.entries(counts).map(([name, value]) => ({ name: name.toUpperCase(), value }));
-  }, [allTasks]);
+  }, [tasks]);
 
   const statusDistribution = useMemo(() => {
     const labels: Record<string, string> = { todo: "A Fazer", in_progress: "Em Andamento", review: "Revisão", done: "Concluído", blocked: "Bloqueado" };
     const counts: Record<string, number> = {};
-    allTasks.forEach((t) => { counts[t.status] = (counts[t.status] || 0) + 1; });
+    (tasks ?? []).forEach((t) => { counts[t.status] = (counts[t.status] || 0) + 1; });
     return Object.entries(counts).map(([key, value]) => ({ name: labels[key] || key, value, key }));
-  }, [allTasks]);
+  }, [tasks]);
 
   const timeComparison = useMemo(() => {
-    return allTasks
+    return (tasks ?? [])
       .filter((t) => t.days_in_phase > 0)
       .slice(0, 6)
       .map((t) => ({
@@ -52,7 +52,7 @@ export function AnalyticsCharts() {
         estimado: t.estimated_days,
         real: t.days_in_phase,
       }));
-  }, [allTasks]);
+  }, [tasks]);
 
   const uxMetricsData = useMemo(() => {
     return (metrics ?? []).map((m) => ({

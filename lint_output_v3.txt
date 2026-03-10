@@ -1,0 +1,63 @@
+
+> vite_react_shadcn_ts@0.2.0 lint
+> eslint .
+
+
+/Users/paulalarosa/Downloads/productklini/src/components/dashboard/AIDesignStudio.tsx
+   81:5   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  144:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/paulalarosa/Downloads/productklini/src/components/dashboard/AnalyticsCharts.tsx
+  31:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 37) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  31:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 44) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  31:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 55) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+/Users/paulalarosa/Downloads/productklini/src/components/dashboard/DesignSystemHub.tsx
+   402:62  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+   403:22  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+   936:42  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+  1343:6   warning  React Hook useEffect has a missing dependency: 'DEFAULT_TOKENS'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/paulalarosa/Downloads/productklini/src/components/dashboard/PrototypePlayer.tsx
+  310:6  warning  React Hook useEffect has a missing dependency: 'loadHotspots'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/paulalarosa/Downloads/productklini/src/components/dashboard/TeamMetrics.tsx
+  8:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 26) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  8:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 51) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  8:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 68) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  8:9  warning  The 'allTasks' logical expression could make the dependencies of useMemo Hook (at line 82) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+/Users/paulalarosa/Downloads/productklini/src/components/dashboard/WireframeTemplates.tsx
+  31:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/badge.tsx
+  29:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/button.tsx
+  47:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/form.tsx
+  129:10  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/navigation-menu.tsx
+  111:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/sidebar.tsx
+  636:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/sonner.tsx
+  27:19  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/components/ui/toggle.tsx
+  37:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/hooks/useAuth.tsx
+  51:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/paulalarosa/Downloads/productklini/src/pages/DevPages.tsx
+  21:9  warning  The 'allTasks' logical expression could make the dependencies of useCallback Hook (at line 41) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  21:9  warning  The 'allTasks' logical expression could make the dependencies of useCallback Hook (at line 86) change on every render. To fix this, wrap the initialization of 'allTasks' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+✖ 26 problems (6 errors, 20 warnings)
+

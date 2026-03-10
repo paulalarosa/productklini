@@ -11,7 +11,7 @@ import {
   Users, Search, Lightbulb, Code, Rocket, BarChart,
   Grid, ChevronRight, X
 } from "lucide-react";
-import { useUserPoints, useUserAchievements, useUserProgress, useAchievementDefinitions } from "@/hooks/useGamification";
+import { useUserPoints, useUserAchievements, useUserProgress, useAchievementDefinitions, AchievementDefinition } from "@/hooks/useGamification";
 import { useProject } from "@/hooks/useProjectData";
 
 const iconMap = {

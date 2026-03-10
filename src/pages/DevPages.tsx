@@ -33,12 +33,12 @@ export function KanbanPage() {
     e.dataTransfer.setData("text/plain", taskId);
     const ghost = document.createElement("div");
     ghost.style.cssText = "position:absolute;top:-1000px;left:-1000px;padding:8px 12px;border-radius:8px;background:hsl(228,12%,13%);border:1px solid hsl(252,80%,65%);color:hsl(210,20%,92%);font-size:11px;font-family:Inter;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
-    const task = allTasks.find(t => t.id === taskId);
+    const task = (tasks ?? []).find(t => t.id === taskId);
     ghost.textContent = task?.title ?? "";
     document.body.appendChild(ghost);
     dragGhost.current = ghost;
     e.dataTransfer.setDragImage(ghost, 0, 0);
-  }, [allTasks]);
+  }, [tasks]);
 
   const handleDragEnd = useCallback(() => {
     setDraggedTask(null);
@@ -70,7 +70,7 @@ export function KanbanPage() {
     const taskId = e.dataTransfer.getData("text/plain");
     if (!taskId) return;
 
-    const task = allTasks.find(t => t.id === taskId);
+    const task = (tasks ?? []).find(t => t.id === taskId);
     if (!task || task.status === targetCol) {
       handleDragEnd();
       return;
@@ -83,7 +83,7 @@ export function KanbanPage() {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
     }
     handleDragEnd();
-  }, [allTasks, queryClient, handleDragEnd]);
+  }, [tasks, queryClient, handleDragEnd]);
 
   const handleAddTask = async (col: string) => {
     if (!newTaskTitle.trim()) {

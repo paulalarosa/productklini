@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
-type AchievementDefinition = Tables<"achievement_definitions">;
+export type AchievementDefinition = Tables<"achievement_definitions">;
 type UserProgress = Tables<"user_progress">;
 type UserAchievement = Tables<"user_achievements">;
 type UserPoints = Tables<"user_points">;

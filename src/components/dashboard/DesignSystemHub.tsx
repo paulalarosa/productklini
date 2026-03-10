@@ -48,7 +48,8 @@ interface DSComponent {
   created_at: string;
 }
 
-import { getProjectId } from "@/lib/api";
+import { getProjectId, type DbTokenHistoryEntry } from "@/lib/api";
+import { Json } from "@/integrations/supabase/types";
 
 // ---- Static Navigation ----
 const STATIC_NAV: { category: DSCategory; title: string; items: DSNavItem[] }[] = [
@@ -399,8 +400,8 @@ export function DesignSystemHub() {
         code_react: result.code || "",
         code_vue: "",
         code_html: "",
-        preview_elements: (result.preview_elements || []) as any,
-        specs: {} as any,
+        preview_elements: (result.preview_elements || []) as unknown as Json,
+        specs: {} as unknown as Json,
         status: "draft",
         source: "ds-hub",
       }]);
@@ -933,7 +934,7 @@ function WCAGView() {
 
 // ---- Token History View ----
 function TokenHistoryView() {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<DbTokenHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -1304,6 +1305,16 @@ function FlutterNativeComponentsView() {
   );
 }
 
+const DEFAULT_TOKENS = [
+  { key: "primary", value: "#6200EE", label: "Primary" },
+  { key: "secondary", value: "#03DAC6", label: "Secondary" },
+  { key: "surface", value: "#131620", label: "Surface" },
+  { key: "background", value: "#0F1117", label: "Background" },
+  { key: "error", value: "#EF4444", label: "Error" },
+  { key: "onPrimary", value: "#FFFFFF", label: "On Primary" },
+  { key: "onSurface", value: "#E2E8F0", label: "On Surface" },
+];
+
 // ---- Flutter Token Automation View ----
 function FlutterTokenAutomationView() {
   const [tokens, setTokens] = useState<{key: string; value: string; label: string}[]>([]);
@@ -1312,17 +1323,7 @@ function FlutterTokenAutomationView() {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
-
-  const DEFAULT_TOKENS = [
-    { key: "primary", value: "#6200EE", label: "Primary" },
-    { key: "secondary", value: "#03DAC6", label: "Secondary" },
-    { key: "surface", value: "#131620", label: "Surface" },
-    { key: "background", value: "#0F1117", label: "Background" },
-    { key: "error", value: "#EF4444", label: "Error" },
-    { key: "onPrimary", value: "#FFFFFF", label: "On Primary" },
-    { key: "onSurface", value: "#E2E8F0", label: "On Surface" },
-  ];
-
+  
   // Load tokens from DB
   useEffect(() => {
     const load = async () => {

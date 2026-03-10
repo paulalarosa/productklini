@@ -8,22 +8,33 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/authHeaders";
+import type { Json } from "@/integrations/supabase/types";
 
 const getStudioUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`;
 
 // ---- Types ----
 type StudioMode = "ux-pilot" | "ui-make";
 
+interface BaseStudioArtifact {
+  title?: string;
+  component_name?: string;
+  artifact_type?: string;
+  code?: string;
+  description?: string;
+  data?: unknown;
+  preview_elements?: PreviewElement[];
+}
+
 interface Iteration {
   id: string;
   mode: StudioMode;
   prompt: string;
-  result: unknown;
+  result: StudioResult;
   timestamp: Date;
   savedToDS?: boolean;
 }
 
-interface PersonaData {
+interface PersonaData extends BaseStudioArtifact {
   name: string;
   role: string;
   age?: number;
@@ -32,6 +43,10 @@ interface PersonaData {
   pain_points: string[];
   behaviors: string[];
 }
+
+interface JourneyStageArtifact extends BaseStudioArtifact { stages: JourneyStage[] }
+interface UserFlowArtifact extends BaseStudioArtifact { steps: UserFlowStep[] }
+interface SitemapArtifact extends BaseStudioArtifact { pages: SitemapPage[] }
 
 interface JourneyStage {
   name: string;
@@ -65,7 +80,7 @@ interface PreviewElement {
   text?: string;
 }
 
-interface StudioComponentResult {
+interface StudioComponentResult extends BaseStudioArtifact {
   component_name: string;
   description?: string;
   code?: string;
@@ -74,11 +89,11 @@ interface StudioComponentResult {
 
 type StudioResult = 
   | PersonaData 
-  | { stages: JourneyStage[] } 
-  | { steps: UserFlowStep[] } 
-  | { pages: SitemapPage[] } 
+  | JourneyStageArtifact
+  | UserFlowArtifact
+  | SitemapArtifact
   | StudioComponentResult 
-  | any; // Adding any at the end as a fallback for unknown artifact types, but focusing on the ones above
+  | (Record<string, unknown> & BaseStudioArtifact);
 
 import { getProjectId } from "@/lib/api";
 
@@ -140,8 +155,8 @@ async function saveComponentToDS(result: StudioComponentResult, prompt: string) 
     code_react: result.code || "",
     code_vue: "",
     code_html: "",
-    preview_elements: (result.preview_elements || []) as any,
-    specs: {} as any,
+    preview_elements: (result.preview_elements || []) as unknown as Json,
+    specs: {} as unknown as Json,
     status: "draft",
     source: "ai-studio",
   }]);
@@ -199,7 +214,7 @@ export function AIDesignStudio() {
       }
 
       const data = await resp.json();
-      setResult(data.result);
+      setResult(data.result as StudioResult);
 
       const iteration: Iteration = {
         id: Date.now().toString(),
@@ -213,7 +228,7 @@ export function AIDesignStudio() {
       // Auto-save UI Make components to DS Hub
       if (mode === "ui-make" && data.result?.component_name) {
         try {
-          await saveComponentToDS(data.result, text);
+          await saveComponentToDS(data.result as StudioComponentResult, text);
           iteration.savedToDS = true;
           toast.success("Componente gerado e salvo no Design System!");
         } catch {
@@ -236,7 +251,7 @@ export function AIDesignStudio() {
     if (!result || savingToDS) return;
     setSavingToDS(true);
     try {
-      await saveComponentToDS(result, prompt);
+      await saveComponentToDS(result as StudioComponentResult, prompt);
       setIterations(prev => prev.map((it, i) => i === 0 ? { ...it, savedToDS: true } : it));
       toast.success("Salvo no Design System Hub!");
     } catch {
@@ -527,10 +542,10 @@ export function AIDesignStudio() {
                   exit={{ opacity: 0 }}
                   className="w-full max-w-4xl"
                 >
-                  {result.artifact_type === "persona" && <PersonaView data={result.data} title={result.title} description={result.description} />}
-                  {result.artifact_type === "journey_map" && <JourneyMapView data={result.data} title={result.title} description={result.description} />}
-                  {result.artifact_type === "user_flow" && <UserFlowView data={result.data} title={result.title} description={result.description} />}
-                  {result.artifact_type === "sitemap" && <SitemapView data={result.data} title={result.title} description={result.description} />}
+                  {result.artifact_type === "persona" && <PersonaView data={result.data as PersonaData} title={result.title} description={result.description} />}
+                  {result.artifact_type === "journey_map" && <JourneyMapView data={result.data as { stages: JourneyStage[] }} title={result.title} description={result.description} />}
+                  {result.artifact_type === "user_flow" && <UserFlowView data={result.data as { steps: UserFlowStep[] }} title={result.title} description={result.description} />}
+                  {result.artifact_type === "sitemap" && <SitemapView data={result.data as { pages: SitemapPage[] }} title={result.title} description={result.description} />}
                   {result.artifact_type === "wireframe_concept" && <WireframeConceptView data={result.data} title={result.title} description={result.description} />}
                 </motion.div>
               )}

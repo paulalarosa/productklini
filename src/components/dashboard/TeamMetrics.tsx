@@ -9,7 +9,7 @@ export function TeamMetrics() {
 
   // Velocity: tasks completed per "sprint" (simulated weekly buckets)
   const velocityData = useMemo(() => {
-    const done = allTasks.filter((t) => t.status === "done");
+    const done = (tasks ?? []).filter((t) => t.status === "done");
     const sorted = [...done].sort((a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime());
     const weeks: Record<string, number> = {};
     sorted.forEach((t) => {
@@ -23,12 +23,13 @@ export function TeamMetrics() {
       sprint: new Date(week).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
       tarefas: count,
     }));
-  }, [allTasks]);
+  }, [tasks]);
 
   // Burndown: remaining tasks over time
   const burndownData = useMemo(() => {
-    const total = allTasks.length;
-    const sorted = [...allTasks].filter(t => t.status === "done").sort((a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime());
+    const currentTasks = (tasks ?? []);
+    const total = currentTasks.length;
+    const sorted = [...currentTasks].filter(t => t.status === "done").sort((a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime());
     const points: { dia: string; restantes: number; ideal: number }[] = [];
     let completed = 0;
     const days = new Set<string>();
@@ -48,12 +49,12 @@ export function TeamMetrics() {
       points.push({ dia: "Fim", restantes: 0, ideal: 0 });
     }
     return points;
-  }, [allTasks]);
+  }, [tasks]);
 
   // Workload per assignee
   const workloadData = useMemo(() => {
     const assignees: Record<string, { total: number; done: number }> = {};
-    allTasks.forEach((t) => {
+    (tasks ?? []).forEach((t) => {
       const name = t.assignee || "Sem atribuição";
       if (!assignees[name]) assignees[name] = { total: 0, done: 0 };
       assignees[name].total++;
@@ -65,21 +66,22 @@ export function TeamMetrics() {
       concluídas: v.done,
       pendentes: v.total - v.done,
     }));
-  }, [allTasks]);
+  }, [tasks]);
 
   // Summary stats
   const stats = useMemo(() => {
-    const done = allTasks.filter((t) => t.status === "done").length;
-    const inProgress = allTasks.filter((t) => t.status === "in_progress").length;
-    const avgDays = allTasks.filter(t => t.days_in_phase > 0).reduce((s, t) => s + t.days_in_phase, 0) / Math.max(allTasks.filter(t => t.days_in_phase > 0).length, 1);
-    const blocked = allTasks.filter((t) => t.status === "blocked").length;
+    const currentTasks = (tasks ?? []);
+    const done = currentTasks.filter((t) => t.status === "done").length;
+    const inProgress = currentTasks.filter((t) => t.status === "in_progress").length;
+    const avgDays = currentTasks.filter(t => t.days_in_phase > 0).reduce((s, t) => s + t.days_in_phase, 0) / Math.max(currentTasks.filter(t => t.days_in_phase > 0).length, 1);
+    const blocked = currentTasks.filter((t) => t.status === "blocked").length;
     return [
       { label: "Concluídas", value: done, color: "text-status-develop" },
       { label: "Em andamento", value: inProgress, color: "text-status-discovery" },
       { label: "Bloqueadas", value: blocked, color: "text-destructive" },
       { label: "Média dias/tarefa", value: avgDays.toFixed(1), color: "text-status-define" },
     ];
-  }, [allTasks]);
+  }, [tasks]);
 
   const tooltipStyle = { background: "hsl(228, 12%, 11%)", border: "1px solid hsl(228, 10%, 18%)", borderRadius: "8px", fontSize: "12px", color: "hsl(210, 20%, 92%)" };
 

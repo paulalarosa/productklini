@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Play, MousePointer2, Maximize2, List } from "lucide-react";
-import { TargetAndTransition } from "framer-motion";
+import { motion, AnimatePresence, TargetAndTransition } from "framer-motion";
+import { X, ChevronLeft, ChevronRight, Play, MousePointer2, Maximize2, List, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getProjectId } from "@/lib/api";
+import type { Json } from "@/integrations/supabase/types";
 
 interface CanvasDesign {
   id: string;
@@ -44,11 +44,7 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
   const [transitionKey, setTransitionKey] = useState(0);
   const [currentTransition, setCurrentTransition] = useState("fade");
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const projectId = await getProjectId();
     const { data: designs } = await supabase
       .from("canvas_designs")
@@ -58,8 +54,11 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
 
     if (designs && designs.length > 0) {
       const mapped = designs.map(d => ({
-        ...d,
-        elements: (d.elements as Record<string, unknown>[]) ?? [],
+        id: d.id,
+        elements: (d.elements || []) as unknown as Record<string, unknown>[],
+        canvas_width: d.canvas_width,
+        canvas_height: d.canvas_height,
+        name: d.name,
       }));
       setScreens(mapped);
       setCurrentScreenId(mapped[0].id);
@@ -73,7 +72,11 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
     if (spots) {
       setHotspots(spots as unknown as Hotspot[]);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const currentScreen = screens.find(s => s.id === currentScreenId);
   const currentHotspots = hotspots.filter(h => h.source_design_id === currentScreenId);
@@ -305,17 +308,17 @@ export function HotspotEditor({
   const [adding, setAdding] = useState(false);
   const [newHotspot, setNewHotspot] = useState({ x: 50, y: 50, width: 100, height: 60, target_design_id: "", transition: "fade", label: "" });
 
-  useEffect(() => {
-    loadHotspots();
-  }, [designId]);
-
-  const loadHotspots = async () => {
+  const loadHotspots = useCallback(async () => {
     const { data } = await supabase
       .from("prototype_hotspots")
       .select("*")
       .eq("source_design_id", designId);
-    if (data) setHotspots(data as unknown as Hotspot[]);
-  };
+    if (data) setHotspots(data as Hotspot[]);
+  }, [designId]);
+
+  useEffect(() => {
+    loadHotspots();
+  }, [loadHotspots]);
 
   const addHotspot = async () => {
     if (!newHotspot.target_design_id) { toast.error("Selecione uma tela de destino"); return; }
