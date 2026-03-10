@@ -104,9 +104,14 @@ FRAMEWORKS DE DISCOVERY (baseado em Teresa Torres, Marty Cagan, Lean UX):
 - Tríade Estratégica: Desirability × Viability × Feasibility = onde a inovação acontece.
 - Output ≠ Outcome: Entregar ≠ Resolver. Research wins revenue.
 
+COERÊNCIA DE CONTEXTO:
+- SEMPRE use as PERSONAS EXISTENTES do projeto listadas acima. NÃO invente novas personas.
+- Todo conteúdo gerado (Mapa de Empatia, JTBD, Benchmark, etc.) deve ser coerente com o projeto e personas existentes.
+- Se não houver personas cadastradas, crie uma persona base primeiro usando create_personas.
+
 DIRETRIZES:
 - Responda sempre em português brasileiro de forma direta e técnica.
-- Quando o usuário pedir para criar QUALQUER artefato, USE AS FERRAMENTAS para inserir diretamente nas tabelas específicas.
+- Quando o usuário pedir para criar QUALQUER artefato, USE AS FERRAMENTAS para inserir diretamente nas tabelas.
 - IMPORTANTE: NÃO use create_document para artefatos que têm tabela própria. Use a ferramenta específica:
   - Benchmark → use create_benchmark (insere na tabela benchmarks)
   - Mapa de Empatia → use create_empathy_map (insere na tabela empathy_maps)
@@ -122,12 +127,27 @@ DIRETRIZES:
   - Teste de Usabilidade → use create_usability_result (insere na tabela usability_tests)
   - WCAG → use create_wcag_audit (insere na tabela wcag_audits)
   - Bug/QA → use create_qa_bug (insere na tabela qa_bugs)
-- Use create_document APENAS para documentos genéricos que não têm tabela própria (research_plan, journey_map, insights_summary, etc.)
+- Use create_document APENAS para documentos genéricos que não têm tabela própria.
+
+FORMATO DE AÇÃO OBRIGATÓRIO:
+Quando precisar usar uma ferramenta, você DEVE usar function calling. Se por algum motivo function calling não funcionar, use EXATAMENTE este formato no seu texto (uma chamada por bloco):
+
+<tool_call>
+{"name": "nome_da_ferramenta", "arguments": {"chave": "valor"}}
+</tool_call>
+
+Exemplo para JTBD:
+<tool_call>
+{"name": "create_jtbd", "arguments": {"job_statement": "...", "situation": "...", "motivation": "...", "expected_outcome": "..."}}
+</tool_call>
+
+NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JTBDs, faça 3 chamadas separadas.
 - Sempre tente preencher o máximo de informações técnicas possíveis baseado no contexto que você tem.
 - Quando gerar benchmarks, inclua concorrentes reais do mercado com análises detalhadas.
-- Quando gerar mapas de empatia, baseie-se nas personas existentes ou crie uma nova.`;
+- Quando gerar mapas de empatia, baseie-se nas personas existentes do projeto.`;
 
     const tools = [
+
       {
         type: "function",
         function: {
@@ -572,8 +592,71 @@ DIRETRIZES:
     const choice = firstData.choices?.[0];
     const toolCalls = choice?.message?.tool_calls;
 
-    // ── No tool calls → stream response directly ──────────────────────
-    if (!toolCalls || toolCalls.length === 0) {
+    // ── Fallback: parse tool calls from text if model didn't use function calling ──
+    const validToolNames = new Set([
+      "create_tasks", "create_personas", "create_document", "create_bmc",
+      "create_ux_metrics", "create_ux_research", "create_empathy_map",
+      "create_benchmark", "create_jtbd", "create_csd_matrix", "create_hmw",
+      "create_sitemap", "create_card_sorting", "create_tone_of_voice",
+      "create_microcopy", "create_nielsen_evaluation", "create_usability_result",
+      "create_wcag_audit", "create_qa_bug"
+    ]);
+
+    function parseToolCallsFromText(text: string): { id: string; function: { name: string; arguments: string } }[] {
+      const parsed: { id: string; function: { name: string; arguments: string } }[] = [];
+      let counter = 0;
+
+      // Pattern 1: <tool_call>{"name": "...", "arguments": {...}}</tool_call>
+      const toolCallRegex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/gi;
+      let match;
+      while ((match = toolCallRegex.exec(text)) !== null) {
+        try {
+          const obj = JSON.parse(match[1]);
+          if (obj.name && validToolNames.has(obj.name)) {
+            parsed.push({
+              id: `fallback_${counter++}`,
+              function: {
+                name: obj.name,
+                arguments: typeof obj.arguments === "string" ? obj.arguments : JSON.stringify(obj.arguments)
+              }
+            });
+          }
+        } catch { /* skip malformed */ }
+      }
+
+      // Pattern 2: create_tool_name({...}) or create_tool_name{...}
+      if (parsed.length === 0) {
+        const inlineRegex = /(?:token_call:|tool_call:)?(create_\w+)\s*\(?\s*(\{[\s\S]*?\})\s*\)?/gi;
+        while ((match = inlineRegex.exec(text)) !== null) {
+          const fnName = match[1];
+          if (validToolNames.has(fnName)) {
+            try {
+              JSON.parse(match[2]);
+              parsed.push({
+                id: `fallback_${counter++}`,
+                function: { name: fnName, arguments: match[2] }
+              });
+            } catch { /* skip malformed */ }
+          }
+        }
+      }
+
+      return parsed;
+    }
+
+    // Check if tool_calls exist natively OR can be parsed from text
+    let effectiveToolCalls = toolCalls;
+    const responseContent = choice?.message?.content || "";
+
+    if (!effectiveToolCalls || effectiveToolCalls.length === 0) {
+      const parsedFromText = parseToolCallsFromText(responseContent);
+      if (parsedFromText.length > 0) {
+        effectiveToolCalls = parsedFromText;
+      }
+    }
+
+    // ── No tool calls at all → stream response directly ──────────────────
+    if (!effectiveToolCalls || effectiveToolCalls.length === 0) {
       const streamResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -595,6 +678,7 @@ DIRETRIZES:
       });
     }
 
+
     // ── Execute tool calls ────────────────────────────────────────────
     const toolResults: { tool_call_id: string; role: "tool"; content: string }[] = [];
     const actionsPerformed: string[] = [];
@@ -606,7 +690,7 @@ DIRETRIZES:
     interface HMWArg { problem_statement: string; hmw_question: string; priority: "P1" | "P2" | "P3" }
     interface SitemapArg { node_name: string; url_path?: string; description?: string; hierarchy_level: number }
 
-    for (const tc of toolCalls) {
+    for (const tc of effectiveToolCalls) {
       const fnName = tc.function.name;
       let args: Record<string, unknown>;
       try { args = JSON.parse(tc.function.arguments); } catch { continue; }
@@ -917,12 +1001,23 @@ DIRETRIZES:
     }
 
     // ── Stream final response ─────────────────────────────────────────
+    // Build the assistant message for context - use original if native tool calls, synthetic if fallback
+    const assistantMessage = (toolCalls && toolCalls.length > 0)
+      ? choice.message
+      : { role: "assistant" as const, content: responseContent || "Executando ferramentas..." };
+
     const finalResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [{ role: "system", content: systemPrompt }, ...messages, choice.message, ...toolResults],
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+          assistantMessage,
+          ...toolResults,
+          { role: "user", content: `As ferramentas foram executadas. Resultado: ${actionsPerformed.join(", ")}. Resuma o que foi criado de forma concisa.` }
+        ],
         stream: true,
       }),
     });
