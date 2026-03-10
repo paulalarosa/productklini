@@ -399,7 +399,9 @@ export function DesignCanvas() {
   const addComponent = (comp: typeof WIREFRAME_COMPONENTS[0]) => {
     const newEls = comp.elements.map((el, i) => ({
       ...el, id: `${Date.now()}-${i}`, rotation: 0, visible: true,
-      stroke: (el as any).stroke, strokeWidth: (el as any).strokeWidth, fontSize: (el as any).fontSize,
+      stroke: (el as Partial<CanvasElement>).stroke,
+      strokeWidth: (el as Partial<CanvasElement>).strokeWidth,
+      fontSize: (el as Partial<CanvasElement>).fontSize,
     }));
     setElements((prev) => [...prev, ...newEls as CanvasElement[]]);
   };
@@ -470,7 +472,11 @@ export function DesignCanvas() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
-      if ((e.metaKey || e.ctrlKey) && e.key === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === "0") { e.preventDefault(); zoomFit(); }
       if (e.key === "Delete" || e.key === "Backspace") deleteSelected();
       if (e.key === "v") setSelectedTool("select");

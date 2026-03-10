@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Plus, Trash2, Pencil, Check, X } from "lucide-react";
-import { usePersonas } from "@/hooks/useProjectData";
+import { usePersonas, type Persona } from "@/hooks/useProjectData";
 import { supabase } from "@/integrations/supabase/client";
 import { getProjectId } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
@@ -53,9 +53,14 @@ export function PersonasCard() {
     toast.success("Persona removida");
   };
 
-  const startEdit = (p: any) => {
+  const startEdit = (p: Persona) => {
     setEditingId(p.id);
-    setForm({ name: p.name, role: p.role, goals: p.goals.join(", "), painPoints: p.pain_points.join(", ") });
+    setForm({ 
+      name: p.name, 
+      role: p.role || "", 
+      goals: (p.goals as string[] || []).join(", "), 
+      painPoints: (p.pain_points as string[] || []).join(", ") 
+    });
     setAdding(false);
   };
 
@@ -125,7 +130,7 @@ export function PersonasCard() {
               </div>
             </div>
             <div className="flex flex-wrap gap-1">
-              {p.goals.map((g) => (
+              {(p.goals as string[] || []).map((g) => (
                 <span key={g} className="text-[10px] px-1.5 py-0.5 rounded-full bg-status-develop/10 text-status-develop">{g}</span>
               ))}
             </div>

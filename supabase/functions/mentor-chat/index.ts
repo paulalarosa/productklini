@@ -72,16 +72,16 @@ FASE ATUAL: ${p.current_phase || "Discovery"}
 PROGRESSO: ${p.progress || 0}%
 
 PERSONAS (${personasRes.data?.length || 0}):
-${personasRes.data?.map(pers => `- ${pers.name} (${pers.role})`).join("\n") || "Nenhuma registrada."}
+${personasRes.data?.map((pers: { name: string; role: string }) => `- ${pers.name} (${pers.role})`).join("\n") || "Nenhuma registrada."}
 
 TAREFAS (${tasksRes.data?.length || 0}):
-${tasksRes.data?.slice(0, 10).map(t => `- [${t.module}] ${t.title} (${t.status})`).join("\n") || "Nenhuma tarefa."}
+${tasksRes.data?.slice(0, 10).map((t: { module: string; title: string; status: string }) => `- [${t.module}] ${t.title} (${t.status})`).join("\n") || "Nenhuma tarefa."}
 
 MÉTRICAS UX:
-${metricsRes.data?.map(m => `- ${m.metric_name}: ${m.score}`).join("\n") || "Nenhuma métrica."}
+${metricsRes.data?.map((m: { metric_name: string; score: number }) => `- ${m.metric_name}: ${m.score}`).join("\n") || "Nenhuma métrica."}
 
 DOCUMENTOS EXISTENTES:
-${docsRes.data?.map(d => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento."}
+${docsRes.data?.map((d: { doc_type: string; title: string }) => `- [${d.doc_type}] ${d.title}`).join("\n") || "Nenhum documento."}
         `.trim();
       }
     }
@@ -599,9 +599,16 @@ DIRETRIZES:
     const toolResults: { tool_call_id: string; role: "tool"; content: string }[] = [];
     const actionsPerformed: string[] = [];
 
+    interface TaskArg { title: string; module?: "ux" | "ui" | "dev"; phase?: "discovery" | "define" | "develop" | "deliver"; priority?: "low" | "medium" | "high" | "urgent" }
+    interface PersonaArg { name: string; role: string; goals?: string[]; pain_points?: string[] }
+    interface MetricArg { metric_name: string; score: number; description?: string; category: string }
+    interface CSDArg { category: "Certeza" | "Suposição" | "Dúvida"; description: string; impact_level: "Low" | "Medium" | "High" }
+    interface HMWArg { problem_statement: string; hmw_question: string; priority: "P1" | "P2" | "P3" }
+    interface SitemapArg { node_name: string; url_path?: string; description?: string; hierarchy_level: number }
+
     for (const tc of toolCalls) {
       const fnName = tc.function.name;
-      let args: any;
+      let args: Record<string, unknown>;
       try { args = JSON.parse(tc.function.arguments); } catch { continue; }
 
       if (!projectId) {
@@ -610,8 +617,8 @@ DIRETRIZES:
       }
 
       if (fnName === "create_tasks") {
-        const tasks = args.tasks ?? [];
-        const toInsert = tasks.map((t: any) => ({
+        const tasks = (args.tasks as TaskArg[]) ?? [];
+        const toInsert = tasks.map((t) => ({
           project_id: projectId,
           title: t.title,
           module: t.module || "ux",
@@ -623,8 +630,8 @@ DIRETRIZES:
         actionsPerformed.push(`✅ ${tasks.length} tarefa(s)`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_personas") {
-        const personas = args.personas ?? [];
-        const toInsert = personas.map((p: any) => ({
+        const personas = (args.personas as PersonaArg[]) ?? [];
+        const toInsert = personas.map((p) => ({
           project_id: projectId,
           name: p.name,
           role: p.role || "User",
@@ -662,8 +669,8 @@ DIRETRIZES:
         actionsPerformed.push(`✅ BMC "${args.name}"`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_ux_metrics") {
-        const metrics = args.metrics ?? [];
-        const toInsert = metrics.map((m: any) => ({
+        const metrics = (args.metrics as MetricArg[]) ?? [];
+        const toInsert = metrics.map((m) => ({
           project_id: projectId,
           metric_name: m.metric_name,
           score: m.score,
@@ -719,28 +726,28 @@ DIRETRIZES:
         actionsPerformed.push(`✅ JTBD Framework`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_csd_matrix") {
-        const itemsToInsert = args.items.map((item: any) => ({
+        const itemsToInsert = (args.items as CSDArg[]).map((item) => ({
           project_id: projectId,
           ...item
         }));
         await supabase.from("csd_matrices").insert(itemsToInsert);
-        actionsPerformed.push(`✅ Matriz CSD (${args.items.length} itens)`);
+        actionsPerformed.push(`✅ Matriz CSD (${(args.items as CSDArg[]).length} itens)`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_hmw") {
-        const questionsToInsert = args.questions.map((q: any) => ({
+        const questionsToInsert = (args.questions as HMWArg[]).map((q) => ({
           project_id: projectId,
           ...q
         }));
         await supabase.from("hmw_questions").insert(questionsToInsert);
-        actionsPerformed.push(`✅ How Might We (${args.questions.length} perguntas)`);
+        actionsPerformed.push(`✅ How Might We (${(args.questions as HMWArg[]).length} perguntas)`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_sitemap") {
-        const nodes = args.nodes.map((n: any) => ({
+        const nodes = (args.nodes as SitemapArg[]).map((n) => ({
           project_id: projectId,
           ...n
         }));
         await supabase.from("sitemaps").insert(nodes);
-        actionsPerformed.push(`✅ Sitemap (${args.nodes.length} nós)`);
+        actionsPerformed.push(`✅ Sitemap (${(args.nodes as SitemapArg[]).length} nós)`);
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
       } else if (fnName === "create_card_sorting") {
         await supabase.from("card_sorting").insert({

@@ -12,6 +12,18 @@ import { toast } from "sonner";
 
 type ABExperiment = Tables<"ab_experiments">;
 
+interface ABVariant {
+  id: string;
+  name: string;
+  is_control: boolean;
+  description?: string;
+}
+
+interface ABMetric {
+  name: string;
+  target_value?: number;
+}
+
 interface ABTestingDashboardProps {
   experiments: ABExperiment[];
   isLoading: boolean;
@@ -31,7 +43,7 @@ export function ABTestingDashboard({ experiments, isLoading, onSelect, selectedI
   const { mutate: deleteExperiment } = useDeleteABExperiment();
 
   const handleStatusChange = (id: string, newStatus: string) => {
-    const updates: any = { status: newStatus };
+    const updates: Partial<ABExperiment> = { status: newStatus as ABExperiment["status"] };
     if (newStatus === "running" && !experiments.find(e => e.id === id)?.start_date) {
       updates.start_date = new Date().toISOString();
     }
@@ -75,8 +87,8 @@ export function ABTestingDashboard({ experiments, isLoading, onSelect, selectedI
     <div className="space-y-4">
       {experiments.map((exp) => {
         const status = statusConfig[exp.status as keyof typeof statusConfig] ?? statusConfig.draft;
-        const variants = (exp.variants as any[]) ?? [];
-        const metrics = (exp.success_metrics as any[]) ?? [];
+        const variants = (exp.variants as unknown as ABVariant[]) ?? [];
+        const metrics = (exp.success_metrics as unknown as ABMetric[]) ?? [];
         const isSelected = selectedId === exp.id;
 
         return (
@@ -147,7 +159,7 @@ export function ABTestingDashboard({ experiments, isLoading, onSelect, selectedI
 
                 {/* Variants */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {variants.map((v: any, i: number) => (
+                  {variants.map((v, i) => (
                     <div key={i} className="p-2 rounded-lg bg-muted/20 text-center">
                       <div className="text-xs font-semibold text-foreground">{v.name}</div>
                       {v.description && <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{v.description}</div>}
@@ -159,7 +171,7 @@ export function ABTestingDashboard({ experiments, isLoading, onSelect, selectedI
                 {/* Metrics */}
                 {metrics.length > 0 && (
                   <div className="flex flex-wrap gap-2">
-                    {metrics.map((m: any, i: number) => (
+                    {metrics.map((m, i) => (
                       <Badge key={i} variant="outline" className="text-xs">
                         <BarChart2 className="w-3 h-3 mr-1" />
                         {m.name}

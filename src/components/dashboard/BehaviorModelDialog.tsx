@@ -44,7 +44,7 @@ export function BehaviorModelDialog({ open, onOpenChange, model, onSave, project
     }
   }, [model, projectId, open]);
 
-  const handleChange = (field: keyof BehaviorModel, value: any) => {
+  const handleChange = (field: keyof BehaviorModel, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

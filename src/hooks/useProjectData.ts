@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchProject, fetchTasks, fetchTeamMembers, fetchPersonas, fetchUxMetrics, fetchDocuments, fetchAllDocuments } from "@/lib/api";
+export type { Persona } from "@/lib/api";
 
 export function useProject() {
   return useQuery({ queryKey: ["project"], queryFn: fetchProject });

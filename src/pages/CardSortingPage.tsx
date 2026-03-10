@@ -40,7 +40,7 @@ export function CardSortingPage() {
                <h3 className="text-sm font-bold uppercase tracking-tight text-muted-foreground">Grupos & Categorias</h3>
                <span className="text-[10px] font-bold bg-muted px-2 py-0.5 rounded">{categories.length} grupos</span>
              </div>
-            <CardSortingBoard categories={(categories as any[]) || []} onDelete={(id) => deleteMutation.mutate({ id })} />
+            <CardSortingBoard categories={categories || []} onDelete={(id) => deleteMutation.mutate({ id })} />
           </div>
         ) : (
           <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2 border-orange-500/20">

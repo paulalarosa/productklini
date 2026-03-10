@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import type { Tables } from "@/integrations/supabase/types";
+
+export type CardSorting = Tables<"card_sorting">;
 
 export function useCardSorting(projectId?: string) {
   const queryClient = useQueryClient();
@@ -10,7 +13,7 @@ export function useCardSorting(projectId?: string) {
     queryFn: async () => {
       if (!projectId) return [];
       const { data, error } = await supabase
-        .from("card_sorting" as any)
+        .from("card_sorting")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -28,7 +31,7 @@ export function useCardSorting(projectId?: string) {
       .channel("card_sorting-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "card_sorting" as any, filter: `project_id=eq.${projectId}` },
+        { event: "*", schema: "public", table: "card_sorting", filter: `project_id=eq.${projectId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["card_sorting", projectId] });
         }
@@ -49,7 +52,7 @@ export function useDeleteCardSorting() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await supabase
-        .from("card_sorting" as any)
+        .from("card_sorting")
         .delete()
         .eq("id", id);
 

@@ -3,17 +3,10 @@ import { MessageSquare, CheckCircle2, XCircle, Trash2, Sparkles } from "lucide-r
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-interface ToneOfVoiceData {
-  id: string;
-  personality_traits: string[];
-  do_say: string[];
-  dont_say: string[];
-  brand_archetype?: string;
-}
+import type { ToneOfVoice } from "@/hooks/useToneOfVoice";
 
 interface ToneOfVoiceCardProps {
-  tone: ToneOfVoiceData;
+  tone: ToneOfVoice;
   onDelete: (id: string) => void;
 }
 
@@ -46,7 +39,7 @@ export function ToneOfVoiceCard({ tone, onDelete }: ToneOfVoiceCardProps) {
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
-                {tone.personality_traits?.map((trait, idx) => (
+                {(tone.personality_traits as unknown as string[])?.map((trait, idx) => (
                   <Badge key={idx} className="bg-primary/10 text-primary border-none text-xs font-semibold px-3 overflow-hidden">
                     {trait}
                   </Badge>
@@ -62,7 +55,7 @@ export function ToneOfVoiceCard({ tone, onDelete }: ToneOfVoiceCardProps) {
                 Fazer (Do)
               </h4>
               <ul className="space-y-2">
-                {tone.do_say?.map((text, idx) => (
+                {(tone.do_say as unknown as string[])?.map((text, idx) => (
                   <li key={idx} className="text-sm text-foreground/80 leading-relaxed pl-4 border-l-2 border-green-500/30">
                     {text}
                   </li>
@@ -76,7 +69,7 @@ export function ToneOfVoiceCard({ tone, onDelete }: ToneOfVoiceCardProps) {
                 Evitar (Don't)
               </h4>
               <ul className="space-y-2">
-                {tone.dont_say?.map((text, idx) => (
+                {(tone.dont_say as unknown as string[])?.map((text, idx) => (
                   <li key={idx} className="text-sm text-muted-foreground leading-relaxed pl-4 border-l-2 border-destructive/30">
                     {text}
                   </li>

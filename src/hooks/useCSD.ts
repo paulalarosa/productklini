@@ -3,7 +3,9 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type CSD = any;
+import type { Tables } from "@/integrations/supabase/types";
+
+export type CSD = Tables<"csd_matrices">;
 
 export function useCSD(projectId?: string) {
   const queryClient = useQueryClient();
@@ -13,7 +15,7 @@ export function useCSD(projectId?: string) {
     queryFn: async () => {
       if (!projectId) return [];
       const { data, error } = await supabase
-        .from("csd_matrices" as any)
+        .from("csd_matrices")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -31,7 +33,7 @@ export function useCSD(projectId?: string) {
       .channel("csd-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "csd_matrices" as any, filter: `project_id=eq.${projectId}` },
+        { event: "*", schema: "public", table: "csd_matrices", filter: `project_id=eq.${projectId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["csd", projectId] });
         }
@@ -52,7 +54,7 @@ export function useDeleteCSD() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await supabase
-        .from("csd_matrices" as any)
+        .from("csd_matrices")
         .delete()
         .eq("id", id);
 

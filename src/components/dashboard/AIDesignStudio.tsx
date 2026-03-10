@@ -18,10 +18,67 @@ interface Iteration {
   id: string;
   mode: StudioMode;
   prompt: string;
-  result: any;
+  result: unknown;
   timestamp: Date;
   savedToDS?: boolean;
 }
+
+interface PersonaData {
+  name: string;
+  role: string;
+  age?: number;
+  bio?: string;
+  goals: string[];
+  pain_points: string[];
+  behaviors: string[];
+}
+
+interface JourneyStage {
+  name: string;
+  description: string;
+  emotion: string;
+  touchpoint: string;
+  action: string;
+  opportunity?: string;
+}
+
+interface UserFlowStep {
+  id: string;
+  type: "start" | "end" | "action" | "decision" | "screen";
+  label: string;
+}
+
+interface SitemapPage {
+  name: string;
+  path: string;
+  children?: { name: string }[];
+}
+
+interface PreviewElement {
+  type: "rect" | "circle" | "text" | "line";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fill: string;
+  fontSize?: number;
+  text?: string;
+}
+
+interface StudioComponentResult {
+  component_name: string;
+  description?: string;
+  code?: string;
+  preview_elements?: PreviewElement[];
+}
+
+type StudioResult = 
+  | PersonaData 
+  | { stages: JourneyStage[] } 
+  | { steps: UserFlowStep[] } 
+  | { pages: SitemapPage[] } 
+  | StudioComponentResult 
+  | any; // Adding any at the end as a fallback for unknown artifact types, but focusing on the ones above
 
 import { getProjectId } from "@/lib/api";
 
@@ -73,9 +130,9 @@ const flowNodeColors: Record<string, string> = {
 };
 
 // ---- Save to DS Hub ----
-async function saveComponentToDS(result: any, prompt: string) {
+async function saveComponentToDS(result: StudioComponentResult, prompt: string) {
   const projectId = await getProjectId();
-  const { error } = await supabase.from("ds_components" as any).insert([{
+  const { error } = await supabase.from("ds_components").insert([{
     project_id: projectId,
     name: result.component_name || "Componente sem nome",
     description: result.description || prompt,
@@ -83,8 +140,8 @@ async function saveComponentToDS(result: any, prompt: string) {
     code_react: result.code || "",
     code_vue: "",
     code_html: "",
-    preview_elements: result.preview_elements || [],
-    specs: {},
+    preview_elements: (result.preview_elements || []) as any,
+    specs: {} as any,
     status: "draft",
     source: "ai-studio",
   }]);
@@ -100,7 +157,7 @@ export function AIDesignStudio() {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<StudioResult | null>(null);
   const [iterations, setIterations] = useState<Iteration[]>([]);
   const [showCode, setShowCode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -504,7 +561,7 @@ export function AIDesignStudio() {
 
 // ---- Sub-Components ----
 
-function PersonaView({ data, title, description }: { data: any; title: string; description: string }) {
+function PersonaView({ data, title, description }: { data: PersonaData; title: string; description: string }) {
   return (
     <div className="glass-card p-6 space-y-5">
       <div className="flex items-start gap-4">
@@ -554,7 +611,7 @@ function PersonaView({ data, title, description }: { data: any; title: string; d
   );
 }
 
-function JourneyMapView({ data, title, description }: { data: any; title: string; description: string }) {
+function JourneyMapView({ data, title, description }: { data: { stages: JourneyStage[] }; title: string; description: string }) {
   const stages = data.stages || [];
   return (
     <div className="space-y-4">
@@ -564,7 +621,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-4">
-        {stages.map((stage: any, i: number) => {
+        {stages.map((stage, i) => {
           const emotion = emotionColors[stage.emotion] || emotionColors.neutral;
           return (
             <motion.div
@@ -610,7 +667,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
       <div className="glass-card p-4">
         <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Curva Emocional</h4>
         <div className="flex items-end gap-1 h-16">
-          {stages.map((stage: any, i: number) => {
+          {stages.map((stage, i) => {
             const levels: Record<string, number> = { happy: 100, satisfied: 80, neutral: 50, confused: 30, frustrated: 10 };
             const h = levels[stage.emotion] || 50;
             const emotion = emotionColors[stage.emotion] || emotionColors.neutral;
@@ -631,7 +688,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
           })}
         </div>
         <div className="flex gap-1 mt-1">
-          {stages.map((stage: any, i: number) => (
+          {stages.map((stage, i) => (
             <span key={i} className="flex-1 text-[7px] text-muted-foreground text-center truncate">{stage.name}</span>
           ))}
         </div>
@@ -640,7 +697,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
   );
 }
 
-function UserFlowView({ data, title, description }: { data: any; title: string; description: string }) {
+function UserFlowView({ data, title, description }: { data: { steps: UserFlowStep[] }; title: string; description: string }) {
   const steps = data.steps || [];
   return (
     <div className="space-y-4">
@@ -651,7 +708,7 @@ function UserFlowView({ data, title, description }: { data: any; title: string; 
 
       <div className="glass-card p-6 overflow-x-auto">
         <div className="flex flex-wrap gap-3 items-start justify-center">
-          {steps.map((step: any, i: number) => {
+          {steps.map((step, i) => {
             const color = flowNodeColors[step.type] || flowNodeColors.action;
             const isDecision = step.type === "decision";
 
@@ -681,7 +738,7 @@ function UserFlowView({ data, title, description }: { data: any; title: string; 
   );
 }
 
-function SitemapView({ data, title, description }: { data: any; title: string; description: string }) {
+function SitemapView({ data, title, description }: { data: { pages: SitemapPage[] }; title: string; description: string }) {
   const pages = data.pages || [];
   return (
     <div className="space-y-4">
@@ -692,7 +749,7 @@ function SitemapView({ data, title, description }: { data: any; title: string; d
 
       <div className="glass-card p-6">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {pages.map((page: any, i: number) => (
+          {pages.map((page, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 8 }}
@@ -707,7 +764,7 @@ function SitemapView({ data, title, description }: { data: any; title: string; d
               <p className="text-[9px] text-muted-foreground font-mono">{page.path}</p>
               {page.children && page.children.length > 0 && (
                 <div className="mt-2 space-y-1 pl-3 border-l border-border/50">
-                  {page.children.map((child: any, j: number) => (
+                  {page.children.map((child, j) => (
                     <div key={j} className="flex items-center gap-1">
                       <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
                       <span className="text-[9px] text-muted-foreground">{child.name}</span>
@@ -723,7 +780,7 @@ function SitemapView({ data, title, description }: { data: any; title: string; d
   );
 }
 
-function WireframeConceptView({ data, title, description }: { data: any; title: string; description: string }) {
+function WireframeConceptView({ data, title, description }: { data: unknown; title: string; description: string }) {
   return (
     <div className="glass-card p-6 space-y-4">
       <h2 className="text-sm font-bold text-foreground">{title}</h2>
@@ -735,7 +792,7 @@ function WireframeConceptView({ data, title, description }: { data: any; title: 
   );
 }
 
-function ComponentPreview({ elements, name, description }: { elements: any[]; name: string; description: string }) {
+function ComponentPreview({ elements, name, description }: { elements: PreviewElement[]; name: string; description: string }) {
   return (
     <div className="space-y-4">
       <div className="glass-card p-4">
@@ -751,7 +808,7 @@ function ComponentPreview({ elements, name, description }: { elements: any[]; na
             </pattern>
           </defs>
           <rect width="800" height="500" fill="url(#studio-grid)" />
-          {(elements || []).map((el: any, i: number) => (
+          {(elements || []).map((el, i) => (
             <g key={i}>
               {el.type === "rect" && <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rx={4} />}
               {el.type === "circle" && <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2} fill={el.fill} />}

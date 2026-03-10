@@ -1852,6 +1852,378 @@ export type Database = {
           },
         ]
       }
+      empathy_maps: {
+        Row: {
+          id: string
+          project_id: string
+          persona_name: string | null
+          thinks_and_feels: Json
+          hears: Json
+          sees: Json
+          says_and_does: Json
+          pains: Json
+          gains: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          persona_name?: string | null
+          thinks_and_feels?: Json
+          hears?: Json
+          sees?: Json
+          says_and_does?: Json
+          pains?: Json
+          gains?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          persona_name?: string | null
+          thinks_and_feels?: Json
+          hears?: Json
+          sees?: Json
+          says_and_does?: Json
+          pains?: Json
+          gains?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empathy_maps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      benchmarks: {
+        Row: {
+          id: string
+          project_id: string
+          name: string
+          competitors: Json
+          features: Json
+          insights: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          name: string
+          competitors?: Json
+          features?: Json
+          insights?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          name?: string
+          competitors?: Json
+          features?: Json
+          insights?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "benchmarks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      jtbd_frameworks: {
+        Row: {
+          id: string
+          project_id: string
+          job_statement: string
+          situation: string | null
+          motivation: string | null
+          expected_outcome: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          job_statement: string
+          situation?: string | null
+          motivation?: string | null
+          expected_outcome?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          job_statement?: string
+          situation?: string | null
+          motivation?: string | null
+          expected_outcome?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jtbd_frameworks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      csd_matrices: {
+        Row: {
+          id: string
+          project_id: string
+          category: string
+          description: string
+          impact_level: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          category: string
+          description: string
+          impact_level?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          category?: string
+          description?: string
+          impact_level?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "csd_matrices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      hmw_questions: {
+        Row: {
+          id: string
+          project_id: string
+          problem_statement: string | null
+          hmw_question: string
+          priority: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          problem_statement?: string | null
+          hmw_question: string
+          priority?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          problem_statement?: string | null
+          hmw_question?: string
+          priority?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hmw_questions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      sitemaps: {
+        Row: {
+          id: string
+          project_id: string
+          parent_id: string | null
+          node_name: string
+          url_path: string | null
+          description: string | null
+          hierarchy_level: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          parent_id?: string | null
+          node_name: string
+          url_path?: string | null
+          description?: string | null
+          hierarchy_level?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          parent_id?: string | null
+          node_name?: string
+          url_path?: string | null
+          description?: string | null
+          hierarchy_level?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sitemaps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      card_sorting: {
+        Row: {
+          id: string
+          project_id: string
+          category_name: string
+          items: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          category_name: string
+          items?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          category_name?: string
+          items?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_sorting_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      tone_of_voice: {
+        Row: {
+          id: string
+          project_id: string
+          personality_traits: Json
+          do_say: string[]
+          dont_say: string[]
+          brand_archetype: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          personality_traits?: Json
+          do_say?: string[]
+          dont_say?: string[]
+          brand_archetype?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          personality_traits?: Json
+          do_say?: string[]
+          dont_say?: string[]
+          brand_archetype?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tone_of_voice_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      microcopy_inventory: {
+        Row: {
+          id: string
+          project_id: string
+          component_type: string
+          context: string | null
+          original_text: string | null
+          suggested_copy: string
+          tone_applied: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          component_type: string
+          context?: string | null
+          original_text?: string | null
+          suggested_copy: string
+          tone_applied?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          component_type?: string
+          context?: string | null
+          original_text?: string | null
+          suggested_copy?: string
+          tone_applied?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "microcopy_inventory_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

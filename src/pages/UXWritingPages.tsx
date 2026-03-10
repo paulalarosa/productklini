@@ -38,7 +38,7 @@ export function ToneOfVoicePage() {
           </div>
         ) : tones && tones.length > 0 ? (
           <div className="space-y-4">
-            {tones.map((tone: any) => (
+            {tones.map((tone) => (
               <ToneOfVoiceCard key={tone.id} tone={tone} onDelete={(id) => deleteMutation.mutate({ id })} />
             ))}
           </div>
@@ -86,7 +86,7 @@ export function MicrocopyLibraryPage() {
             <p className="text-sm font-medium text-muted-foreground">Carregando inventário...</p>
           </div>
         ) : items && items.length > 0 ? (
-          <MicrocopyInventory items={items as any[]} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <MicrocopyInventory items={items || []} onDelete={(id) => deleteMutation.mutate({ id })} />
         ) : (
           <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
             <BookOpen className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
@@ -118,7 +118,7 @@ export function ContentAuditPage() {
             <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
           </div>
         ) : items && items.length > 0 ? (
-          <MicrocopyInventory items={items as any[]} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <MicrocopyInventory items={items || []} onDelete={(id) => deleteMutation.mutate({ id })} />
         ) : (
           <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
             <ClipboardList className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />

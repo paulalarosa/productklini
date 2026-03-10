@@ -5,12 +5,28 @@ import { BarChart3, Trash2, ExternalLink, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Benchmark } from "@/hooks/useBenchmark";
 
+interface Competitor {
+  name: string;
+  strengths: string[];
+  weaknesses: string[];
+  url?: string;
+}
+
+interface FeatureComparison {
+  feature: string;
+  competitors: Record<string, string>;
+}
+
 interface BenchmarkCardProps {
   benchmark: Benchmark;
   onDelete?: (id: string) => void;
 }
 
 export function BenchmarkCard({ benchmark, onDelete }: BenchmarkCardProps) {
+  const competitors = (benchmark.competitors as unknown) as Competitor[] || [];
+  const features = (benchmark.features as unknown) as FeatureComparison[] || [];
+  const insights = (benchmark.insights as unknown) as string[] || [];
+
   return (
     <Card className="overflow-hidden border-border/40 hover:border-primary/20 transition-all group">
       <CardHeader className="pb-2 bg-secondary/30">
@@ -39,7 +55,7 @@ export function BenchmarkCard({ benchmark, onDelete }: BenchmarkCardProps) {
         <div className="mb-4 space-y-3">
           <h4 className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Principais Concorrentes</h4>
           <div className="flex flex-wrap gap-2">
-            {benchmark.competitors?.map((comp: any, i: number) => (
+            {competitors.map((comp, i) => (
               <Badge key={i} variant="outline" className="text-[10px] py-0 px-2 flex items-center gap-1 bg-accent/30">
                 {comp.name}
               </Badge>
@@ -55,7 +71,7 @@ export function BenchmarkCard({ benchmark, onDelete }: BenchmarkCardProps) {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left p-1.5 font-bold border-b border-border/40">Feature</th>
-                  {benchmark.competitors?.slice(0, 2).map((comp: any, i: number) => (
+                  {competitors.slice(0, 2).map((comp, i) => (
                     <th key={i} className="text-center p-1.5 font-bold border-b border-border/40 border-l">
                       {comp.name.slice(0, 8)}
                     </th>
@@ -63,10 +79,10 @@ export function BenchmarkCard({ benchmark, onDelete }: BenchmarkCardProps) {
                 </tr>
               </thead>
               <tbody>
-                {benchmark.features?.slice(0, 3).map((f: any, i: number) => (
+                {features.slice(0, 3).map((f, i) => (
                   <tr key={i} className={i % 2 === 0 ? "bg-accent/10" : ""}>
                     <td className="p-1.5 border-b border-border/40">{f.feature}</td>
-                    {benchmark.competitors?.slice(0, 2).map((comp: any, j: number) => (
+                    {competitors.slice(0, 2).map((comp, j) => (
                       <td key={j} className="text-center p-1.5 border-b border-border/40 border-l font-medium">
                         {f.competitors?.[comp.name] === "Yes" ? "✓" : "×"}
                       </td>
@@ -85,7 +101,7 @@ export function BenchmarkCard({ benchmark, onDelete }: BenchmarkCardProps) {
             <h4 className="text-[10px] uppercase font-bold tracking-wider text-primary">Key Insights</h4>
           </div>
           <div className="space-y-1">
-            {benchmark.insights?.slice(0, 2).map((insight: string, i: number) => (
+            {insights.slice(0, 2).map((insight, i) => (
               <p key={i} className="text-[11px] leading-tight text-foreground/80 italic">
                 "{insight}"
               </p>

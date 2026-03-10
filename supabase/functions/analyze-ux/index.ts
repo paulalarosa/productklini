@@ -57,17 +57,24 @@ interface PersonaData {
   pain_points?: string[];
 }
 
+interface ToneData {
+  brand_archetype?: string;
+  personality_traits?: string[];
+  do_say?: string[];
+  dont_say?: string[];
+}
+
     // Fetch project context for context-aware analysis
     let projectContext = "";
     if (project_id) {
       const [pRes, persRes, toneRes] = await Promise.all([
         supabase.from("projects").select("name, description").eq("id", project_id).single(),
         supabase.from("personas").select("name, role, goals, pain_points").eq("project_id", project_id),
-        supabase.from("tone_of_voice" as any).select("*").eq("project_id", project_id).maybeSingle(),
+        supabase.from("tone_of_voice").select("*").eq("project_id", project_id).maybeSingle(),
       ]);
       const p = pRes.data as ProjectData | null;
       const personas = (persRes.data ?? []) as PersonaData[];
-      const tone = toneRes.data as any;
+      const tone = toneRes.data as ToneData | null;
       
       projectContext = `Projeto: ${p?.name || "N/A"}. ${p?.description || ""}
 Personas: ${personas.map((pe: PersonaData) => `${pe.name} (${pe.role})`).join(", ") || "Nenhuma"}

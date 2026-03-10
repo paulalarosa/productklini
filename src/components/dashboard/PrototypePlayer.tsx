@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Play, MousePointer2, Maximize2, List } from "lucide-react";
+import { TargetAndTransition } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getProjectId } from "@/lib/api";
@@ -211,9 +212,9 @@ export function PrototypePlayer({ onClose }: { onClose: () => void }) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${currentScreenId}-${transitionKey}`}
-                initial={trans.initial as any}
-                animate={trans.animate as any}
-                exit={trans.exit as any}
+                initial={trans.initial as TargetAndTransition}
+                animate={trans.animate as TargetAndTransition}
+                exit={trans.exit as TargetAndTransition}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="relative"
                 style={{ boxShadow: "0 20px 60px hsl(0 0% 0% / 0.5)" }}

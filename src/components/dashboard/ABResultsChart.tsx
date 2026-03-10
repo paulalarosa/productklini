@@ -7,6 +7,13 @@ import { useABResults } from "@/hooks/useABExperiments";
 
 type ABExperiment = Tables<"ab_experiments">;
 
+interface ABVariant {
+  id: string;
+  name: string;
+  is_control: boolean;
+  description?: string;
+}
+
 interface ABResultsChartProps {
   experiments: ABExperiment[];
   selectedId: string | null;
@@ -17,12 +24,12 @@ export function ABResultsChart({ experiments, selectedId }: ABResultsChartProps)
   const { data: results } = useABResults(selectedId ?? undefined);
 
   // Mock aggregated data for visualization when no real results exist
-  const variants = ((selectedExp?.variants as any[]) ?? []);
+  const variants = ((selectedExp?.variants as unknown as ABVariant[]) ?? []);
 
   const buildChartData = () => {
     if (!results || results.length === 0) {
       // Generate plausible mock data for demo
-      return variants.map((v: any, i: number) => ({
+      return variants.map((v, i) => ({
         name: v.name ?? `Variante ${i}`,
         conversions: Math.round(Math.random() * 100 + (i === 0 ? 50 : 60)),
         clicks: Math.round(Math.random() * 500 + 400),
@@ -40,7 +47,7 @@ export function ABResultsChart({ experiments, selectedId }: ABResultsChartProps)
       grouped[r.variant_id].sessions++;
     }
 
-    return variants.map((v: any) => {
+    return variants.map((v) => {
       const g = grouped[v.id] ?? { conversions: 0, clicks: 0, sessions: 1 };
       return {
         name: v.name,

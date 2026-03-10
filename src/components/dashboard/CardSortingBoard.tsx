@@ -3,15 +3,10 @@ import { Grid3X3, Trash2, Tag } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-interface CardSortingItem {
-  id: string;
-  category_name: string;
-  items: string[];
-}
+import type { CardSorting } from "@/hooks/useCardSorting";
 
 interface CardSortingBoardProps {
-  categories: CardSortingItem[];
+  categories: CardSorting[];
   onDelete: (id: string) => void;
 }
 
@@ -38,14 +33,14 @@ export function CardSortingBoard({ categories, onDelete }: CardSortingBoardProps
           </div>
           
           <div className="flex flex-wrap gap-2 mt-auto">
-            {cat.items.map((item, idx) => (
+            {(cat.items as unknown as string[]).map((item, idx) => (
               <Badge key={idx} variant="secondary" className="bg-muted/50 text-muted-foreground hover:bg-muted font-medium">
                 {item}
               </Badge>
             ))}
           </div>
           
-          {cat.items.length === 0 && (
+          {(cat.items as unknown as string[]).length === 0 && (
             <p className="text-xs text-muted-foreground italic">Sem itens nesta categoria</p>
           )}
         </Card>

@@ -149,7 +149,7 @@ export function GamificationPanel({ isOpen, onToggle }: GamificationPanelProps) 
               <TabsContent value="achievements" className="space-y-2 mt-3">
                 {userAchievements && userAchievements.length > 0 ? (
                   userAchievements.map((achievement) => {
-                    const def = achievement.achievement_definitions as any;
+                    const def = achievement.achievement_definitions as unknown as AchievementDefinition;
                     const IconComponent = getIconComponent(def?.icon || 'trophy');
                     
                     return (

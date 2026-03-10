@@ -138,7 +138,7 @@ export function JTBDPage() {
       }
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {frameworks?.map((jtbd: any) => (
+        {frameworks?.map((jtbd) => (
           <JTBDCard key={jtbd.id} jtbd={jtbd} onDelete={handleDelete} />
         ))}
         
@@ -232,7 +232,7 @@ export function HMWPage() {
       }
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {questions?.map((hmw: any) => (
+        {questions?.map((hmw) => (
           <HMWCard key={hmw.id} hmw={hmw} onDelete={handleDelete} />
         ))}
         

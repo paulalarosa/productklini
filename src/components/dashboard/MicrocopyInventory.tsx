@@ -3,6 +3,7 @@ import { Type, Trash2, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { Microcopy } from "@/hooks/useMicrocopy";
 import {
   Table,
   TableBody,
@@ -12,17 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface MicrocopyData {
-  id: string;
-  component_type: string;
-  context?: string;
-  original_text?: string;
-  suggested_copy: string;
-  tone_applied?: string;
-}
-
 interface MicrocopyInventoryProps {
-  items: MicrocopyData[];
+  items: Microcopy[];
   onDelete: (id: string) => void;
 }
 

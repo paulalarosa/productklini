@@ -3,9 +3,11 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type Benchmark = any;
-export type BenchmarkInsert = any;
-export type BenchmarkUpdate = any;
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+
+export type Benchmark = Tables<"benchmarks">;
+export type BenchmarkInsert = TablesInsert<"benchmarks">;
+export type BenchmarkUpdate = TablesUpdate<"benchmarks">;
 
 export function useBenchmarks(projectId?: string) {
   const queryClient = useQueryClient();

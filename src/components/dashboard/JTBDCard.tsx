@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Briefcase, Quote, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import type { JTBD } from "@/hooks/useJTBD";
+
 interface JTBDCardProps {
-  jtbd: any;
+  jtbd: JTBD;
   onDelete?: (id: string) => void;
 }
 

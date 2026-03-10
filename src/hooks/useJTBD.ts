@@ -3,8 +3,10 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type JTBD = any;
-export type JTBDInsert = any;
+import type { Tables, TablesInsert } from "@/integrations/supabase/types";
+
+export type JTBD = Tables<"jtbd_frameworks">;
+export type JTBDInsert = TablesInsert<"jtbd_frameworks">;
 
 export function useJTBD(projectId?: string) {
   const queryClient = useQueryClient();
@@ -14,7 +16,7 @@ export function useJTBD(projectId?: string) {
     queryFn: async () => {
       if (!projectId) return [];
       const { data, error } = await supabase
-        .from("jtbd_frameworks" as any)
+        .from("jtbd_frameworks")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -32,7 +34,7 @@ export function useJTBD(projectId?: string) {
       .channel("jtbd-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "jtbd_frameworks" as any, filter: `project_id=eq.${projectId}` },
+        { event: "*", schema: "public", table: "jtbd_frameworks", filter: `project_id=eq.${projectId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["jtbd", projectId] });
         }
@@ -53,13 +55,13 @@ export function useDeleteJTBD() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await supabase
-        .from("jtbd_frameworks" as any)
+        .from("jtbd_frameworks")
         .delete()
         .eq("id", id);
 
       if (error) throw error;
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: () => {
       // Invalidation handled by realtime or manually if needed
     },
   });

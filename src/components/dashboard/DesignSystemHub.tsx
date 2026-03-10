@@ -22,6 +22,17 @@ interface DSNavItem {
   children?: { label: string; id: string }[];
 }
 
+interface PreviewElement {
+  type: "rect" | "circle" | "text" | "line";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fill: string;
+  fontSize?: number;
+  text?: string;
+}
+
 interface DSComponent {
   id: string;
   name: string;
@@ -30,8 +41,8 @@ interface DSComponent {
   code_react: string;
   code_vue: string;
   code_html: string;
-  preview_elements: any[];
-  specs: any;
+  preview_elements: PreviewElement[];
+  specs: Record<string, unknown>;
   status: string;
   source: string;
   created_at: string;
@@ -297,7 +308,7 @@ export function DesignSystemHub() {
     setLoadingComponents(true);
     const projectId = await getProjectId();
     const { data, error } = await supabase
-      .from("ds_components" as any)
+      .from("ds_components")
       .select("*")
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
@@ -317,7 +328,7 @@ export function DesignSystemHub() {
   };
 
   const deleteComponent = async (id: string) => {
-    const { error } = await supabase.from("ds_components" as any).delete().eq("id", id);
+    const { error } = await supabase.from("ds_components").delete().eq("id", id);
     if (error) { toast.error("Erro ao deletar"); return; }
     toast.success("Componente removido");
     if (selectedComponent?.id === id) { setSelectedComponent(null); setActiveItem("colors"); }
@@ -325,7 +336,7 @@ export function DesignSystemHub() {
   };
 
   const updateComponentStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("ds_components" as any).update({ status }).eq("id", id);
+    const { error } = await supabase.from("ds_components").update({ status }).eq("id", id);
     if (error) { toast.error("Erro ao atualizar status"); return; }
     toast.success(`Status: ${status}`);
     loadComponents();
@@ -380,7 +391,7 @@ export function DesignSystemHub() {
 
       // Save to DB
       const projectId = await getProjectId();
-      const { error } = await supabase.from("ds_components" as any).insert([{
+      const { error } = await supabase.from("ds_components").insert([{
         project_id: projectId,
         name: result.component_name || "Componente",
         description: result.description || genPrompt,
@@ -388,8 +399,8 @@ export function DesignSystemHub() {
         code_react: result.code || "",
         code_vue: "",
         code_html: "",
-        preview_elements: result.preview_elements || [],
-        specs: {},
+        preview_elements: (result.preview_elements || []) as any,
+        specs: {} as any,
         status: "draft",
         source: "ds-hub",
       }]);
@@ -576,7 +587,7 @@ export function DesignSystemHub() {
                     }}>
                       {selectedComponent.preview_elements && selectedComponent.preview_elements.length > 0 ? (
                         <svg width="800" height="400" viewBox="0 0 800 400" className="w-full" style={{ borderRadius: "8px" }}>
-                          {selectedComponent.preview_elements.map((el: any, i: number) => (
+                          {selectedComponent.preview_elements.map((el, i) => (
                             <g key={i}>
                               {el.type === "rect" && <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rx={4} />}
                               {el.type === "circle" && <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2} fill={el.fill} />}

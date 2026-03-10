@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import type { Tables } from "@/integrations/supabase/types";
+
+export type Sitemap = Tables<"sitemaps">;
 
 export function useSitemap(projectId?: string) {
   const queryClient = useQueryClient();
@@ -10,7 +13,7 @@ export function useSitemap(projectId?: string) {
     queryFn: async () => {
       if (!projectId) return [];
       const { data, error } = await supabase
-        .from("sitemaps" as any)
+        .from("sitemaps")
         .select("*")
         .eq("project_id", projectId)
         .order("hierarchy_level", { ascending: true })
@@ -29,7 +32,7 @@ export function useSitemap(projectId?: string) {
       .channel("sitemaps-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "sitemaps" as any, filter: `project_id=eq.${projectId}` },
+        { event: "*", schema: "public", table: "sitemaps", filter: `project_id=eq.${projectId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["sitemaps", projectId] });
         }
@@ -50,7 +53,7 @@ export function useDeleteSitemap() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
       const { error } = await supabase
-        .from("sitemaps" as any)
+        .from("sitemaps")
         .delete()
         .eq("id", id);
 

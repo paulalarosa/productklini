@@ -2,17 +2,10 @@ import React from "react";
 import { FolderTree, ExternalLink, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-interface SitemapNode {
-  id: string;
-  node_name: string;
-  url_path?: string;
-  description?: string;
-  hierarchy_level: number;
-}
+import type { Sitemap } from "@/hooks/useSitemap";
 
 interface SitemapTreeProps {
-  nodes: SitemapNode[];
+  nodes: Sitemap[];
   onDelete: (id: string) => void;
 }
 

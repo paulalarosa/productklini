@@ -12,15 +12,15 @@ interface EmpathyMapCardProps {
 
 export function EmpathyMapCard({ map, onDelete }: EmpathyMapCardProps) {
   const quadrants = [
-    { title: "Pensa e Sente", data: map.thinks_and_feels as string[], color: "bg-blue-500/10 text-blue-500" },
-    { title: "Escuta", data: map.hears as string[], color: "bg-purple-500/10 text-purple-500" },
-    { title: "Vê", data: map.sees as string[], color: "bg-amber-500/10 text-amber-500" },
-    { title: "Fala e Faz", data: map.says_and_does as string[], color: "bg-emerald-500/10 text-emerald-500" },
+    { title: "Pensa e Sente", data: map.thinks_and_feels as unknown as string[], color: "bg-blue-500/10 text-blue-500" },
+    { title: "Escuta", data: map.hears as unknown as string[], color: "bg-purple-500/10 text-purple-500" },
+    { title: "Vê", data: map.sees as unknown as string[], color: "bg-amber-500/10 text-amber-500" },
+    { title: "Fala e Faz", data: map.says_and_does as unknown as string[], color: "bg-emerald-500/10 text-emerald-500" },
   ];
 
   const paintPoints = [
-    { title: "Dores", data: map.pains as string[], color: "bg-destructive/10 text-destructive" },
-    { title: "Ganhos", data: map.gains as string[], color: "bg-primary/10 text-primary" },
+    { title: "Dores", data: map.pains as unknown as string[], color: "bg-destructive/10 text-destructive" },
+    { title: "Ganhos", data: map.gains as unknown as string[], color: "bg-primary/10 text-primary" },
   ];
 
   return (

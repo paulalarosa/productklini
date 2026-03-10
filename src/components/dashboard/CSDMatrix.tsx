@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, HelpCircle, AlertCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import type { CSD } from "@/hooks/useCSD";
+
 interface CSDMatrixProps {
-  items: any[];
+  items: CSD[];
   onDelete?: (id: string) => void;
 }
 

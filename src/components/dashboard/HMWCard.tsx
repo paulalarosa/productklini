@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Lightbulb, Trash2, ArrowUpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import type { HMW } from "@/hooks/useHMW";
+
 interface HMWCardProps {
-  hmw: any;
+  hmw: HMW;
   onDelete?: (id: string) => void;
 }
 

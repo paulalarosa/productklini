@@ -3,9 +3,9 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type EmpathyMap = any;
-export type EmpathyMapInsert = any;
-export type EmpathyMapUpdate = any;
+export type EmpathyMap = Tables<"empathy_maps">;
+export type EmpathyMapInsert = TablesInsert<"empathy_maps">;
+export type EmpathyMapUpdate = TablesUpdate<"empathy_maps">;
 
 export function useEmpathyMaps(projectId?: string) {
   const queryClient = useQueryClient();

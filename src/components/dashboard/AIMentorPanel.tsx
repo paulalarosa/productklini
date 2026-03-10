@@ -5,6 +5,7 @@ import { useAIChat } from "@/hooks/useAIChat";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useProject, usePersonas, useUxMetrics } from "@/hooks/useProjectData";
 import ReactMarkdown from "react-markdown";
+import { DbTask, DbProject, DbPersona, DbUxMetric } from "@/lib/api";
 
 interface AISuggestion {
   id: string;
@@ -14,10 +15,10 @@ interface AISuggestion {
 }
 
 function generateDynamicSuggestions(
-  tasks: any[] | undefined,
-  project: any | undefined,
-  personas: any[] | undefined,
-  metrics: any[] | undefined
+  tasks: DbTask[] | undefined,
+  project: DbProject | null | undefined,
+  personas: DbPersona[] | undefined,
+  metrics: DbUxMetric[] | undefined
 ): AISuggestion[] {
   const suggestions: AISuggestion[] = [];
   const allTasks = tasks ?? [];
@@ -45,7 +46,7 @@ function generateDynamicSuggestions(
   }
 
   if (project) {
-    const pp = project.phase_progress as Record<string, number>;
+    const pp = project.phase_progress;
     const currentPhase = project.current_phase;
     const progress = pp?.[currentPhase] ?? 0;
     if (progress >= 90) {

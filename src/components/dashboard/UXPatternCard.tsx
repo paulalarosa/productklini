@@ -16,6 +16,11 @@ import { toast } from "sonner";
 
 type UXPattern = Tables<"ux_patterns">;
 
+interface PatternExample {
+  company: string;
+  description: string;
+}
+
 interface UXPatternCardProps {
   pattern: UXPattern;
 }
@@ -280,7 +285,7 @@ export function UXPatternCard({ pattern }: UXPatternCardProps) {
                         Exemplos Reais
                       </h4>
                       <div className="grid gap-4">
-                        {pattern.examples.map((example: any, index: number) => (
+                        {(pattern.examples as unknown as PatternExample[]).map((example, index) => (
                           <Card key={index}>
                             <CardContent className="p-4">
                               <h5 className="font-medium text-primary">{example.company}</h5>
