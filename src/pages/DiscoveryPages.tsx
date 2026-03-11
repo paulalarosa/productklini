@@ -1,4 +1,4 @@
-import { Heart, BarChart3, Briefcase, Grid3X3, HelpCircle, Lightbulb, TrendingUp } from "lucide-react";
+import { Heart, BarChart3, Briefcase, Grid3X3, HelpCircle, Lightbulb } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { EmpathyMapCard } from "@/components/dashboard/EmpathyMapCard";
 import { BenchmarkCard } from "@/components/dashboard/BenchmarkCard";
@@ -13,11 +13,11 @@ import { useHMW, useDeleteHMW } from "@/hooks/useHMW";
 import { useDocuments } from "@/hooks/useProjectData";
 import { DocumentManager } from "@/components/dashboard/DocumentManager";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
-import { useParams } from "react-router-dom";
+import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { toast } from "sonner";
 
 export function EmpathyMapPage() {
-  const { id: projectId } = useParams();
+  const projectId = useCurrentProjectId();
   const { data: maps, isLoading } = useEmpathyMaps(projectId);
   const { mutate: deleteMap } = useDeleteEmpathyMap();
 
@@ -65,7 +65,7 @@ export function EmpathyMapPage() {
 }
 
 export function BenchmarkPage() {
-  const { id: projectId } = useParams();
+  const projectId = useCurrentProjectId();
   const { data: benchmarks, isLoading } = useBenchmarks(projectId);
   const { mutate: deleteBenchmark } = useDeleteBenchmark();
 
@@ -113,7 +113,7 @@ export function BenchmarkPage() {
 }
 
 export function JTBDPage() {
-  const { id: projectId } = useParams();
+  const projectId = useCurrentProjectId();
   const { data: frameworks, isLoading } = useJTBD(projectId);
   const { mutate: deleteJTBD } = useDeleteJTBD();
 
@@ -160,7 +160,7 @@ export function JTBDPage() {
 }
 
 export function CSDMatrixPage() {
-  const { id: projectId } = useParams();
+  const projectId = useCurrentProjectId();
   const { data: items, isLoading } = useCSD(projectId);
   const { mutate: deleteCSD } = useDeleteCSD();
 
@@ -207,7 +207,7 @@ export function CSDMatrixPage() {
 }
 
 export function HMWPage() {
-  const { id: projectId } = useParams();
+  const projectId = useCurrentProjectId();
   const { data: questions, isLoading } = useHMW(projectId);
   const { mutate: deleteHMW } = useDeleteHMW();
 

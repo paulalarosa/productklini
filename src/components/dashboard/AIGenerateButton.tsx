@@ -63,8 +63,8 @@ export function AIGenerateButton({
         }
       }
 
-      // Small delay to let database writes propagate
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Delay to let database writes propagate
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Invalidate relevant queries
       for (const key of invalidateKeys) {
@@ -72,22 +72,15 @@ export function AIGenerateButton({
       }
 
       // Also invalidate common keys that tools may have written to
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
-      queryClient.invalidateQueries({ queryKey: ["empathy-maps"] });
-      queryClient.invalidateQueries({ queryKey: ["benchmarks"] });
-      queryClient.invalidateQueries({ queryKey: ["jtbd"] });
-      queryClient.invalidateQueries({ queryKey: ["csd"] });
-      queryClient.invalidateQueries({ queryKey: ["hmw"] });
-      queryClient.invalidateQueries({ queryKey: ["personas"] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      queryClient.invalidateQueries({ queryKey: ["sitemaps"] });
-      queryClient.invalidateQueries({ queryKey: ["card-sorting"] });
-      queryClient.invalidateQueries({ queryKey: ["tone-of-voice"] });
-      queryClient.invalidateQueries({ queryKey: ["microcopy"] });
-      queryClient.invalidateQueries({ queryKey: ["nielsen"] });
-      queryClient.invalidateQueries({ queryKey: ["usability-tests"] });
-      queryClient.invalidateQueries({ queryKey: ["wcag"] });
-      queryClient.invalidateQueries({ queryKey: ["qa-bugs"] });
+      const commonKeys = [
+        "documents", "empathy-maps", "benchmarks", "jtbd", "csd", "hmw",
+        "personas", "tasks", "sitemaps", "card-sorting", "tone-of-voice",
+        "microcopy", "nielsen", "usability-tests", "wcag", "qa-bugs",
+        "ux-metrics", "project", "behavior-models", "business-model-canvas",
+      ];
+      for (const key of commonKeys) {
+        queryClient.invalidateQueries({ queryKey: [key] });
+      }
 
       toast.success("Conteúdo gerado com sucesso!");
     } catch (e: unknown) {
