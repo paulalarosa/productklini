@@ -748,12 +748,18 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
     for (const tc of effectiveToolCalls) {
       const fnName = tc.function.name;
       let args: Record<string, unknown>;
-      try { args = JSON.parse(tc.function.arguments); } catch { continue; }
+      try { args = JSON.parse(tc.function.arguments); } catch (parseErr) {
+        console.error(`Failed to parse args for ${fnName}:`, tc.function.arguments);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: JSON inválido nos argumentos` });
+        continue;
+      }
 
       if (!projectId) {
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Projeto não encontrado" });
         continue;
       }
+      
+      console.log(`Executing tool: ${fnName} with args:`, JSON.stringify(args).slice(0, 500));
 
       if (fnName === "update_task") {
         const { error: dbErr } = await supabase.from("tasks")
