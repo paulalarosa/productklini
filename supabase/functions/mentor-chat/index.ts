@@ -748,12 +748,18 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
     for (const tc of effectiveToolCalls) {
       const fnName = tc.function.name;
       let args: Record<string, unknown>;
-      try { args = JSON.parse(tc.function.arguments); } catch { continue; }
+      try { args = JSON.parse(tc.function.arguments); } catch (parseErr) {
+        console.error(`Failed to parse args for ${fnName}:`, tc.function.arguments);
+        toolResults.push({ tool_call_id: tc.id, role: "tool", content: `ERRO: JSON inválido nos argumentos` });
+        continue;
+      }
 
       if (!projectId) {
         toolResults.push({ tool_call_id: tc.id, role: "tool", content: "Projeto não encontrado" });
         continue;
       }
+      
+      console.log(`Executing tool: ${fnName} with args:`, JSON.stringify(args).slice(0, 500));
 
       if (fnName === "update_task") {
         const { error: dbErr } = await supabase.from("tasks")
@@ -780,12 +786,12 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
         }
       } else if (fnName === "generate_document_with_ai") {
-        // Triggers the heavy generating endpoint asynchronously so we don't block chat streaming
+        // Triggers the heavy generating endpoint - forward user's auth token for RLS
         fetch(`${supabaseUrl}/functions/v1/generate-docs`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${supabaseAnonKey}`, // Must dispatch as anon to trigger internal function, or forward standard auth
+            Authorization: authHeader,
           },
           body: JSON.stringify({
             doc_type: args.doc_type,
@@ -873,8 +879,6 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           project_id: projectId,
           metric_name: m.metric_name,
           score: m.score,
-          description: m.description,
-          category: m.category
         }));
         const { error: dbErr } = await supabase.from("ux_metrics").insert(toInsert);
         if (dbErr) {
