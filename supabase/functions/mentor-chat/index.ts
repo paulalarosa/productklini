@@ -780,12 +780,12 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           toolResults.push({ tool_call_id: tc.id, role: "tool", content: "OK" });
         }
       } else if (fnName === "generate_document_with_ai") {
-        // Triggers the heavy generating endpoint asynchronously so we don't block chat streaming
+        // Triggers the heavy generating endpoint - forward user's auth token for RLS
         fetch(`${supabaseUrl}/functions/v1/generate-docs`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${supabaseAnonKey}`, // Must dispatch as anon to trigger internal function, or forward standard auth
+            Authorization: authHeader,
           },
           body: JSON.stringify({
             doc_type: args.doc_type,
