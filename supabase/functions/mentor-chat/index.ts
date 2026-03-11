@@ -873,8 +873,6 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           project_id: projectId,
           metric_name: m.metric_name,
           score: m.score,
-          description: m.description,
-          category: m.category
         }));
         const { error: dbErr } = await supabase.from("ux_metrics").insert(toInsert);
         if (dbErr) {
