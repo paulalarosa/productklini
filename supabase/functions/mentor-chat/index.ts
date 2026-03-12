@@ -764,7 +764,7 @@ NUNCA descreva o que você faria. SEMPRE execute a ferramenta. Se for criar 3 JT
           model: "google/gemini-2.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
-            ...messages,
+            ...processedMessages,
           ],
           stream: true,
         }),
