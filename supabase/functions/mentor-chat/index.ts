@@ -87,8 +87,50 @@ ${docsRes.data?.map((d: { doc_type: string; title: string }) => `- [${d.doc_type
       }
     }
 
+    // Build multimodal user messages if attachments exist
+    const processedMessages = [...messages];
+    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+      // Find the last user message and enhance it with attachments
+      for (let i = processedMessages.length - 1; i >= 0; i--) {
+        if (processedMessages[i].role === "user") {
+          const parts: any[] = [{ type: "text", text: processedMessages[i].content }];
+          for (const att of attachments) {
+            if (att.type === "image" && att.data) {
+              parts.push({
+                type: "image_url",
+                image_url: { url: `data:${att.mime_type || "image/jpeg"};base64,${att.data}` }
+              });
+            } else if (att.type === "pdf" && att.data) {
+              parts.push({
+                type: "text",
+                text: `[DOCUMENTO PDF ANEXADO - conteúdo extraído]:\n${att.extracted_text || "Documento PDF enviado para análise visual."}`
+              });
+              parts.push({
+                type: "image_url",
+                image_url: { url: `data:application/pdf;base64,${att.data}` }
+              });
+            } else if (att.type === "url" && att.url) {
+              parts.push({
+                type: "text",
+                text: `[LINK ANEXADO]: ${att.url}\n${att.description || ""}`
+              });
+            }
+          }
+          processedMessages[i] = { role: "user", content: parts };
+          break;
+        }
+      }
+    }
+
     const systemPrompt = `Você é o "Mentor IA" de um Dashboard de Ciclo de Vida de Produto Digital.
+Você é um especialista sênior em Product Design, UI/UX Design, Design Systems e Front-end Development.
 Você ajuda com análise de gargalos, checklists de QA, acessibilidade (WCAG), handoff Design→Dev, e análise de métricas UX.
+
+CAPACIDADES MULTIMODAIS:
+- Você pode analisar IMAGENS de protótipos, wireframes, screenshots de interfaces e dar feedback detalhado de design.
+- Você pode processar DOCUMENTOS PDF com especificações, guias de estilo e briefings.
+- Você pode interpretar LINKS do Figma e outras ferramentas de design quando fornecidos.
+- Quando receber uma imagem de interface, analise: hierarquia visual, tipografia, espaçamento, cores, acessibilidade, consistência e usabilidade.
 
 CONTEXTO REAL DO BANCO DE DADOS:
 ${richContext || "Nenhum dado de projeto encontrado ainda."}
