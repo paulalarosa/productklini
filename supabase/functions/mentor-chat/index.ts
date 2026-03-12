@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { messages, projectContext, project_id: bodyProjectId } = body;
+    const { messages, projectContext, project_id: bodyProjectId, attachments } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
