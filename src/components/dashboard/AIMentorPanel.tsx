@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X, Send, Sparkles, AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
-import { useAIChat } from "@/hooks/useAIChat";
+import { useAIChat, ChatAttachment } from "@/hooks/useAIChat";
+import { ChatAttachments } from "@/components/dashboard/ChatAttachments";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useProject, usePersonas, useUxMetrics } from "@/hooks/useProjectData";
 import ReactMarkdown from "react-markdown";
