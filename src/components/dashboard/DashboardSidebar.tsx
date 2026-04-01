@@ -7,7 +7,8 @@ import {
   ChevronDown, Menu, X, Heart, Briefcase, Grid3X3, HelpCircle, Lightbulb,
   MessageSquare, BookOpen, ClipboardList, ListChecks, PlayCircle, Accessibility,
   ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid, BrainCircuit,
-  MonitorSmartphone, Microscope, MessageSquareDot
+  MonitorSmartphone, Microscope, MessageSquareDot, BookMarked, Users2, Star,
+  Target, Map, FileText, MessageSquareMore
 } from "lucide-react";
 
 interface NavItem { label: string; icon: React.ElementType; path: string; }
@@ -26,6 +27,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Pesquisas", icon: Search, path: "/ux/pesquisas" },
       { label: "Entrevistas", icon: Mic, path: "/ux/interviews" },
+      { label: "Diary Studies", icon: BookOpen, path: "/research/diary-studies" },
+      { label: "Stakeholder Map", icon: Users2, path: "/research/stakeholder-map" },
       { label: "Personas", icon: Users, path: "/ux/personas" },
       { label: "Mapa de Empatia", icon: Heart, path: "/ux/empathy-map" },
       { label: "Benchmark", icon: BarChart3, path: "/ux/benchmark" },
@@ -36,6 +39,14 @@ const navGroups: NavGroup[] = [
       { label: "Behavior Model", icon: BrainCircuit, path: "/ux/behavior-model" },
       { label: "UX Patterns", icon: BookOpen, path: "/ux/patterns" },
       { label: "Fluxos de Jornada", icon: Route, path: "/ux/fluxos" },
+    ],
+  },
+  {
+    title: "Métricas & KPIs",
+    items: [
+      { label: "HEART Framework", icon: Heart, path: "/metrics/heart" },
+      { label: "North Star", icon: Star, path: "/metrics/north-star" },
+      { label: "NPS / CSAT / CES", icon: BarChart3, path: "/metrics/nps" },
     ],
   },
   {
@@ -72,10 +83,12 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    title: "Estratégia",
+    title: "Estratégia & Produto",
     items: [
       { label: "Priorização", icon: ArrowUpDown, path: "/strategy/prioritization" },
       { label: "Business Model Canvas", icon: Briefcase, path: "/strategy/business-model" },
+      { label: "Roadmap", icon: Map, path: "/product/roadmap" },
+      { label: "OKRs", icon: Target, path: "/product/okrs" },
     ],
   },
   {
@@ -98,6 +111,14 @@ const navGroups: NavGroup[] = [
       { label: "Análise UX (IA)", icon: Microscope, path: "/ux-analysis" },
       { label: "Analytics Hub", icon: BarChart3, path: "/analytics" },
       { label: "Voice of Customer", icon: MessageSquareDot, path: "/voice-of-customer" },
+    ],
+  },
+  {
+    title: "Knowledge Base",
+    items: [
+      { label: "Design Principles", icon: Star, path: "/knowledge/design-principles" },
+      { label: "Decision Log", icon: FileText, path: "/knowledge/decision-log" },
+      { label: "Design Critiques", icon: MessageSquareMore, path: "/knowledge/design-critiques" },
     ],
   },
   {
