@@ -628,6 +628,153 @@ export type Database = {
           },
         ]
       }
+      decision_log: {
+        Row: {
+          alternatives: string[]
+          context: string
+          created_at: string
+          decided_at: string
+          decided_by: string
+          decision: string
+          id: string
+          impact: string
+          project_id: string
+          rationale: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alternatives?: string[]
+          context?: string
+          created_at?: string
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          id?: string
+          impact?: string
+          project_id: string
+          rationale?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alternatives?: string[]
+          context?: string
+          created_at?: string
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          id?: string
+          impact?: string
+          project_id?: string
+          rationale?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "decision_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_critiques: {
+        Row: {
+          created_at: string
+          critique_type: string
+          feedback: string
+          id: string
+          project_id: string
+          reviewer: string
+          screen_name: string
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          critique_type?: string
+          feedback?: string
+          id?: string
+          project_id: string
+          reviewer?: string
+          screen_name: string
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          critique_type?: string
+          feedback?: string
+          id?: string
+          project_id?: string
+          reviewer?: string
+          screen_name?: string
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_critiques_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_principles: {
+        Row: {
+          created_at: string
+          description: string
+          example: string
+          icon: string
+          id: string
+          project_id: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          example?: string
+          icon?: string
+          id?: string
+          project_id: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          example?: string
+          icon?: string
+          id?: string
+          project_id?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_principles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_token_history: {
         Row: {
           author: string
@@ -703,6 +850,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "design_tokens_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diary_studies: {
+        Row: {
+          activity: string
+          context: string
+          created_at: string
+          emotions: string
+          entry_date: string
+          id: string
+          insights: string[]
+          pain_points: string[]
+          participant_name: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          activity?: string
+          context?: string
+          created_at?: string
+          emotions?: string
+          entry_date?: string
+          id?: string
+          insights?: string[]
+          pain_points?: string[]
+          participant_name?: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          activity?: string
+          context?: string
+          created_at?: string
+          emotions?: string
+          entry_date?: string
+          id?: string
+          insights?: string[]
+          pain_points?: string[]
+          participant_name?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diary_studies_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -804,6 +1001,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "empathy_maps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      heart_metrics: {
+        Row: {
+          category: string
+          created_at: string
+          current_value: number
+          goal: string
+          id: string
+          measured_at: string
+          metric_name: string
+          project_id: string
+          signal: string
+          target_value: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current_value?: number
+          goal?: string
+          id?: string
+          measured_at?: string
+          metric_name: string
+          project_id: string
+          signal?: string
+          target_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_value?: number
+          goal?: string
+          id?: string
+          measured_at?: string
+          metric_name?: string
+          project_id?: string
+          signal?: string
+          target_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "heart_metrics_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1004,6 +1254,56 @@ export type Database = {
           },
         ]
       }
+      north_star_metrics: {
+        Row: {
+          created_at: string
+          current_value: number
+          description: string
+          id: string
+          input_metrics: Json
+          measured_at: string
+          metric_name: string
+          project_id: string
+          target_value: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          description?: string
+          id?: string
+          input_metrics?: Json
+          measured_at?: string
+          metric_name: string
+          project_id: string
+          target_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          description?: string
+          id?: string
+          input_metrics?: Json
+          measured_at?: string
+          metric_name?: string
+          project_id?: string
+          target_value?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "north_star_metrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1033,6 +1333,94 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      nps_surveys: {
+        Row: {
+          created_at: string
+          feedback: string
+          id: string
+          project_id: string
+          respondent_name: string
+          score: number
+          segment: string
+          survey_type: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string
+          id?: string
+          project_id: string
+          respondent_name?: string
+          score?: number
+          segment?: string
+          survey_type?: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string
+          id?: string
+          project_id?: string
+          respondent_name?: string
+          score?: number
+          segment?: string
+          survey_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nps_surveys_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      okrs: {
+        Row: {
+          created_at: string
+          id: string
+          key_results: Json
+          objective: string
+          owner: string
+          progress: number
+          project_id: string
+          quarter: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_results?: Json
+          objective: string
+          owner?: string
+          progress?: number
+          project_id: string
+          quarter?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_results?: Json
+          objective?: string
+          owner?: string
+          progress?: number
+          project_id?: string
+          quarter?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "okrs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       personas: {
         Row: {
@@ -1253,6 +1641,59 @@ export type Database = {
           },
         ]
       }
+      roadmap_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          effort: string
+          id: string
+          impact: string
+          priority: string
+          project_id: string
+          quarter: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          effort?: string
+          id?: string
+          impact?: string
+          priority?: string
+          project_id: string
+          quarter?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          effort?: string
+          id?: string
+          impact?: string
+          priority?: string
+          project_id?: string
+          quarter?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       share_links: {
         Row: {
           created_at: string
@@ -1338,6 +1779,53 @@ export type Database = {
           },
           {
             foreignKeyName: "sitemaps_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stakeholder_maps: {
+        Row: {
+          created_at: string
+          id: string
+          influence_level: string
+          interest_level: string
+          name: string
+          notes: string
+          project_id: string
+          relationship: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          influence_level?: string
+          interest_level?: string
+          name: string
+          notes?: string
+          project_id: string
+          relationship?: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          influence_level?: string
+          interest_level?: string
+          name?: string
+          notes?: string
+          project_id?: string
+          relationship?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholder_maps_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
