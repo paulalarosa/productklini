@@ -4,7 +4,8 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
 import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
 import { GamificationPanel } from "@/components/dashboard/GamificationPanel";
-import { Outlet } from "react-router-dom";
+import { CommandPalette } from "@/components/CommandPalette";
+import { Outlet, useLocation } from "react-router-dom";
 import { useProject, useTasks } from "@/hooks/useProjectData";
 
 export function DashboardLayout() {
@@ -13,8 +14,14 @@ export function DashboardLayout() {
   const [showSetup, setShowSetup] = useState(false);
   const { data: project, isLoading } = useProject();
   const { data: tasks } = useTasks();
+  const location = useLocation();
 
-  // Show setup wizard only if no project exists (project is null after loading)
+  // Fecha o painel de AI ao navegar entre páginas
+  useEffect(() => {
+    setAiOpen(false);
+  }, [location.pathname]);
+
+  // Exibe o wizard apenas se não houver projeto após o carregamento
   useEffect(() => {
     if (!isLoading && !project) {
       setShowSetup(true);
@@ -44,12 +51,16 @@ export function DashboardLayout() {
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-background">
+      {/* Command Palette — ativado via Cmd+K em qualquer página */}
+      <CommandPalette />
+
       <DashboardSidebar />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <DashboardHeader
           onToggleAI={() => setAiOpen(!aiOpen)}
           onCreateProject={() => setShowSetup(true)}
+          aiOpen={aiOpen}
         />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">

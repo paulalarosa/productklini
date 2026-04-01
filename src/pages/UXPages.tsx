@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Search, Users, Route, Plus, Trash2, Pencil, Check, X, User, FileText, Lightbulb, Map } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { DocumentManager } from "@/components/dashboard/DocumentManager";
@@ -10,10 +10,13 @@ import { toast } from "sonner";
 import { type DbPersona } from "@/lib/api";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
+import { PageSkeleton, PersonaSkeleton } from "@/components/ui/skeletons";
 
 export function PesquisasPage() {
-  const { data: researchDocs } = useDocuments("research_plan");
-  const { data: insightDocs } = useDocuments("insights_summary");
+  const { data: researchDocs, isLoading: loadingResearch } = useDocuments("research_plan");
+  const { data: insightDocs, isLoading: loadingInsights } = useDocuments("insights_summary");
+
+  if (loadingResearch || loadingInsights) return <PageSkeleton />;
 
   return (
     <ModulePage
@@ -48,8 +51,10 @@ export function PesquisasPage() {
 }
 
 export function PersonasPage() {
-  const { data: personas } = usePersonas();
+  const { data: personas, isLoading } = usePersonas();
   const projectId = useCurrentProjectId();
+
+  if (isLoading) return <PersonaSkeleton />;
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -191,7 +196,9 @@ export function PersonasPage() {
 }
 
 export function FluxosPage() {
-  const { data: journeyDocs } = useDocuments("journey_map");
+  const { data: journeyDocs, isLoading } = useDocuments("journey_map");
+
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage

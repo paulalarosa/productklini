@@ -1,256 +1,365 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Kanban, ShieldCheck, BarChart3, Plus, Bug, Sparkles, Loader2, Check } from "lucide-react";
-import { TeamMetrics } from "@/components/dashboard/TeamMetrics";
-import { ModulePage } from "@/components/dashboard/ModulePage";
+import { useMemo, useState } from "react";
 import { useTasks } from "@/hooks/useProjectData";
-import { supabase } from "@/integrations/supabase/client";
+import { updateTaskStatus, type DbTask } from "@/lib/api";
+import { KanbanSkeleton } from "@/components/ui/skeletons";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { getProjectId, type DbTask } from "@/lib/api";
-import { useQABugs, useUpdateBugStatus, useDeleteBug } from "@/hooks/useQABugs";
-import { QABugTracker } from "@/components/dashboard/QABugTracker";
-import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
-import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
+import {
+  AlertCircle, Clock, CheckCircle2, Circle,
+  Eye, PlayCircle, Filter,
+} from "lucide-react";
 
-const columns = ["todo", "in_progress", "review", "done"] as const;
-const columnLabels: Record<string, string> = { todo: "A Fazer", in_progress: "Em Andamento", review: "Em Revisão", done: "Concluído" };
-const columnColors: Record<string, string> = { todo: "border-muted-foreground/30", in_progress: "border-status-develop/50", review: "border-status-discovery/50", done: "border-status-develop/30" };
+// ─── Configuração das colunas ─────────────────────────────────────────────────
 
-export function KanbanPage() {
-  const { data: tasks } = useTasks();
-  const queryClient = useQueryClient();
-  const allTasks = tasks ?? [];
-  const [draggedTask, setDraggedTask] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const dragGhost = useRef<HTMLDivElement | null>(null);
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [addingToCol, setAddingToCol] = useState<string | null>(null);
+const COLUMNS: {
+  id: DbTask["status"];
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+}[] = [
+  { id: "todo",        label: "A Fazer",     icon: Circle,       color: "text-muted-foreground",  bg: "bg-muted/30" },
+  { id: "in_progress", label: "Em Progresso",icon: PlayCircle,   color: "text-blue-500",          bg: "bg-blue-500/10" },
+  { id: "review",      label: "Em Revisão",  icon: Eye,          color: "text-amber-500",         bg: "bg-amber-500/10" },
+  { id: "done",        label: "Concluído",   icon: CheckCircle2, color: "text-green-500",         bg: "bg-green-500/10" },
+  { id: "blocked",     label: "Bloqueado",   icon: AlertCircle,  color: "text-destructive",       bg: "bg-destructive/10" },
+];
 
-  const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
-    setDraggedTask(taskId);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", taskId);
-    const ghost = document.createElement("div");
-    ghost.style.cssText = "position:absolute;top:-1000px;left:-1000px;padding:8px 12px;border-radius:8px;background:hsl(228,12%,13%);border:1px solid hsl(252,80%,65%);color:hsl(210,20%,92%);font-size:11px;font-family:Inter;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
-    const task = (tasks ?? []).find(t => t.id === taskId);
-    ghost.textContent = task?.title ?? "";
-    document.body.appendChild(ghost);
-    dragGhost.current = ghost;
-    e.dataTransfer.setDragImage(ghost, 0, 0);
-  }, [tasks]);
+const PRIORITY_COLORS: Record<DbTask["priority"], string> = {
+  low:    "bg-muted/40 text-muted-foreground border-muted",
+  medium: "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  high:   "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  urgent: "bg-destructive/10 text-destructive border-destructive/20",
+};
 
-  const handleDragEnd = useCallback(() => {
-    setDraggedTask(null);
-    setDragOverCol(null);
-    setDragOverIndex(null);
-    if (dragGhost.current) {
-      document.body.removeChild(dragGhost.current);
-      dragGhost.current = null;
-    }
-  }, []);
+const MODULE_COLORS: Record<string, string> = {
+  ux:  "bg-purple-500/10 text-purple-600",
+  ui:  "bg-pink-500/10 text-pink-600",
+  dev: "bg-cyan-500/10 text-cyan-600",
+};
 
-  const handleDragOver = useCallback((e: React.DragEvent, col: string, index?: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverCol(col);
-    if (index !== undefined) setDragOverIndex(index);
-  }, []);
+// ─── Card de tarefa ───────────────────────────────────────────────────────────
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    const relatedTarget = e.relatedTarget as HTMLElement | null;
-    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
-      setDragOverCol(null);
-      setDragOverIndex(null);
-    }
-  }, []);
-
-  const handleDrop = useCallback(async (e: React.DragEvent, targetCol: string) => {
-    e.preventDefault();
-    const taskId = e.dataTransfer.getData("text/plain");
-    if (!taskId) return;
-    const task = (tasks ?? []).find(t => t.id === taskId);
-    if (!task || task.status === targetCol) { handleDragEnd(); return; }
-    const { error } = await supabase.from("tasks").update({ status: targetCol }).eq("id", taskId);
-    if (error) { toast.error("Erro ao mover tarefa"); } else { queryClient.invalidateQueries({ queryKey: ["tasks"] }); }
-    handleDragEnd();
-  }, [tasks, queryClient, handleDragEnd]);
-
-  const handleAddTask = async (col: string) => {
-    if (!newTaskTitle.trim()) { setIsAddingTask(false); setAddingToCol(null); return; }
-    try {
-      const projectId = await getProjectId();
-      const { error } = await supabase.from("tasks").insert({ project_id: projectId, title: newTaskTitle.trim(), status: col, module: "dev", phase: "develop", priority: "medium", days_in_phase: 0, estimated_days: 3 });
-      if (error) throw error;
-      toast.success("Tarefa criada!");
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      setNewTaskTitle(""); setIsAddingTask(false); setAddingToCol(null);
-    } catch { toast.error("Erro ao criar tarefa"); }
-  };
+function TaskCard({
+  task,
+  onStatusChange,
+}: {
+  task: DbTask;
+  onStatusChange: (id: string, status: DbTask["status"]) => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const otherStatuses = COLUMNS.filter(c => c.id !== task.status);
 
   return (
-    <ModulePage title="Kanban" subtitle="Board de desenvolvimento" icon={<Kanban className="w-4 h-4 text-primary-foreground" />}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {columns.map((col) => {
-          const colTasks = allTasks.filter((t) => t.status === col);
-          const isOver = dragOverCol === col;
+    <div className="group relative border rounded-lg p-3 bg-card hover:border-border/80 transition-colors space-y-2">
+      {/* Módulo + prioridade */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${MODULE_COLORS[task.module] ?? "bg-muted text-muted-foreground"}`}>
+          {task.module?.toUpperCase()}
+        </span>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${PRIORITY_COLORS[task.priority]}`}>
+          {task.priority}
+        </span>
+      </div>
+
+      {/* Título */}
+      <p className="text-xs font-medium text-foreground leading-snug">{task.title}</p>
+
+      {/* Footer — assignee + dias + mover */}
+      <div className="flex items-center justify-between gap-2 pt-0.5">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {task.assignee && (
+            <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center text-[9px] font-semibold text-primary shrink-0">
+              {task.assignee.slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            {task.days_in_phase}d / {task.estimated_days}d
+          </span>
+        </div>
+
+        {/* Menu de mover para outra coluna */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuOpen(v => !v)}
+            className="text-[10px] px-2 py-1 rounded border border-border/50 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors opacity-0 group-hover:opacity-100"
+          >
+            Mover
+          </button>
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+              <div className="absolute right-0 bottom-full mb-1 w-36 bg-popover border border-border rounded-lg shadow-lg z-20 overflow-hidden">
+                {otherStatuses.map(col => {
+                  const Icon = col.icon;
+                  return (
+                    <button
+                      key={col.id}
+                      onClick={() => { onStatusChange(task.id, col.id); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors"
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${col.color}`} />
+                      {col.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── KanbanPage ───────────────────────────────────────────────────────────────
+
+export function KanbanPage() {
+  const { data: tasks, isLoading } = useTasks();
+  const queryClient = useQueryClient();
+  const [moduleFilter, setModuleFilter] = useState<"all" | "ux" | "ui" | "dev">("all");
+
+  const filtered = useMemo(() => {
+    if (!tasks) return [];
+    return moduleFilter === "all" ? tasks : tasks.filter(t => t.module === moduleFilter);
+  }, [tasks, moduleFilter]);
+
+  const byStatus = useMemo(() => {
+    const map: Record<string, DbTask[]> = {};
+    for (const col of COLUMNS) map[col.id] = [];
+    for (const task of filtered) {
+      if (map[task.status]) map[task.status].push(task);
+    }
+    return map;
+  }, [filtered]);
+
+  const handleStatusChange = async (taskId: string, newStatus: DbTask["status"]) => {
+    // Optimistic update
+    queryClient.setQueryData<DbTask[]>(["tasks"], old =>
+      old?.map(t => t.id === taskId ? { ...t, status: newStatus } : t) ?? [],
+    );
+    try {
+      await updateTaskStatus(taskId, newStatus);
+    } catch {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      toast.error("Erro ao atualizar tarefa.");
+    }
+  };
+
+  if (isLoading) return <KanbanSkeleton />;
+
+  const blockedCount = byStatus["blocked"]?.length ?? 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold">Kanban</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {filtered.length} tarefas
+            {blockedCount > 0 && (
+              <span className="ml-2 text-destructive font-medium">
+                · {blockedCount} bloqueada{blockedCount > 1 ? "s" : ""}
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* Filtro por módulo */}
+        <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-0.5 border border-border/50 w-fit">
+          <Filter className="w-3.5 h-3.5 text-muted-foreground ml-2" />
+          {(["all", "ux", "ui", "dev"] as const).map(m => (
+            <button
+              key={m}
+              onClick={() => setModuleFilter(m)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                moduleFilter === m
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m === "all" ? "Todos" : m.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Board */}
+      <div className="flex gap-3 overflow-x-auto pb-4">
+        {COLUMNS.map(col => {
+          const Icon = col.icon;
+          const colTasks = byStatus[col.id] ?? [];
           return (
-            <div key={col} className={`glass-card p-4 transition-all duration-200 border-t-2 ${columnColors[col]} ${isOver ? "ring-2 ring-primary/50 bg-accent/30" : ""}`} onDragOver={(e) => handleDragOver(e, col)} onDragLeave={handleDragLeave} onDrop={(e) => handleDrop(e, col)}>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center justify-between">
-                {columnLabels[col]}
-                <span className="text-[10px] bg-secondary rounded-full px-2 py-0.5">{colTasks.length}</span>
-              </h4>
-              <div className="mb-3">
-                {isAddingTask && addingToCol === col ? (
-                  <div className="space-y-2">
-                    <input autoFocus value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleAddTask(col); if (e.key === "Escape") { setIsAddingTask(false); setAddingToCol(null); } }} placeholder="Título da tarefa..." className="w-full px-3 py-2 rounded-lg bg-background border border-primary/30 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50" />
-                    <div className="flex gap-1">
-                      <button onClick={() => handleAddTask(col)} className="flex-1 py-1 rounded bg-primary text-primary-foreground text-[10px] font-medium">Adicionar</button>
-                      <button onClick={() => { setIsAddingTask(false); setAddingToCol(null); }} className="px-2 py-1 rounded bg-secondary text-muted-foreground text-[10px]">Cancelar</button>
-                    </div>
+            <div key={col.id} className="min-w-[240px] w-[240px] shrink-0 space-y-2">
+              {/* Cabeçalho da coluna */}
+              <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${col.bg}`}>
+                <div className="flex items-center gap-1.5">
+                  <Icon className={`w-3.5 h-3.5 ${col.color}`} />
+                  <span className="text-xs font-medium text-foreground">{col.label}</span>
+                </div>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${col.bg} ${col.color} border border-current/20`}>
+                  {colTasks.length}
+                </span>
+              </div>
+
+              {/* Cards */}
+              <div className="space-y-2">
+                {colTasks.length === 0 ? (
+                  <div className="border border-dashed border-border/50 rounded-lg p-4 text-center">
+                    <p className="text-[10px] text-muted-foreground/50">Vazio</p>
                   </div>
                 ) : (
-                  <button onClick={() => { setAddingToCol(col); setIsAddingTask(true); }} className="w-full py-1.5 rounded-lg border border-dashed border-muted-foreground/30 text-[10px] text-muted-foreground hover:text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-1">
-                    <Plus className="w-3 h-3" /> Nova Tarefa
-                  </button>
+                  colTasks.map(task => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))
                 )}
-              </div>
-              <div className="space-y-2 min-h-[100px]">
-                {colTasks.map((t, i) => (
-                  <div key={t.id}>
-                    {isOver && dragOverIndex === i && <div className="h-1 bg-primary/50 rounded-full mb-2 transition-all" />}
-                    <div draggable onDragStart={(e) => handleDragStart(e, t.id)} onDragEnd={handleDragEnd} onDragOver={(e) => handleDragOver(e, col, i)} className={`p-3 rounded-lg bg-secondary/50 hover:bg-accent/50 transition-all cursor-grab active:cursor-grabbing select-none ${draggedTask === t.id ? "opacity-30 scale-95" : ""}`}>
-                      <p className="text-xs font-medium text-foreground">{t.title}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-[10px] text-muted-foreground">{t.assignee}</span>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.module === "ux" ? "bg-status-discovery/10 text-status-discovery" : t.module === "ui" ? "bg-status-define/10 text-status-define" : "bg-status-develop/10 text-status-develop"}`}>{t.module.toUpperCase()}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${t.priority === "urgent" ? "bg-destructive/10 text-status-urgent" : t.priority === "high" ? "bg-status-blocked/10 text-status-blocked" : "bg-secondary text-muted-foreground"}`}>{t.priority}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span className="text-[9px] text-muted-foreground">{t.days_in_phase}d / {t.estimated_days}d</span>
-                        <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center text-[8px] font-semibold text-secondary-foreground">{t.avatar ?? "?"}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {isOver && colTasks.length === 0 && (
-                  <div className="h-16 border-2 border-dashed border-primary/30 rounded-lg flex items-center justify-center"><span className="text-[10px] text-primary/50">Soltar aqui</span></div>
-                )}
-                {!isOver && colTasks.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-4">Vazio</p>}
               </div>
             </div>
           );
         })}
       </div>
-    </ModulePage>
+    </div>
   );
 }
+
+// ─── QAPage — placeholder funcional ──────────────────────────────────────────
 
 export function QAPage() {
-  const projectId = useCurrentProjectId();
-  const { data: bugs, isLoading } = useQABugs(projectId);
-  const updateStatusMutation = useUpdateBugStatus();
-  const deleteMutation = useDeleteBug();
-  const { data: tasks } = useTasks();
-  const blockedTasks = (tasks ?? []).filter((t) => t.status === "blocked" || t.status === "review");
-  const queryClient = useQueryClient();
-  const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ bug_title: "", steps_to_reproduce: "", severity: "Média" });
+  const { data: tasks, isLoading } = useTasks();
 
-  const handleAdd = async () => {
-    if (!projectId || !form.bug_title.trim()) return;
-    const { error } = await supabase.from("qa_bugs").insert({
-      project_id: projectId,
-      bug_title: form.bug_title.trim(),
-      steps_to_reproduce: form.steps_to_reproduce.trim() || null,
-      severity: form.severity,
-      status: "Aberto",
-    });
-    if (error) { toast.error("Erro ao criar"); return; }
-    queryClient.invalidateQueries({ queryKey: ["qa-bugs"] });
-    setForm({ bug_title: "", steps_to_reproduce: "", severity: "Média" });
-    setAdding(false);
-    toast.success("Bug reportado");
-  };
+  const qaIssues = useMemo(() =>
+    tasks?.filter(t => t.status === "blocked" || t.priority === "urgent") ?? [],
+    [tasks],
+  );
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <div className="h-8 w-24 rounded-md bg-muted animate-pulse" />
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <ModulePage
-      title="QA & Qualidade"
-      subtitle="Gerenciamento de bugs e tickets técnicos"
-      icon={<ShieldCheck className="w-4 h-4 text-primary-foreground" />}
-      actions={
-        <div className="flex items-center gap-2">
-          <button onClick={() => setAdding(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-            <Plus className="w-3.5 h-3.5" /> Reportar Bug
-          </button>
-          <AIGenerateButton
-            prompt="Analise o projeto e identifique possíveis bugs e problemas técnicos. Use create_qa_bug para cada bug encontrado. Considere problemas de responsividade, acessibilidade, performance e edge cases."
-            label="Gerar Análise QA"
-            invalidateKeys={[["qa-bugs"]]}
-            size="sm"
-          />
-        </div>
-      }
-    >
-      <div className="space-y-6">
-        {adding && (
-          <div className="glass-card p-5 space-y-3 border-2 border-primary/20">
-            <h4 className="text-sm font-semibold text-foreground">Reportar Bug</h4>
-            <input value={form.bug_title} onChange={e => setForm(f => ({ ...f, bug_title: e.target.value }))} placeholder="Título do bug *" className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" autoFocus />
-            <textarea value={form.steps_to_reproduce} onChange={e => setForm(f => ({ ...f, steps_to_reproduce: e.target.value }))} placeholder="Passos para reproduzir" rows={3} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-y" />
-            <select value={form.severity} onChange={e => setForm(f => ({ ...f, severity: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
-              <option value="Baixa">Baixa</option>
-              <option value="Média">Média</option>
-              <option value="Alta">Alta</option>
-              <option value="Crítica">Crítica</option>
-            </select>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setAdding(false)} className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={handleAdd} className="px-4 py-1.5 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium"><Check className="w-3 h-3 inline mr-1" />Reportar</button>
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2 space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><Bug className="w-4 h-4 text-red-500" /> Bug Tracker</h3>
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 animate-pulse"><Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" /></div>
-            ) : bugs && bugs.length > 0 ? (
-              <QABugTracker bugs={bugs} onUpdateStatus={(id, status) => updateStatusMutation.mutate({ id, status })} onDelete={(id) => deleteMutation.mutate({ id })} />
-            ) : (
-              <div className="text-center py-12 glass-card bg-card/10 border-dashed border-2">
-                <Bug className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                <h3 className="text-sm font-bold text-foreground mb-1">Nenhum Bug Reportado</h3>
-                <p className="text-[11px] text-muted-foreground">Sistema operando nominalmente.</p>
-              </div>
-            )}
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-primary" /> Tarefas em Revisão / Bloqueadas</h3>
-            <div className="space-y-2">
-              {blockedTasks.map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-white/5">
-                  <div><p className="text-xs font-bold text-foreground">{t.title}</p><p className="text-[10px] text-muted-foreground">{t.assignee} · {t.days_in_phase}d</p></div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.status === "blocked" ? "bg-red-500/10 text-red-500" : "bg-primary/10 text-primary"}`}>{t.status === "blocked" ? "BLOQUEADO" : "REVISÃO"}</span>
-                </div>
-              ))}
-              {blockedTasks.length === 0 && <p className="text-xs text-muted-foreground text-center py-8 bg-secondary/10 rounded-lg">Nenhuma tarefa crítica no momento ✅</p>}
-            </div>
-          </div>
-        </div>
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-xl font-semibold">QA</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Tarefas bloqueadas e urgentes — {qaIssues.length} issue{qaIssues.length !== 1 ? "s" : ""}
+        </p>
       </div>
-    </ModulePage>
+
+      {qaIssues.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-2 text-muted-foreground">
+          <CheckCircle2 className="w-10 h-10 text-green-500/50" />
+          <p className="text-sm">Nenhuma issue aberta. Tudo certo!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {qaIssues.map(task => (
+            <div key={task.id} className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+              <span className={`h-2 w-2 rounded-full shrink-0 ${task.status === "blocked" ? "bg-destructive" : "bg-amber-500"}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{task.title}</p>
+                <p className="text-xs text-muted-foreground">{task.module?.toUpperCase()} · {task.phase}</p>
+              </div>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${PRIORITY_COLORS[task.priority]}`}>
+                {task.priority}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
+// ─── TeamMetricsPage — resumo por assignee ────────────────────────────────────
+
 export function TeamMetricsPage() {
+  const { data: tasks, isLoading } = useTasks();
+
+  const byAssignee = useMemo(() => {
+    if (!tasks) return [];
+    const map: Record<string, { total: number; done: number; blocked: number; inProgress: number }> = {};
+    for (const t of tasks) {
+      const key = t.assignee ?? "Sem responsável";
+      if (!map[key]) map[key] = { total: 0, done: 0, blocked: 0, inProgress: 0 };
+      map[key].total++;
+      if (t.status === "done")        map[key].done++;
+      if (t.status === "blocked")     map[key].blocked++;
+      if (t.status === "in_progress") map[key].inProgress++;
+    }
+    return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
+  }, [tasks]);
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <div className="h-8 w-36 rounded-md bg-muted animate-pulse" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <ModulePage title="Métricas do Time" subtitle="Velocity, burndown e carga de trabalho" icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}>
-      <TeamMetrics />
-    </ModulePage>
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-xl font-semibold">Métricas do Time</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {byAssignee.length} membro{byAssignee.length !== 1 ? "s" : ""} com tarefas atribuídas
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {byAssignee.map(([name, stats]) => {
+          const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+          return (
+            <div key={name} className="border rounded-lg p-4 bg-card space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                  {name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{name}</p>
+                  <p className="text-[10px] text-muted-foreground">{stats.total} tarefa{stats.total !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+              {/* Barra de progresso */}
+              <div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                  <span>Progresso</span>
+                  <span>{pct}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-green-500 transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+              {/* Stats */}
+              <div className="flex gap-3 text-[10px]">
+                <span className="text-blue-500">{stats.inProgress} em andamento</span>
+                {stats.blocked > 0 && (
+                  <span className="text-destructive font-medium">{stats.blocked} bloqueada{stats.blocked > 1 ? "s" : ""}</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BookOpen, Plus, Trash2, Pencil, Check, Users2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
@@ -6,6 +7,7 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageSkeleton } from "@/components/ui/skeletons";
 
 // ─── Diary Studies ───
 export function DiaryStudiesPage() {
@@ -14,7 +16,7 @@ export function DiaryStudiesPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ participant_name: "", context: "", activity: "", emotions: "", pain_points: "", insights: "" });
 
-  const { data: entries } = useQuery({
+  const { data: entries, isLoading } = useQuery({
     queryKey: ["diary-studies", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -24,6 +26,8 @@ export function DiaryStudiesPage() {
     },
     enabled: !!projectId,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.participant_name.trim() || !projectId) return;
@@ -131,7 +135,7 @@ export function StakeholderMapPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ name: "", role: "", influence_level: "medium", interest_level: "medium", relationship: "neutral", notes: "" });
 
-  const { data: stakeholders } = useQuery({
+  const { data: stakeholders, isLoading } = useQuery({
     queryKey: ["stakeholder-maps", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -141,6 +145,8 @@ export function StakeholderMapPage() {
     },
     enabled: !!projectId,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.name.trim() || !projectId) return;

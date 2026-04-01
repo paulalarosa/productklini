@@ -14,9 +14,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
   seedAnalyticsData, insertAppReviews, scrapeStoreReviews,
-  analyzeReviewsWithAI, updateReviewTags,
+  analyzeReviewsWithAI, updateReviewTags, fetchAppReviews,
   DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
 } from "@/lib/api";
+import {
+  useAnalyticsSnapshots,
+  useFunnelSteps,
+  useAppReviews,
+} from "@/hooks/useProjectData";
 
 const SENTIMENT_COLORS = {
   positive: "hsl(160, 70%, 50%)",
@@ -33,6 +38,17 @@ const TAG_STYLES: Record<string, string> = {
   feature: "bg-primary/15 text-primary border-primary/30",
   security: "bg-destructive/15 text-destructive border-destructive/30",
   accessibility: "bg-status-define/15 text-status-define border-status-define/30",
+};
+
+export const TAG_LABELS: Record<string, string> = {
+  bug:           "🐛 Bug",
+  performance:   "⚡ Performance",
+  praise:        "👏 Elogio",
+  ux:            "🎯 UX",
+  crash:         "💥 Crash",
+  feature:       "✨ Feature",
+  security:      "🔒 Segurança",
+  accessibility: "♿ Acessibilidade",
 };
 
 const TOOLTIP_STYLE = {
@@ -57,18 +73,9 @@ export function AnalyticsHubPage() {
   const [tagFilter, setTagFilter] = useState<string>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: snapshots, isLoading: loadingSnapshots } = useQuery({
-    queryKey: ["analytics-snapshots"],
-    queryFn: fetchAnalyticsSnapshots,
-  });
-  const { data: funnel, isLoading: loadingFunnel } = useQuery({
-    queryKey: ["analytics-funnel"],
-    queryFn: fetchFunnelSteps,
-  });
-  const { data: reviews, isLoading: loadingReviews, refetch: refetchReviews } = useQuery({
-    queryKey: ["app-reviews"],
-    queryFn: fetchAppReviews,
-  });
+  const { data: snapshots, isLoading: loadingSnapshots } = useAnalyticsSnapshots();
+  const { data: funnel, isLoading: loadingFunnel } = useFunnelSteps();
+  const { data: reviews, isLoading: loadingReviews } = useAppReviews();
 
   const isEmpty = !loadingSnapshots && (!snapshots || snapshots.length === 0);
 
@@ -76,8 +83,10 @@ export function AnalyticsHubPage() {
     setSeeding(true);
     try {
       await seedAnalyticsData();
+      queryClient.invalidateQueries({ queryKey: ["analytics-snapshots"] });
+      queryClient.invalidateQueries({ queryKey: ["analytics-funnel"] });
+      queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
       toast.success("Dados de exemplo inseridos!");
-      window.location.reload();
     } catch (e) {
       toast.error("Erro ao inserir dados");
     }
@@ -301,11 +310,15 @@ export function AnalyticsHubPage() {
       toast.success(`${result.reviews.length} reviews importadas! Analisando com IA...`);
       setStoreUrl("");
       setShowImport(false);
-      // Auto-analyze after import - refetch to get IDs
-      const freshReviews = await fetchAppReviews();
-      const pendingReviews = freshReviews.filter(r => r.ai_tag === "Pendente");
-      if (pendingReviews.length > 0) {
-        await runAIAnalysis(pendingReviews);
+      
+      // Auto-analyze after import - pass the local list instead of refetching
+      const pendingForAI = reviewsToInsert.map(r => ({
+        ...r,
+        id: "", // Will be updated by realtime after analysis syncs
+      })) as DbAppReview[];
+      
+      if (pendingForAI.length > 0) {
+        await runAIAnalysis(pendingForAI);
       }
     } catch (e) {
       const err = e as Error;
@@ -359,11 +372,15 @@ export function AnalyticsHubPage() {
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
       toast.success(`${reviewsToInsert.length} reviews importadas! Analisando com IA...`);
       setShowImport(false);
+
       // Auto-analyze
-      const freshReviews = await fetchAppReviews();
-      const pendingReviews = freshReviews.filter(r => r.ai_tag === "Pendente");
-      if (pendingReviews.length > 0) {
-        await runAIAnalysis(pendingReviews);
+      const pendingForAI = reviewsToInsert.map(r => ({
+        ...r,
+        id: "",
+      })) as DbAppReview[];
+      
+      if (pendingForAI.length > 0) {
+        await runAIAnalysis(pendingForAI);
       }
     } catch (e) {
       toast.error("Erro ao processar arquivo. Verifique o formato.");
@@ -372,10 +389,6 @@ export function AnalyticsHubPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const TAG_LABELS: Record<string, string> = {
-    bug: "🐛 Bug", performance: "⚡ Performance", praise: "👏 Elogio", ux: "🎯 UX",
-    crash: "💥 Crash", feature: "✨ Feature", security: "🔒 Segurança", accessibility: "♿ Acessibilidade",
-  };
 
   if (isEmpty) {
     return (
