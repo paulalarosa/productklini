@@ -33,7 +33,7 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
   }, []);
 
   const send = useCallback(
-    async (input: string) => {
+    async (input: string, attachments?: ChatAttachment[]) => {
       if (!input.trim() || isLoading) return;
 
       const userMsg: Msg = { role: "user", content: input };
