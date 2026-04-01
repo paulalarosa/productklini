@@ -264,6 +264,12 @@ export function AIMentorPanel({
 
             {/* Input */}
             <div className="px-3 py-3 border-t border-border shrink-0 safe-area-bottom">
+              <ChatAttachments
+                attachments={attachments}
+                onAdd={(att) => setAttachments((prev) => [...prev, att])}
+                onRemove={(i) => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                disabled={isLoading}
+              />
               <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
                 <input
                   type="text"
