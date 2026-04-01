@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, X, Send, Sparkles, AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
-import { useAIChat } from "@/hooks/useAIChat";
+import { useAIChat, ChatAttachment } from "@/hooks/useAIChat";
+import { ChatAttachments } from "@/components/dashboard/ChatAttachments";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTasks, useProject, usePersonas, useUxMetrics } from "@/hooks/useProjectData";
 import ReactMarkdown from "react-markdown";
@@ -132,6 +133,7 @@ export function AIMentorPanel({
   const { data: personas } = usePersonas();
   const { data: metrics } = useUxMetrics();
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevLoadingRef = useRef(isLoading);
 
@@ -156,8 +158,9 @@ export function AIMentorPanel({
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return;
-    send(input);
+    send(input, attachments.length > 0 ? attachments : undefined);
     setInput("");
+    setAttachments([]);
   };
 
   const handleSuggestionAction = (msg: string) => {
@@ -261,6 +264,12 @@ export function AIMentorPanel({
 
             {/* Input */}
             <div className="px-3 py-3 border-t border-border shrink-0 safe-area-bottom">
+              <ChatAttachments
+                attachments={attachments}
+                onAdd={(att) => setAttachments((prev) => [...prev, att])}
+                onRemove={(i) => setAttachments((prev) => prev.filter((_, idx) => idx !== i))}
+                disabled={isLoading}
+              />
               <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
                 <input
                   type="text"

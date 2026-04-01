@@ -5,6 +5,16 @@ import { toast } from "sonner";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+export interface ChatAttachment {
+  type: "image" | "pdf" | "url";
+  data?: string; // base64
+  mime_type?: string;
+  extracted_text?: string;
+  url?: string;
+  description?: string;
+  name?: string;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-chat`;
 
 export function useAIChat(projectContext?: Record<string, unknown>) {
@@ -23,7 +33,7 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
   }, []);
 
   const send = useCallback(
-    async (input: string) => {
+    async (input: string, attachments?: ChatAttachment[]) => {
       if (!input.trim() || isLoading) return;
 
       const userMsg: Msg = { role: "user", content: input };
@@ -49,14 +59,18 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
       try {
         const headers = await getAuthHeaders();
         const projectId = await getProjectId();
-        const resp = await fetch(CHAT_URL, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
+        const payload: Record<string, unknown> = {
             messages: updatedMessages,
             projectContext,
             project_id: projectId,
-          }),
+        };
+        if (attachments && attachments.length > 0) {
+          payload.attachments = attachments;
+        }
+        const resp = await fetch(CHAT_URL, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
         });
 
         if (!resp.ok) {
