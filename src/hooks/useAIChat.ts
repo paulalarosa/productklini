@@ -59,14 +59,18 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
       try {
         const headers = await getAuthHeaders();
         const projectId = await getProjectId();
-        const resp = await fetch(CHAT_URL, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
+        const payload: Record<string, unknown> = {
             messages: updatedMessages,
             projectContext,
             project_id: projectId,
-          }),
+        };
+        if (attachments && attachments.length > 0) {
+          payload.attachments = attachments;
+        }
+        const resp = await fetch(CHAT_URL, {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
         });
 
         if (!resp.ok) {
