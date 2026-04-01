@@ -133,6 +133,7 @@ export function AIMentorPanel({
   const { data: personas } = usePersonas();
   const { data: metrics } = useUxMetrics();
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevLoadingRef = useRef(isLoading);
 
