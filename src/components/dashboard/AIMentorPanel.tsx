@@ -158,8 +158,9 @@ export function AIMentorPanel({
 
   const handleSend = () => {
     if (!input.trim() || isLoading) return;
-    send(input);
+    send(input, attachments.length > 0 ? attachments : undefined);
     setInput("");
+    setAttachments([]);
   };
 
   const handleSuggestionAction = (msg: string) => {
