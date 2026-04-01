@@ -5,6 +5,16 @@ import { toast } from "sonner";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+export interface ChatAttachment {
+  type: "image" | "pdf" | "url";
+  data?: string; // base64
+  mime_type?: string;
+  extracted_text?: string;
+  url?: string;
+  description?: string;
+  name?: string;
+}
+
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mentor-chat`;
 
 export function useAIChat(projectContext?: Record<string, unknown>) {
