@@ -42,6 +42,12 @@ import { EnhancedReportPage } from "./pages/EnhancedReportPage";
 import { VoiceOfCustomerPage } from "./pages/VoiceOfCustomerPage";
 import NotFound from "./pages/NotFound";
 
+// New modules
+import { DiaryStudiesPage, StakeholderMapPage } from "./pages/ResearchPages";
+import { HEARTFrameworkPage, NorthStarPage, NPSSurveysPage } from "./pages/MetricsPages";
+import { RoadmapPage, OKRsPage } from "./pages/ProductManagementPages";
+import { DesignPrinciplesPage, DecisionLogPage, DesignCritiquesPage } from "./pages/KnowledgePages";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -109,6 +115,17 @@ const App = () => (
               <Route path="/relatorio" element={<EnhancedReportPage />} />
               <Route path="/git-sync" element={<GitSyncHubPage />} />
               <Route path="/config" element={<ConfigPage />} />
+              {/* New modules */}
+              <Route path="/research/diary-studies" element={<DiaryStudiesPage />} />
+              <Route path="/research/stakeholder-map" element={<StakeholderMapPage />} />
+              <Route path="/metrics/heart" element={<HEARTFrameworkPage />} />
+              <Route path="/metrics/north-star" element={<NorthStarPage />} />
+              <Route path="/metrics/nps" element={<NPSSurveysPage />} />
+              <Route path="/product/roadmap" element={<RoadmapPage />} />
+              <Route path="/product/okrs" element={<OKRsPage />} />
+              <Route path="/knowledge/design-principles" element={<DesignPrinciplesPage />} />
+              <Route path="/knowledge/decision-log" element={<DecisionLogPage />} />
+              <Route path="/knowledge/design-critiques" element={<DesignCritiquesPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
