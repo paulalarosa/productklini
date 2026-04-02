@@ -110,6 +110,19 @@ const DesignPrinciplesPage   = lazy(() => import("./pages/KnowledgePages").then(
 const DecisionLogPage        = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DecisionLogPage as unknown as React.ComponentType<unknown> })));
 const DesignCritiquesPage    = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DesignCritiquesPage as unknown as React.ComponentType<unknown> })));
 
+// Design & Prototyping
+const UserFlowEditorPage     = lazy(() => import("./pages/DesignPrototypingPages").then(m => ({ default: m.UserFlowEditorPage as unknown as React.ComponentType<unknown> })));
+const MoodboardPage          = lazy(() => import("./pages/DesignPrototypingPages").then(m => ({ default: m.MoodboardPage as unknown as React.ComponentType<unknown> })));
+const ImpactEffortPage       = lazy(() => import("./pages/DesignPrototypingPages").then(m => ({ default: m.ImpactEffortPage as unknown as React.ComponentType<unknown> })));
+
+// Testing & Validation (new)
+const FeatureFlagsPage       = lazy(() => import("./pages/TestingValidationPages").then(m => ({ default: m.FeatureFlagsPage as unknown as React.ComponentType<unknown> })));
+const HeatmapViewerPage      = lazy(() => import("./pages/TestingValidationPages").then(m => ({ default: m.HeatmapViewerPage as unknown as React.ComponentType<unknown> })));
+const SessionRecordingPage   = lazy(() => import("./pages/TestingValidationPages").then(m => ({ default: m.SessionRecordingPage as unknown as React.ComponentType<unknown> })));
+
+// Competitive
+const CompetitiveLandscapePage = lazy(() => import("./pages/CompetitiveLandscapePage").then(m => ({ default: m.CompetitiveLandscapePage as unknown as React.ComponentType<unknown> })));
+
 
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({
