@@ -79,8 +79,9 @@ export function NotificationsPanel() {
   // ── Mutations ───────────────────────────────────────────────────────────────
 
   const markRead = useMutation({
-    mutationFn: (id: string) =>
-      supabase.from("notifications").update({ is_read: true }).eq("id", id),
+    mutationFn: async (id: string) => {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    },
     // Optimistic update — marca como lido antes da resposta do servidor
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
@@ -90,7 +91,7 @@ export function NotificationsPanel() {
       );
       return { prev };
     },
-    onError: (_err, _id, ctx) => {
+    onError: (_err, _id, ctx: { prev?: Notification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
@@ -113,14 +114,15 @@ export function NotificationsPanel() {
       );
       return { prev };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (_err, _vars, ctx: { prev?: Notification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
 
   const deleteNotification = useMutation({
-    mutationFn: (id: string) =>
-      supabase.from("notifications").delete().eq("id", id),
+    mutationFn: async (id: string) => {
+      await supabase.from("notifications").delete().eq("id", id);
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
       const prev = queryClient.getQueryData<Notification[]>(["notifications"]);
@@ -129,7 +131,7 @@ export function NotificationsPanel() {
       );
       return { prev };
     },
-    onError: (_err, _id, ctx) => {
+    onError: (_err, _id, ctx: { prev?: Notification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });

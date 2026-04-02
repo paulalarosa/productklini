@@ -20,33 +20,32 @@ type SharePayload = {
 
 async function fetchSharedDoc(token: string): Promise<SharePayload> {
   const { data, error } = await supabase
-    .from("shared_documents")
-    .select("*, project_documents(title, content, doc_type), projects(name)")
+    .from("share_links")
+    .select("*, projects(name)")
     .eq("token", token)
     .maybeSingle();
 
   if (error) throw new Error("Erro ao buscar documento compartilhado.");
   if (!data)  throw new Error("NOT_FOUND");
 
+  const d = data as Record<string, unknown>;
+
   // Verifica expiração
-  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+  if (d.expires_at && new Date(d.expires_at as string) < new Date()) {
     throw new Error("EXPIRED");
   }
 
-  // A estrutura de retorno depende de como as relações estão no Supabase.
-  // Ajustando para lidar com o retorno do join (que vem como array ou objeto dependendo da config)
-  const doc = Array.isArray(data.project_documents) ? data.project_documents[0] : data.project_documents;
-  const proj = Array.isArray(data.projects) ? data.projects[0] : data.projects;
+  const proj = d.projects as Record<string, string> | null;
 
   return {
-    id:           data.id,
-    token:        data.token,
-    doc_type:     doc?.doc_type ?? "",
-    title:        doc?.title    ?? "Documento",
-    content:      doc?.content  ?? "",
-    project_name: proj?.name    ?? "",
-    expires_at:   data.expires_at,
-    created_at:   data.created_at,
+    id:           d.id as string,
+    token:        d.token as string,
+    doc_type:     "share_link",
+    title:        (d.label as string) ?? "Link compartilhado",
+    content:      "",
+    project_name: proj?.name ?? "",
+    expires_at:   (d.expires_at as string) ?? null,
+    created_at:   d.created_at as string,
   };
 }
 

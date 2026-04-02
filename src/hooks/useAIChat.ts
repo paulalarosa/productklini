@@ -26,7 +26,7 @@ export function useAIChat(projectContext?: Record<string, unknown>) {
   useEffect(() => {
     fetchAiMessages().then((data) => {
       if (data.length > 0) {
-        setMessages(data.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })));
+        setMessages(data.map((m: { role: string; content: string }) => ({ role: m.role as "user" | "assistant", content: m.content })));
       }
       setInitialized(true);
     });

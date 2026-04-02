@@ -9,7 +9,8 @@ import {
   ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid,
   BrainCircuit, MonitorSmartphone, Microscope, MessageSquareDot, BookMarked,
   Users2, Star, Target, Map, FileText, MessageSquareMore, BookOpen,
-  FlaskConical, PenTool, Compass, GalleryHorizontal,
+  FlaskConical, PenTool, Compass, GalleryHorizontal, Image, Globe,
+  Flag, Activity, Eye, ExternalLink,
 } from "lucide-react";
 import { useTasks } from "@/hooks/useProjectData";
 
@@ -75,8 +76,10 @@ const navGroups: NavGroup[] = [
   {
     title: "Interaction Design",
     items: [
+      { label: "User Flow Editor",    icon: GitBranch, path: "/design/user-flows" },
       { label: "Estados Componentes", icon: Columns,    path: "/ixd/states" },
       { label: "Task Flows",          icon: GitBranch,  path: "/ixd/task-flows" },
+      { label: "Moodboard",           icon: Image,      path: "/design/moodboard" },
     ],
   },
   {
@@ -91,10 +94,11 @@ const navGroups: NavGroup[] = [
   {
     title: "Estratégia & Produto",
     items: [
-      { label: "Priorização",           icon: ArrowUpDown, path: "/strategy/prioritization" },
-      { label: "Business Model Canvas", icon: Briefcase,   path: "/strategy/business-model" },
-      { label: "Roadmap",               icon: Map,         path: "/product/roadmap" },
-      { label: "OKRs",                  icon: Target,      path: "/product/okrs" },
+      { label: "Priorização",           icon: ArrowUpDown,   path: "/strategy/prioritization" },
+      { label: "Impact vs Effort",      icon: ExternalLink,  path: "/strategy/impact-effort" },
+      { label: "Business Model Canvas", icon: Briefcase,     path: "/strategy/business-model" },
+      { label: "Roadmap",               icon: Map,           path: "/product/roadmap" },
+      { label: "OKRs",                  icon: Target,        path: "/product/okrs" },
     ],
   },
   {
@@ -112,19 +116,23 @@ const navGroups: NavGroup[] = [
   {
     title: "Validação & Experimentos",
     items: [
-      { label: "A/B Testing",      icon: CircleDot,       path: "/ab-testing" },
-      { label: "Audit Responsivo", icon: MonitorSmartphone,path: "/responsive-audit" },
-      { label: "Análise UX (IA)",  icon: Microscope,      path: "/ux-analysis" },
-      { label: "Analytics Hub",    icon: BarChart3,        path: "/analytics" },
-      { label: "Voice of Customer",icon: MessageSquareDot, path: "/voice-of-customer" },
+      { label: "A/B Testing",        icon: CircleDot,       path: "/ab-testing" },
+      { label: "Feature Flags",      icon: Flag,            path: "/testing/feature-flags" },
+      { label: "Heatmap Viewer",     icon: Activity,        path: "/testing/heatmap" },
+      { label: "Session Recording",  icon: Eye,             path: "/testing/session-recording" },
+      { label: "Audit Responsivo",   icon: MonitorSmartphone,path: "/responsive-audit" },
+      { label: "Análise UX (IA)",    icon: Microscope,      path: "/ux-analysis" },
+      { label: "Analytics Hub",      icon: BarChart3,       path: "/analytics" },
+      { label: "Voice of Customer",  icon: MessageSquareDot,path: "/voice-of-customer" },
     ],
   },
   {
     title: "Knowledge Base",
     items: [
-      { label: "Design Principles", icon: Star,             path: "/knowledge/design-principles" },
-      { label: "Decision Log",      icon: ClipboardList,    path: "/knowledge/decision-log" },
-      { label: "Design Critiques",  icon: MessageSquareMore,path: "/knowledge/design-critiques" },
+      { label: "Design Principles",     icon: Star,             path: "/knowledge/design-principles" },
+      { label: "Decision Log",          icon: ClipboardList,    path: "/knowledge/decision-log" },
+      { label: "Design Critiques",      icon: MessageSquareMore,path: "/knowledge/design-critiques" },
+      { label: "Competitive Landscape", icon: Globe,            path: "/knowledge/competitive-landscape" },
     ],
   },
   {
