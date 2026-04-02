@@ -590,6 +590,48 @@ export type Database = {
           },
         ]
       }
+      competitive_landscape: {
+        Row: {
+          category: string
+          competitor_name: string
+          created_at: string
+          id: string
+          market_position: string
+          notes: string
+          project_id: string
+          strengths: string[]
+          updated_at: string
+          weaknesses: string[]
+          website_url: string
+        }
+        Insert: {
+          category?: string
+          competitor_name: string
+          created_at?: string
+          id?: string
+          market_position?: string
+          notes?: string
+          project_id: string
+          strengths?: string[]
+          updated_at?: string
+          weaknesses?: string[]
+          website_url?: string
+        }
+        Update: {
+          category?: string
+          competitor_name?: string
+          created_at?: string
+          id?: string
+          market_position?: string
+          notes?: string
+          project_id?: string
+          strengths?: string[]
+          updated_at?: string
+          weaknesses?: string[]
+          website_url?: string
+        }
+        Relationships: []
+      }
       csd_matrices: {
         Row: {
           category: string
@@ -1008,6 +1050,45 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string
+          flag_name: string
+          id: string
+          owner: string
+          project_id: string
+          rollout_percentage: number
+          status: string
+          target_segments: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          flag_name: string
+          id?: string
+          owner?: string
+          project_id: string
+          rollout_percentage?: number
+          status?: string
+          target_segments?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          flag_name?: string
+          id?: string
+          owner?: string
+          project_id?: string
+          rollout_percentage?: number
+          status?: string
+          target_segments?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       heart_metrics: {
         Row: {
           category: string
@@ -1098,6 +1179,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      impact_effort_items: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          effort_level: string
+          id: string
+          impact_level: string
+          project_id: string
+          quadrant: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          effort_level?: string
+          id?: string
+          impact_level?: string
+          project_id: string
+          quadrant?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          effort_level?: string
+          id?: string
+          impact_level?: string
+          project_id?: string
+          quadrant?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       jtbd_frameworks: {
         Row: {
@@ -1212,6 +1332,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      moodboards: {
+        Row: {
+          color_palette: string[]
+          created_at: string
+          description: string
+          id: string
+          image_urls: string[]
+          project_id: string
+          references_notes: string
+          tags: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color_palette?: string[]
+          created_at?: string
+          description?: string
+          id?: string
+          image_urls?: string[]
+          project_id: string
+          references_notes?: string
+          tags?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          color_palette?: string[]
+          created_at?: string
+          description?: string
+          id?: string
+          image_urls?: string[]
+          project_id?: string
+          references_notes?: string
+          tags?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       nielsen_heuristics: {
         Row: {
@@ -2084,6 +2243,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_flows: {
+        Row: {
+          created_at: string
+          description: string
+          flow_name: string
+          goal: string
+          id: string
+          pain_points: string[]
+          persona: string
+          project_id: string
+          status: string
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          flow_name: string
+          goal?: string
+          id?: string
+          pain_points?: string[]
+          persona?: string
+          project_id: string
+          status?: string
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          flow_name?: string
+          goal?: string
+          id?: string
+          pain_points?: string[]
+          persona?: string
+          project_id?: string
+          status?: string
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_points: {
         Row: {
