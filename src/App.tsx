@@ -212,6 +212,13 @@ const App = () => (
                 <Route path="/knowledge/design-principles" element={<DesignPrinciplesPage />} />
                 <Route path="/knowledge/decision-log" element={<DecisionLogPage />} />
                 <Route path="/knowledge/design-critiques" element={<DesignCritiquesPage />} />
+                <Route path="/knowledge/competitive-landscape" element={<CompetitiveLandscapePage />} />
+                <Route path="/design/user-flows" element={<UserFlowEditorPage />} />
+                <Route path="/design/moodboard" element={<MoodboardPage />} />
+                <Route path="/strategy/impact-effort" element={<ImpactEffortPage />} />
+                <Route path="/testing/feature-flags" element={<FeatureFlagsPage />} />
+                <Route path="/testing/heatmap" element={<HeatmapViewerPage />} />
+                <Route path="/testing/session-recording" element={<SessionRecordingPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
