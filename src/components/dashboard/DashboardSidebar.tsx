@@ -129,9 +129,10 @@ const navGroups: NavGroup[] = [
   {
     title: "Knowledge Base",
     items: [
-      { label: "Design Principles", icon: Star,             path: "/knowledge/design-principles" },
-      { label: "Decision Log",      icon: ClipboardList,    path: "/knowledge/decision-log" },
-      { label: "Design Critiques",  icon: MessageSquareMore,path: "/knowledge/design-critiques" },
+      { label: "Design Principles",     icon: Star,             path: "/knowledge/design-principles" },
+      { label: "Decision Log",          icon: ClipboardList,    path: "/knowledge/decision-log" },
+      { label: "Design Critiques",      icon: MessageSquareMore,path: "/knowledge/design-critiques" },
+      { label: "Competitive Landscape", icon: Globe,            path: "/knowledge/competitive-landscape" },
     ],
   },
   {
