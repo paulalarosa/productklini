@@ -116,11 +116,14 @@ const navGroups: NavGroup[] = [
   {
     title: "Validação & Experimentos",
     items: [
-      { label: "A/B Testing",      icon: CircleDot,       path: "/ab-testing" },
-      { label: "Audit Responsivo", icon: MonitorSmartphone,path: "/responsive-audit" },
-      { label: "Análise UX (IA)",  icon: Microscope,      path: "/ux-analysis" },
-      { label: "Analytics Hub",    icon: BarChart3,        path: "/analytics" },
-      { label: "Voice of Customer",icon: MessageSquareDot, path: "/voice-of-customer" },
+      { label: "A/B Testing",        icon: CircleDot,       path: "/ab-testing" },
+      { label: "Feature Flags",      icon: Flag,            path: "/testing/feature-flags" },
+      { label: "Heatmap Viewer",     icon: Activity,        path: "/testing/heatmap" },
+      { label: "Session Recording",  icon: Eye,             path: "/testing/session-recording" },
+      { label: "Audit Responsivo",   icon: MonitorSmartphone,path: "/responsive-audit" },
+      { label: "Análise UX (IA)",    icon: Microscope,      path: "/ux-analysis" },
+      { label: "Analytics Hub",      icon: BarChart3,       path: "/analytics" },
+      { label: "Voice of Customer",  icon: MessageSquareDot,path: "/voice-of-customer" },
     ],
   },
   {
