@@ -9,7 +9,8 @@ import {
   ArrowUpDown, Network, Mic, Type, Shield, Columns, GitBranch, LayoutGrid,
   BrainCircuit, MonitorSmartphone, Microscope, MessageSquareDot, BookMarked,
   Users2, Star, Target, Map, FileText, MessageSquareMore, BookOpen,
-  FlaskConical, PenTool, Compass, GalleryHorizontal,
+  FlaskConical, PenTool, Compass, GalleryHorizontal, Image, Globe,
+  Flag, Activity, Eye, ExternalLink,
 } from "lucide-react";
 import { useTasks } from "@/hooks/useProjectData";
 
