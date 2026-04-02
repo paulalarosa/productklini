@@ -79,8 +79,9 @@ export function NotificationsPanel() {
   // ── Mutations ───────────────────────────────────────────────────────────────
 
   const markRead = useMutation({
-    mutationFn: (id: string) =>
-      supabase.from("notifications").update({ is_read: true }).eq("id", id),
+    mutationFn: async (id: string) => {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    },
     // Optimistic update — marca como lido antes da resposta do servidor
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
