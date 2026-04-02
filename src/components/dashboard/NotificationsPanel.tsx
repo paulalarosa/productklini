@@ -114,14 +114,15 @@ export function NotificationsPanel() {
       );
       return { prev };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (_err, _vars, ctx: { prev?: Notification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
 
   const deleteNotification = useMutation({
-    mutationFn: (id: string) =>
-      supabase.from("notifications").delete().eq("id", id),
+    mutationFn: async (id: string) => {
+      await supabase.from("notifications").delete().eq("id", id);
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
       const prev = queryClient.getQueryData<Notification[]>(["notifications"]);
