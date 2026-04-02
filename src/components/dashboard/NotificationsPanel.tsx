@@ -131,7 +131,7 @@ export function NotificationsPanel() {
       );
       return { prev };
     },
-    onError: (_err, _id, ctx) => {
+    onError: (_err, _id, ctx: { prev?: Notification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
