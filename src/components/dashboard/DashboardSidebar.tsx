@@ -76,8 +76,10 @@ const navGroups: NavGroup[] = [
   {
     title: "Interaction Design",
     items: [
+      { label: "User Flow Editor",    icon: GitBranch, path: "/design/user-flows" },
       { label: "Estados Componentes", icon: Columns,    path: "/ixd/states" },
       { label: "Task Flows",          icon: GitBranch,  path: "/ixd/task-flows" },
+      { label: "Moodboard",           icon: Image,      path: "/design/moodboard" },
     ],
   },
   {
