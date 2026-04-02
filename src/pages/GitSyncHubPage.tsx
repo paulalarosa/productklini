@@ -104,12 +104,10 @@ function VersionTimeline({
         <p className="text-xs text-muted-foreground text-center py-8">Nenhum histórico de versão ainda.</p>
       )}
       {versions.map((v, i) => (
-        <motion.div
+        <div
           key={v.id}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.05 }}
-          className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group"
+          className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group animate-fade-in"
+          style={{ animationDelay: `${i * 50}ms` }}
         >
           <div className="flex flex-col items-center mt-0.5">
             <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
@@ -141,7 +139,7 @@ function VersionTimeline({
               {new Date(v.updated_at).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
             </p>
           </div>
-        </motion.div>
+        </div>
       ))}
     </div>
   );
@@ -161,11 +159,9 @@ function StagingArea({
       {items.map((item) => {
         const isSelected = selected.has(item.id);
         return (
-          <motion.div
+          <div
             key={item.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card overflow-hidden"
+            className="glass-card overflow-hidden animate-slide-up"
           >
             <div className="flex items-center gap-3 p-3 border-b border-border">
               <button onClick={() => onToggle(item.id)} className="shrink-0">
@@ -195,7 +191,7 @@ function StagingArea({
                 <pre className="whitespace-pre-wrap text-foreground font-mono leading-relaxed">{item.newCode}</pre>
               </div>
             </div>
-          </motion.div>
+          </div>
         );
       })}
     </div>
@@ -216,10 +212,8 @@ function BidirectionalSyncPanel({
   if (divergences.length === 0) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="glass-card p-4 border-l-4 border-l-[hsl(45,90%,55%)]"
+    <div
+      className="glass-card p-4 border-l-4 border-l-[hsl(45,90%,55%)] animate-slide-up"
     >
       <div className="flex items-center gap-2 mb-3">
         <div className="w-8 h-8 rounded-lg bg-[hsl(45,90%,55%)]/15 flex items-center justify-center">
@@ -283,7 +277,7 @@ function BidirectionalSyncPanel({
           </div>
         ))}
       </div>
-    </motion.div>
+    </div>
   );
 }
 

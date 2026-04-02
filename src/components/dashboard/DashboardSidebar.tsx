@@ -310,11 +310,8 @@ export function DashboardSidebar() {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            <motion.div
-              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden animate-fade-in"
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside

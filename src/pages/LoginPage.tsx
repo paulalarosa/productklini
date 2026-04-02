@@ -60,11 +60,7 @@ const LoginPage = forwardRef<HTMLDivElement>(function LoginPage(_props, _ref) {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <motion.div
-        className="w-full max-w-sm"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+      <div className="w-full max-w-sm animate-slide-up">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
@@ -192,7 +188,7 @@ const LoginPage = forwardRef<HTMLDivElement>(function LoginPage(_props, _ref) {
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 });

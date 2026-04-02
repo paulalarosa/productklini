@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PageHeader } from "@/components/ui/responsive-layout";
 
 // ─── Atalhos rápidos — módulos mais usados por designers ─────────────────────
 const QUICK_ACCESS = [
@@ -75,34 +76,24 @@ const OverviewPage = () => {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-
-      {/* ── Boas-vindas contextual ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">
-            {getGreeting()}, {firstName} 👋
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {project?.name
-              ? `Projeto ativo: ${project.name}`
-              : "Nenhum projeto ativo — crie um para começar."}
-          </p>
-        </div>
-
-        {/* Alerta de tarefas urgentes */}
-        {highlight.length > 0 && (
-          <button
-            onClick={() => navigate("/dev/kanban")}
-            className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors"
-          >
-            <Clock className="h-3.5 w-3.5 shrink-0" />
-            <span>
-              {highlight.length} tarefa{highlight.length > 1 ? "s" : ""} precisa{highlight.length > 1 ? "m" : ""} de atenção
-            </span>
-            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title={`${getGreeting()}, ${firstName} 👋`}
+        description={project?.name ? `Projeto ativo: ${project.name}` : "Nenhum projeto ativo — crie um para começar."}
+        actions={
+          highlight.length > 0 && (
+            <button
+              onClick={() => navigate("/dev/kanban")}
+              className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2 hover:bg-amber-100 dark:hover:bg-amber-950/60 transition-colors"
+            >
+              <Clock className="h-3.5 w-3.5 shrink-0" />
+              <span>
+                {highlight.length} tarefa{highlight.length > 1 ? "s" : ""} precisa{highlight.length > 1 ? "m" : ""} de atenção
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          )
+        }
+      />
 
       {/* ── Acesso rápido ──────────────────────────────────────────────────── */}
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">

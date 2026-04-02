@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Bot, LogOut, User, ChevronDown, X } from "lucide-react";
 import { useProject, useTeamMembers } from "@/hooks/useProjectData";
 import { NotificationsPanel } from "./NotificationsPanel";
@@ -67,9 +67,9 @@ function UserMenu({ user, signOut }: { user: ReturnType<typeof useAuth>["user"];
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.12 }}
             className="absolute right-0 top-full mt-1.5 w-52 rounded-lg border border-border bg-popover shadow-md z-50 overflow-hidden"
           >
@@ -123,11 +123,10 @@ function ProjectProgress({ progress, phase }: { progress: number; phase?: string
       <TooltipTrigger asChild>
         <div className="flex items-center gap-2 mt-0.5 cursor-default">
           <div className="w-16 md:w-40 h-1.5 rounded-full bg-secondary overflow-hidden shrink-0">
-            <motion.div
-              className="h-full rounded-full gradient-primary"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
+            {/* CSS transition — sem Framer Motion */}
+            <div
+              className="h-full rounded-full gradient-primary progress-bar"
+              style={{ width: `${progress}%` }}
             />
           </div>
           <span className="text-[10px] text-muted-foreground font-medium shrink-0">
@@ -142,7 +141,8 @@ function ProjectProgress({ progress, phase }: { progress: number; phase?: string
   );
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
+// motion ainda usado apenas no UserMenu (AnimatePresence + exit)
+// Se não houver mais uso direto de motion.div aqui, pode remover `motion` do import
 export function DashboardHeader({
   onToggleAI,
   onCreateProject,

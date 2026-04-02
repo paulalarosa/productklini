@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { ArrowLeft, Plus, Briefcase, Edit, Trash2, Calendar, Users } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -78,11 +77,8 @@ export default function BusinessModelCanvasPage() {
 
   if (canvasId && selectedCanvas) {
     return (
-      <motion.div
-        className="space-y-6"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+      <div
+        className="space-y-6 animate-slide-up"
       >
         <div className="flex items-center gap-4">
           <Button
@@ -112,16 +108,13 @@ export default function BusinessModelCanvasPage() {
         ) : (
           <BusinessModelCanvasView canvas={selectedCanvas} />
         )}
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+    <div
+      className="space-y-6 animate-slide-up"
     >
       <div className="flex items-center gap-4">
         <button
@@ -287,6 +280,6 @@ export default function BusinessModelCanvasPage() {
           </CardContent>
         </Card>
       )}
-    </motion.div>
+    </div>
   );
 }

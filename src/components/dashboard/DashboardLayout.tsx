@@ -5,6 +5,7 @@ import { AIMentorPanel } from "@/components/dashboard/AIMentorPanel";
 import { ProjectSetupWizard } from "@/components/dashboard/ProjectSetupWizard";
 import { GamificationPanel } from "@/components/dashboard/GamificationPanel";
 import { CommandPalette } from "@/components/CommandPalette";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Outlet, useLocation } from "react-router-dom";
 import { useProject, useTasks } from "@/hooks/useProjectData";
 
@@ -54,9 +55,10 @@ export function DashboardLayout() {
       {/* Command Palette — ativado via Cmd+K em qualquer página */}
       <CommandPalette />
 
+      {/* Sidebar — oculta no mobile (drawer), fixa no desktop */}
       <DashboardSidebar />
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 max-w-full">
         <DashboardHeader
           onToggleAI={() => setAiOpen(!aiOpen)}
           onCreateProject={() => setShowSetup(true)}
@@ -64,7 +66,9 @@ export function DashboardLayout() {
         />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 md:p-6">
-          <Outlet />
+          <ErrorBoundary level="page">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

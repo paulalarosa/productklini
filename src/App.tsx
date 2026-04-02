@@ -1,4 +1,4 @@
-import { Suspense, lazy } from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,15 +17,15 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { PageLoader } from "@/components/PageLoader";
 
 // ─── Lazy imports — cada página vira um chunk separado ───────────────────────
-const ShareViewPage          = lazy(() => import("./pages/ShareViewPage").then(m => ({ default: m.ShareViewPage })));
-const NotFound               = lazy(() => import("./pages/NotFound"));
+const ShareViewPage          = lazy(() => import("./pages/ShareViewPage").then(m => ({ default: m.ShareViewPage as any })));
+const NotFound               = lazy(() => import("./pages/NotFound").then(m => ({ default: m.default as any })));
 
 // UX / Discovery
-const PesquisasPage          = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PesquisasPage })));
-const PersonasPage           = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PersonasPage })));
-const FluxosPage             = lazy(() => import("./pages/UXPages").then(m => ({ default: m.FluxosPage })));
-const EmpathyMapPage         = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.EmpathyMapPage })));
-const BenchmarkPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.BenchmarkPage })));
+const PesquisasPage          = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PesquisasPage as any })));
+const PersonasPage           = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PersonasPage as any })));
+const FluxosPage             = lazy(() => import("./pages/UXPages").then(m => ({ default: m.FluxosPage as any })));
+const EmpathyMapPage         = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.EmpathyMapPage as any })));
+const BenchmarkPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.BenchmarkPage as any })));
 const JTBDPage               = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.JTBDPage })));
 const CSDMatrixPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.CSDMatrixPage })));
 const HMWPage                = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.HMWPage })));

@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   TrendingUp, TrendingDown, Smartphone, Apple, Star,
-  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2, FileText,
+  Sparkles, CheckCircle2, Loader2, Download, Globe, FileUp, X, Wand2, FileText, Inbox,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import {
@@ -12,7 +13,7 @@ import {
 } from "recharts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchAnalyticsSnapshots, fetchFunnelSteps, fetchAppReviews,
+  fetchAnalyticsSnapshots, fetchFunnelSteps,
   seedAnalyticsData, insertAppReviews, scrapeStoreReviews,
   analyzeReviewsWithAI, updateReviewTags, fetchAppReviews,
   DbAnalyticsSnapshot, DbFunnelStep, DbAppReview,
@@ -22,6 +23,7 @@ import {
   useFunnelSteps,
   useAppReviews,
 } from "@/hooks/useProjectData";
+import { PageHeader, ActionBar, MetricCard } from "@/components/ui/responsive-layout";
 
 const SENTIMENT_COLORS = {
   positive: "hsl(160, 70%, 50%)",
@@ -392,57 +394,53 @@ export function AnalyticsHubPage() {
 
   if (isEmpty) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center h-[60vh] gap-4">
-        <Sparkles className="w-12 h-12 text-muted-foreground/30" />
-        <h2 className="text-lg font-semibold text-foreground">Sem dados de analytics</h2>
-        <p className="text-sm text-muted-foreground text-center max-w-md">
-          Insira dados de exemplo para visualizar métricas de retenção, funil de conversão e reviews de usuários.
-        </p>
-        <button
-          onClick={handleSeedData}
-          disabled={seeding}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg gradient-primary text-primary-foreground text-sm font-medium hover:opacity-90 disabled:opacity-50"
-        >
-          {seeding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {seeding ? "Inserindo..." : "Inserir dados de exemplo"}
-        </button>
-      </div>
+      <EmptyState
+        icon={Sparkles}
+        title="Sem dados de analytics"
+        description="Insira dados de exemplo para visualizar métricas de retenção, funil de conversão e reviews de usuários."
+        size="page"
+        action={{
+          label: seeding ? "Inserindo..." : "Inserir dados de exemplo",
+          onClick: handleSeedData,
+        }}
+      />
     );
   }
 
   return (
     <div className="p-3 md:p-6 space-y-6 max-w-[1400px] mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">Analytics & Continuous Feedback</h1>
-          <p className="text-sm text-muted-foreground mt-1">Métricas de uso + voz do usuário, interpretados por IA</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-muted/50 rounded-lg p-0.5 border border-border/50">
-            {([
-              { key: "all" as Platform, label: "Ambos", icon: null },
-              { key: "ios" as Platform, label: "iOS", icon: Apple },
-              { key: "android" as Platform, label: "Android", icon: Smartphone },
-            ]).map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setPlatform(key)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                  platform === key ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {Icon && <Icon size={12} />}
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Analytics & Continuous Feedback"
+        description="Métricas de uso + voz do usuário, interpretados por IA"
+        actions={
+          <ActionBar
+            primary={
+              <div className="flex items-center bg-muted/50 rounded-lg p-0.5 border border-border/50">
+                {([
+                  { key: "all" as Platform, label: "Ambos", icon: null },
+                  { key: "ios" as Platform, label: "iOS", icon: Apple },
+                  { key: "android" as Platform, label: "Android", icon: Smartphone },
+                ]).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setPlatform(key)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                      platform === key ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {Icon && <Icon size={12} />}
+                    {label}
+                  </button>
+                ))}
+              </div>
+            }
+          />
+        }
+      />
 
       {/* AI Insights Panel */}
       {aiInsightsSummary && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 md:p-5 border-l-4 border-l-status-deliver">
+        <div className="glass-card p-4 md:p-5 border-l-4 border-l-status-deliver animate-slide-up">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-status-deliver/15 flex items-center justify-center shrink-0">
               <Sparkles size={18} className="text-status-deliver" />
@@ -481,34 +479,43 @@ export function AnalyticsHubPage() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {[
-          { label: "DAU", value: latestSnapshot ? `${(latestSnapshot.dau / 1000).toFixed(1)}K` : "—", change: `${Number(dauChange) >= 0 ? "+" : ""}${dauChange}%`, up: Number(dauChange) >= 0 },
-          { label: "MAU", value: latestSnapshot ? `${(latestSnapshot.mau / 1000).toFixed(1)}K` : "—", change: `${Number(mauChange) >= 0 ? "+" : ""}${mauChange}%`, up: Number(mauChange) >= 0 },
-          { label: "Conversão", value: `${conversionRate}%`, change: "", up: conversionRate > 10 },
-          { label: "Nota Média", value: `${avgStars}★`, change: `${(reviews?.length ?? 0)} reviews`, up: Number(avgStars) >= 3.5 },
-        ].map((kpi) => (
-          <motion.div key={kpi.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
-            <p className="text-xl md:text-2xl font-bold text-foreground mt-1">{kpi.value}</p>
-            {kpi.change && (
-              <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${kpi.up ? "text-status-develop" : "text-destructive"}`}>
-                {kpi.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {kpi.change}
-              </div>
-            )}
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 stagger-children">
+        <MetricCard
+          label="DAU"
+          value={latestSnapshot ? `${(latestSnapshot.dau / 1000).toFixed(1)}K` : "—"}
+          change={`${Number(dauChange) >= 0 ? "+" : ""}${dauChange}%`}
+          trend={Number(dauChange) >= 0 ? "up" : "down"}
+          icon={<TrendingUp size={14} className="opacity-50" />}
+        />
+        <MetricCard
+          label="MAU"
+          value={latestSnapshot ? `${(latestSnapshot.mau / 1000).toFixed(1)}K` : "—"}
+          change={`${Number(mauChange) >= 0 ? "+" : ""}${mauChange}%`}
+          trend={Number(mauChange) >= 0 ? "up" : "down"}
+          icon={<TrendingUp size={14} className="opacity-50" />}
+        />
+        <MetricCard
+          label="Conversão"
+          value={`${conversionRate}%`}
+          trend={conversionRate > 10 ? "up" : "neutral"}
+          icon={<Star size={14} className="opacity-50" />}
+        />
+        <MetricCard
+          label="Nota Média"
+          value={`${avgStars}★`}
+          change={`${(reviews?.length ?? 0)} reviews`}
+          trend={Number(avgStars) >= 3.5 ? "up" : "down"}
+          icon={<CheckCircle2 size={14} className="opacity-50" />}
+        />
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Retention Chart */}
-        <motion.div className="glass-card p-4 md:p-5 lg:col-span-2" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <div className="glass-card p-4 md:p-5 lg:col-span-2 animate-slide-up" style={{ animationDelay: "100ms" }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Retenção de Usuários (DAU / MAU)</h3>
           {loadingSnapshots ? (
             <div className="flex items-center justify-center h-[220px]"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
@@ -525,10 +532,10 @@ export function AnalyticsHubPage() {
               </LineChart>
             </ResponsiveContainer>
           )}
-        </motion.div>
+        </div>
 
         {/* Crash-Free Gauge */}
-        <motion.div className="glass-card p-4 md:p-5 flex flex-col items-center justify-center" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <div className="glass-card p-4 md:p-5 flex flex-col items-center justify-center animate-slide-up" style={{ animationDelay: "150ms" }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Crash-Free Sessions</h3>
           <div className="relative w-36 h-36">
             <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
@@ -545,12 +552,12 @@ export function AnalyticsHubPage() {
             <CheckCircle2 size={12} />
             <span>{crashFreePercent >= 99.5 ? "Excelente estabilidade" : "Necessita atenção"}</span>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Funnel + Sentiment */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-        <motion.div className="glass-card p-4 md:p-5 lg:col-span-2" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 stagger-children">
+        <div className="glass-card p-4 md:p-5 lg:col-span-2 animate-slide-up" style={{ animationDelay: "200ms" }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Funil de Conversão</h3>
           {loadingFunnel ? (
             <div className="flex items-center justify-center h-[140px]"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
@@ -560,10 +567,13 @@ export function AnalyticsHubPage() {
                 <div key={step.id} className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground w-24 shrink-0 text-right">{step.step_name}</span>
                   <div className="flex-1 relative h-8 bg-muted/30 rounded-lg overflow-hidden">
-                    <motion.div className="absolute inset-y-0 left-0 rounded-lg"
-                      style={{ background: "linear-gradient(90deg, hsl(214, 90%, 60%), hsl(270, 70%, 60%))" }}
-                      initial={{ width: 0 }} animate={{ width: `${step.percent_value}%` }}
-                      transition={{ delay: 0.3 + i * 0.1, duration: 0.6 }} />
+                    <div className="absolute inset-y-0 left-0 rounded-lg progress-bar"
+                      style={{ 
+                        background: "linear-gradient(90deg, hsl(214, 90%, 60%), hsl(270, 70%, 60%))",
+                        width: `${step.percent_value}%`,
+                        transitionDelay: `${0.3 + i * 0.1}s`
+                      }} 
+                    />
                     <div className="absolute inset-0 flex items-center px-3 justify-between">
                       <span className="text-xs font-semibold text-foreground z-10">{Number(step.percent_value)}%</span>
                       <span className="text-[10px] text-muted-foreground z-10">{step.user_count.toLocaleString()} usuários</span>
@@ -573,10 +583,10 @@ export function AnalyticsHubPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Sentiment Donut */}
-        <motion.div className="glass-card p-4 md:p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+        <div className="glass-card p-4 md:p-5 animate-slide-up" style={{ animationDelay: "250ms" }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Sentimento Geral</h3>
           {sentimentData.length > 0 ? (
             <>
@@ -601,7 +611,7 @@ export function AnalyticsHubPage() {
           ) : (
             <p className="text-xs text-muted-foreground text-center py-8">Sem reviews para análise</p>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* Import Panel */}
@@ -665,7 +675,7 @@ export function AnalyticsHubPage() {
       </AnimatePresence>
 
       {/* Reviews Feed */}
-      <motion.div className="glass-card p-4 md:p-5" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+      <div className="glass-card p-4 md:p-5 animate-slide-up" style={{ animationDelay: "300ms" }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Avaliações Analisadas por IA</h3>
           <div className="flex items-center gap-2">
@@ -750,7 +760,7 @@ export function AnalyticsHubPage() {
             ))}
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

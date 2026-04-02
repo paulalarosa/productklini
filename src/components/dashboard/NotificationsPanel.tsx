@@ -156,9 +156,9 @@ export function NotificationsPanel() {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
             <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0,  scale: 1 }}
-              exit={{   opacity: 0, y: -8, scale: 0.95 }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0  }}
+              exit={{   opacity: 0, y: -8  }}
               transition={{ duration: 0.12 }}
               className="fixed right-2 top-14 md:absolute md:right-0 md:top-full md:mt-2 w-[calc(100vw-1rem)] max-w-[320px] max-h-[70vh] md:max-h-96 glass-card rounded-lg border border-border z-50 flex flex-col overflow-hidden"
             >

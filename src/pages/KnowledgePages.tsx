@@ -87,9 +87,9 @@ export function DesignPrinciplesPage() {
           <button onClick={() => setAdding(true)} className="px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeiro princípio</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
           {(principles ?? []).map((p: any, i: number) => (
-            <div key={p.id} className="glass-card p-5 group">
+            <div key={p.id} className="glass-card p-5 group animate-slide-up">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground">{i + 1}</div>
@@ -205,9 +205,9 @@ export function DecisionLogPage() {
           <button onClick={() => setAdding(true)} className="px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Registrar primeira decisão</button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 stagger-children">
           {(decisions ?? []).map((d: any) => (
-            <div key={d.id} className="glass-card p-5 group">
+            <div key={d.id} className="glass-card p-5 group animate-slide-up">
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="flex items-center gap-2">
@@ -322,9 +322,9 @@ export function DesignCritiquesPage() {
           <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Registrar primeira critique</button>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 stagger-children">
           {(critiques ?? []).map((c: any) => (
-            <div key={c.id} className="glass-card p-4 group">
+            <div key={c.id} className="glass-card p-4 group animate-slide-up">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-sm font-semibold text-foreground">{c.screen_name}</h3>

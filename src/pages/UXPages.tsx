@@ -53,12 +53,12 @@ export function PesquisasPage() {
 export function PersonasPage() {
   const { data: personas, isLoading } = usePersonas();
   const projectId = useCurrentProjectId();
-
-  if (isLoading) return <PersonaSkeleton />;
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", role: "", goals: "", painPoints: "" });
+
+  if (isLoading) return <PersonaSkeleton />;
 
   const resetForm = () => { setForm({ name: "", role: "", goals: "", painPoints: "" }); setAdding(false); setEditingId(null); };
 

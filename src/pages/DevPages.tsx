@@ -6,8 +6,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertCircle, Clock, CheckCircle2, Circle,
-  Eye, PlayCircle, Filter,
+  Eye, PlayCircle, Filter, Inbox,
 } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader, ActionBar, ResponsiveTable, type Column } from "@/components/ui/responsive-layout";
 
 // ─── Configuração das colunas ─────────────────────────────────────────────────
 
@@ -153,38 +155,31 @@ export function KanbanPage() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold">Kanban</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {filtered.length} tarefas
-            {blockedCount > 0 && (
-              <span className="ml-2 text-destructive font-medium">
-                · {blockedCount} bloqueada{blockedCount > 1 ? "s" : ""}
-              </span>
-            )}
-          </p>
-        </div>
+      <PageHeader
+        title="Kanban"
+        description={`${filtered.length} tarefas${blockedCount > 0 ? ` · ${blockedCount} bloqueada${blockedCount > 1 ? "s" : ""}` : ""}`}
+      />
 
-        {/* Filtro por módulo */}
-        <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-0.5 border border-border/50 w-fit">
-          <Filter className="w-3.5 h-3.5 text-muted-foreground ml-2" />
-          {(["all", "ux", "ui", "dev"] as const).map(m => (
-            <button
-              key={m}
-              onClick={() => setModuleFilter(m)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                moduleFilter === m
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {m === "all" ? "Todos" : m.toUpperCase()}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ActionBar
+        primary={
+          <div className="flex items-center gap-1.5 bg-muted/40 rounded-lg p-0.5 border border-border/50 w-fit">
+            <Filter className="w-3.5 h-3.5 text-muted-foreground ml-2" />
+            {(["all", "ux", "ui", "dev"] as const).map(m => (
+              <button
+                key={m}
+                onClick={() => setModuleFilter(m)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                  moduleFilter === m
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {m === "all" ? "Todos" : m.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {/* Board */}
       <div className="flex gap-3 overflow-x-auto pb-4">
@@ -207,9 +202,7 @@ export function KanbanPage() {
               {/* Cards */}
               <div className="space-y-2">
                 {colTasks.length === 0 ? (
-                  <div className="border border-dashed border-border/50 rounded-lg p-4 text-center">
-                    <p className="text-[10px] text-muted-foreground/50">Vazio</p>
-                  </div>
+                  <EmptyState title="Vazio" size="inline" />
                 ) : (
                   colTasks.map(task => (
                     <TaskCard
@@ -238,6 +231,45 @@ export function QAPage() {
     [tasks],
   );
 
+  const columns = useMemo<Column<DbTask>[]>(() => [
+    {
+      key:      "title",
+      header:   "Tarefa",
+      pinned:   true,
+      minWidth: 180,
+      render:   (t) => (
+        <span className="font-medium text-foreground">{t.title}</span>
+      ),
+    },
+    {
+      key:    "priority",
+      header: "Prioridade",
+      pinned: true,
+      render: (t) => (
+        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${PRIORITY_COLORS[t.priority]}`}>
+          {t.priority}
+        </span>
+      ),
+    },
+    {
+      key:    "module",
+      header: "Módulo",
+      render: (t) => <span className="text-xs text-muted-foreground uppercase">{t.module}</span>,
+    },
+    {
+      key:    "status",
+      header: "Status",
+      render: (t) => <span className="text-xs text-muted-foreground">{t.status}</span>,
+    },
+    {
+      key:    "assignee",
+      header: "Responsável",
+      render: (t) => (
+        <span className="text-xs text-muted-foreground">{t.assignee ?? "—"}</span>
+      ),
+    },
+  ], []);
+
   if (isLoading) return (
     <div className="space-y-4">
       <div className="h-8 w-24 rounded-md bg-muted animate-pulse" />
@@ -251,33 +283,25 @@ export function QAPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">QA</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Tarefas bloqueadas e urgentes — {qaIssues.length} issue{qaIssues.length !== 1 ? "s" : ""}
-        </p>
-      </div>
+      <PageHeader
+        title="QA"
+        description={`Tarefas bloqueadas e urgentes — ${qaIssues.length} issue${qaIssues.length !== 1 ? "s" : ""}`}
+      />
 
       {qaIssues.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] gap-2 text-muted-foreground">
-          <CheckCircle2 className="w-10 h-10 text-green-500/50" />
-          <p className="text-sm">Nenhuma issue aberta. Tudo certo!</p>
-        </div>
+        <EmptyState
+          icon={CheckCircle2}
+          title="Nenhuma issue aberta"
+          description="Tudo certo! Não há tarefas bloqueadas ou urgentes no momento."
+          size="page"
+        />
       ) : (
-        <div className="space-y-2">
-          {qaIssues.map(task => (
-            <div key={task.id} className="flex items-center gap-3 p-3 border rounded-lg bg-card">
-              <span className={`h-2 w-2 rounded-full shrink-0 ${task.status === "blocked" ? "bg-destructive" : "bg-amber-500"}`} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{task.title}</p>
-                <p className="text-xs text-muted-foreground">{task.module?.toUpperCase()} · {task.phase}</p>
-              </div>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${PRIORITY_COLORS[task.priority]}`}>
-                {task.priority}
-              </span>
-            </div>
-          ))}
-        </div>
+        <ResponsiveTable
+          columns={columns}
+          data={qaIssues}
+          keyExtractor={(t) => t.id}
+          emptyMessage="Nenhuma issue aberta. Tudo certo!"
+        />
       )}
     </div>
   );
@@ -315,12 +339,10 @@ export function TeamMetricsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Métricas do Time</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {byAssignee.length} membro{byAssignee.length !== 1 ? "s" : ""} com tarefas atribuídas
-        </p>
-      </div>
+      <PageHeader
+        title="Métricas do Time"
+        description={`${byAssignee.length} membro${byAssignee.length !== 1 ? "s" : ""} com tarefas atribuídas`}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {byAssignee.map(([name, stats]) => {

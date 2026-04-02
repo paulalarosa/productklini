@@ -1,271 +1,182 @@
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Lock, Layers, TrendingUp, CheckCircle2, Clock, AlertTriangle, Loader2, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { useParams, Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Layers, FileText, Clock, AlertTriangle, Loader2 } from "lucide-react";
 
-const SHARE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/share-view`;
+// ─── Tipos ────────────────────────────────────────────────────────────────────
 
-const phaseLabels: Record<string, string> = {
-  discovery: "Discovery",
-  define: "Define",
-  develop: "Develop",
-  deliver: "Deliver",
+type SharePayload = {
+  id: string;
+  token: string;
+  doc_type: string;
+  title: string;
+  content: string;
+  project_name: string;
+  expires_at: string | null;
+  created_at: string;
 };
 
-const statusLabels: Record<string, string> = {
-  todo: "A Fazer",
-  in_progress: "Em Andamento",
-  review: "Revisão",
-  done: "Concluído",
-  blocked: "Bloqueado",
-};
+// ─── Fetcher ─────────────────────────────────────────────────────────────────
 
-const statusIcons: Record<string, React.ReactNode> = {
-  todo: <Clock className="w-4 h-4 text-muted-foreground" />,
-  in_progress: <Loader2 className="w-4 h-4 text-primary animate-spin" />,
-  review: <Eye className="w-4 h-4 text-[hsl(270,70%,60%)]" />,
-  done: <CheckCircle2 className="w-4 h-4 text-[hsl(160,70%,50%)]" />,
-  blocked: <AlertTriangle className="w-4 h-4 text-destructive" />,
-};
+async function fetchSharedDoc(token: string): Promise<SharePayload> {
+  const { data, error } = await supabase
+    .from("shared_documents")
+    .select("*, project_documents(title, content, doc_type), projects(name)")
+    .eq("token", token)
+    .maybeSingle();
 
-const phaseColors: Record<string, string> = {
-  discovery: "bg-primary",
-  define: "bg-[hsl(270,70%,60%)]",
-  develop: "bg-[hsl(160,70%,50%)]",
-  deliver: "bg-[hsl(40,90%,55%)]",
-};
+  if (error) throw new Error("Erro ao buscar documento compartilhado.");
+  if (!data)  throw new Error("NOT_FOUND");
 
-interface ProjectData {
-  project: {
-    name: string;
-    description: string | null;
-    current_phase: string;
-    progress: number;
-    phase_progress: Record<string, number>;
+  // Verifica expiração
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    throw new Error("EXPIRED");
+  }
+
+  // A estrutura de retorno depende de como as relações estão no Supabase.
+  // Ajustando para lidar com o retorno do join (que vem como array ou objeto dependendo da config)
+  const doc = Array.isArray(data.project_documents) ? data.project_documents[0] : data.project_documents;
+  const proj = Array.isArray(data.projects) ? data.projects[0] : data.projects;
+
+  return {
+    id:           data.id,
+    token:        data.token,
+    doc_type:     doc?.doc_type ?? "",
+    title:        doc?.title    ?? "Documento",
+    content:      doc?.content  ?? "",
+    project_name: proj?.name    ?? "",
+    expires_at:   data.expires_at,
+    created_at:   data.created_at,
   };
-  taskSummary: {
-    total: number;
-    byStatus: Record<string, number>;
-    byModule: Record<string, number>;
-    byPhase: Record<string, number>;
-  };
-  metrics: { metric_name: string; score: number; previous_score: number | null }[];
 }
+
+// ─── Estados de erro ──────────────────────────────────────────────────────────
+
+function NotFoundState() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-8 text-center bg-background">
+      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+        <AlertTriangle className="w-8 h-8 text-muted-foreground/50" />
+      </div>
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">Link inválido</h1>
+        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+          Este link de compartilhamento não existe ou foi removido.
+        </p>
+      </div>
+      <Link
+        to="/login"
+        className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-accent transition-colors"
+      >
+        Ir para o app
+      </Link>
+    </div>
+  );
+}
+
+function ExpiredState() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 p-8 text-center bg-background">
+      <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+        <Clock className="w-8 h-8 text-amber-500/70" />
+      </div>
+      <div>
+        <h1 className="text-xl font-semibold text-foreground">Link expirado</h1>
+        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+          Este link de compartilhamento expirou. Solicite um novo link ao autor.
+        </p>
+      </div>
+      <Link
+        to="/login"
+        className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-accent transition-colors"
+      >
+        Ir para o app
+      </Link>
+    </div>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export function ShareViewPage() {
   const { token } = useParams<{ token: string }>();
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [data, setData] = useState<ProjectData | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password.trim() || !token) return;
-    setLoading(true);
-    setError("");
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["shared-doc", token],
+    queryFn: () => fetchSharedDoc(token!),
+    enabled: !!token,
+    retry: false, // não re-tentar em NOT_FOUND ou EXPIRED
+    staleTime: 5 * 60 * 1000,
+  });
 
-    try {
-      const resp = await fetch(SHARE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-        body: JSON.stringify({ action: "view", token, password }),
-      });
-      const result = await resp.json();
-      if (!resp.ok) {
-        setError(result.error || "Erro ao acessar");
-        setLoading(false);
-        return;
-      }
-      setData(result);
-    } catch {
-      setError("Erro de conexão");
-    }
-    setLoading(false);
-  };
-
-  // Password gate
-  if (!data) {
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-sm"
-        >
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
-              <Layers className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground">Visão do Projeto</h1>
-            <p className="text-sm text-muted-foreground mt-1">Insira a senha para acessar o painel executivo</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Senha de acesso"
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
-                autoFocus
-              />
-            </div>
-            {error && <p className="text-xs text-destructive text-center">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading || !password.trim()}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
-              Acessar
-            </Button>
-          </form>
-        </motion.div>
+      <div className="flex items-center justify-center min-h-screen bg-background gap-2 text-muted-foreground">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span className="text-sm">Carregando documento...</span>
       </div>
     );
   }
 
-  const { project, taskSummary } = data;
-  const phaseProgress = project.phase_progress ?? {};
-  const doneCount = taskSummary.byStatus["done"] || 0;
-  const totalTasks = taskSummary.total;
-  const completionRate = totalTasks > 0 ? Math.round((doneCount / totalTasks) * 100) : 0;
+  // ── Erros semânticos ──────────────────────────────────────────────────────
+  if (error) {
+    const msg = (error as Error).message;
+    if (msg === "EXPIRED")   return <ExpiredState />;
+    return <NotFoundState />;  // NOT_FOUND ou qualquer outro erro
+  }
 
+  if (!data) return <NotFoundState />;
+
+  // ── Documento encontrado e válido ─────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center">
-              <Layers className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold text-foreground">{project.name}</h1>
-              {project.description && (
-                <p className="text-xs text-muted-foreground">{project.description}</p>
-              )}
-            </div>
+      {/* Header público */}
+      <header className="border-b border-border px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center">
+            <Layers className="w-4 h-4 text-primary-foreground" />
           </div>
-          <Badge variant="secondary" className="text-xs">
-            {phaseLabels[project.current_phase] || project.current_phase}
-          </Badge>
+          <span className="text-sm font-semibold text-foreground">ProductOS</span>
+          {data.project_name && (
+            <span className="text-sm text-muted-foreground">· {data.project_name}</span>
+          )}
         </div>
-      </div>
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+          <FileText className="w-3.5 h-3.5" />
+          Documento compartilhado
+        </span>
+      </header>
 
-      <div className="max-w-4xl mx-auto p-4 space-y-6 mt-4">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-foreground">{project.progress}%</p>
-            <p className="text-xs text-muted-foreground mt-1">Progresso Geral</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-foreground">{totalTasks}</p>
-            <p className="text-xs text-muted-foreground mt-1">Tarefas Totais</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-[hsl(160,70%,50%)]">{doneCount}</p>
-            <p className="text-xs text-muted-foreground mt-1">Concluídas</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="glass-card p-4 text-center">
-            <p className="text-2xl font-bold text-foreground">{completionRate}%</p>
-            <p className="text-xs text-muted-foreground mt-1">Taxa de Conclusão</p>
-          </motion.div>
-        </div>
-
-        {/* Double Diamond Progress */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Progresso Double Diamond</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {["discovery", "define", "develop", "deliver"].map((phase) => {
-                  const pct = (phaseProgress as Record<string, number>)[phase] ?? 0;
-                  const isCurrent = project.current_phase === phase;
-                  return (
-                    <div key={phase} className={`p-3 rounded-xl border transition-colors ${isCurrent ? "border-primary bg-primary/5" : "border-border"}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-foreground">{phaseLabels[phase]}</span>
-                        {isCurrent && <Badge variant="default" className="text-[10px] px-1.5 py-0">Atual</Badge>}
-                      </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${phaseColors[phase]}`} style={{ width: `${pct}%` }} />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">{pct}%</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Task Summary by Status */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold">Resumo de Tarefas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(taskSummary.byStatus).map(([status, count]) => {
-                  const pct = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
-                  return (
-                    <div key={status} className="flex items-center gap-3">
-                      <div className="w-5">{statusIcons[status] || null}</div>
-                      <span className="text-xs text-foreground w-28">{statusLabels[status] || status}</span>
-                      <div className="flex-1">
-                        <Progress value={pct} className="h-2" />
-                      </div>
-                      <span className="text-xs font-semibold text-foreground w-12 text-right">{count} ({pct}%)</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Tasks by Phase */}
-        {Object.keys(taskSummary.byPhase).length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold">Tarefas por Fase</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {["discovery", "define", "develop", "deliver"].map((phase) => {
-                    const count = taskSummary.byPhase[phase] || 0;
-                    return (
-                      <div key={phase} className="p-3 rounded-lg bg-muted/50 text-center">
-                        <p className="text-lg font-bold text-foreground">{count}</p>
-                        <p className="text-xs text-muted-foreground">{phaseLabels[phase]}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Footer */}
-        <div className="text-center py-6">
-          <p className="text-xs text-muted-foreground">
-            Visão executiva gerada por <span className="font-semibold text-foreground">ProductOS</span>
+      {/* Conteúdo */}
+      <main className="max-w-3xl mx-auto px-6 py-10">
+        <div className="mb-6">
+          <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            {data.doc_type}
+          </span>
+          <h1 className="text-2xl font-bold text-foreground mt-1">{data.title}</h1>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Compartilhado em {new Date(data.created_at).toLocaleDateString("pt-BR", {
+              day: "2-digit", month: "long", year: "numeric",
+            })}
+            {data.expires_at && (
+              <span className="ml-2">
+                · Expira em {new Date(data.expires_at).toLocaleDateString("pt-BR")}
+              </span>
+            )}
           </p>
         </div>
-      </div>
+
+        <div className="prose prose-sm dark:prose-invert max-w-none border rounded-lg p-6 bg-card">
+          {data.content ? (
+            <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">
+              {data.content}
+            </pre>
+          ) : (
+            <p className="text-muted-foreground italic">Este documento está vazio.</p>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
