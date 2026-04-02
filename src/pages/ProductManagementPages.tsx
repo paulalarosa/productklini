@@ -248,7 +248,7 @@ export function OKRsPage() {
       ) : (
         <div className="space-y-4">
           {(okrs ?? []).map((okr) => {
-            const krs = Array.isArray(okr.key_results) ? (okr.key_results as IKeyResult[]) : [];
+            const krs = Array.isArray(okr.key_results) ? (okr.key_results as unknown as IKeyResult[]) : [];
             const avgProgress = krs.length > 0 ? krs.reduce((sum: number, kr: IKeyResult) => sum + (kr.progress || 0), 0) / krs.length : 0;
 
             return (
