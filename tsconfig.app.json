@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "lib": [
-      "ES2020",
+      "ESNext",
       "DOM",
       "DOM.Iterable"
     ],
@@ -23,10 +25,11 @@
     },
     "skipLibCheck": true,
     "strict": false,
-    "target": "ES2020",
+    "target": "ESNext",
     "types": [
       "react",
       "react-dom",
+      "node",
       "vitest/globals"
     ],
     "useDefineForClassFields": true
@@ -34,4 +37,4 @@
   "include": [
     "src"
   ]
-}
+}

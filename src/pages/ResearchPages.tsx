@@ -9,6 +9,27 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PageSkeleton } from "@/components/ui/skeletons";
 
+interface IDiaryEntry {
+  id: string;
+  participant_name: string;
+  entry_date: string;
+  context: string;
+  activity?: string;
+  emotions?: string;
+  pain_points?: string[];
+  insights?: string[];
+}
+
+interface IStakeholder {
+  id: string;
+  name: string;
+  role: string;
+  influence_level: string;
+  interest_level: string;
+  relationship: string;
+  notes?: string;
+}
+
 // ─── Diary Studies ───
 export function DiaryStudiesPage() {
   const projectId = useCurrentProjectId();
@@ -101,7 +122,8 @@ export function DiaryStudiesPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {(entries ?? []).map((e: any) => (
+          {(entries ?? []).map((e: IDiaryEntry) => (
+
             <div key={e.id} className="glass-card p-5 group">
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -227,7 +249,8 @@ export function StakeholderMapPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(stakeholders ?? []).map((s: any) => (
+          {(stakeholders ?? []).map((s: IStakeholder) => (
+
             <div key={s.id} className="glass-card p-5 group">
               <div className="flex items-start justify-between mb-2">
                 <div>

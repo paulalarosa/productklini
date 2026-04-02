@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { DoubleDiamond } from "@/components/dashboard/DoubleDiamond";
 import { StatusCards } from "@/components/dashboard/StatusCards";

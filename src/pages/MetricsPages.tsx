@@ -7,6 +7,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+interface IHeartMetric {
+  id: string;
+  category: string;
+  metric_name: string;
+  signal: string;
+  goal: string;
+  current_value: number;
+  target_value: number;
+  unit: string;
+}
+
+interface INorthStarMetric {
+  id: string;
+  metric_name: string;
+  description: string;
+  current_value: number;
+  target_value: number;
+  unit: string;
+}
+
+interface INpsSurvey {
+  id: string;
+  survey_type: string;
+  score: number;
+  respondent_name: string;
+  feedback: string;
+  segment: string;
+}
+
+
 // ─── HEART Framework ───
 const HEART_CATEGORIES = [
   { key: "happiness", label: "Happiness", color: "text-pink-500", bg: "bg-pink-500/10" },
@@ -101,13 +131,14 @@ export function HEARTFrameworkPage() {
       )}
 
       {HEART_CATEGORIES.map(cat => {
-        const catMetrics = (metrics ?? []).filter((m: any) => m.category === cat.key);
+        const catMetrics = (metrics ?? []).filter((m: IHeartMetric) => m.category === cat.key);
         if (catMetrics.length === 0 && !adding) return null;
         return (
           <div key={cat.key} className="mb-6">
             <h3 className={`text-xs font-bold uppercase tracking-wider ${cat.color} mb-3`}>{cat.label}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {catMetrics.map((m: any) => {
+              {catMetrics.map((m: IHeartMetric) => {
+
                 const progress = m.target_value > 0 ? Math.min(100, (m.current_value / m.target_value) * 100) : 0;
                 return (
                   <div key={m.id} className="glass-card p-4 group">
@@ -229,7 +260,8 @@ export function NorthStarPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {(metrics ?? []).map((m: any) => {
+          {(metrics ?? []).map((m: INorthStarMetric) => {
+
             const progress = m.target_value > 0 ? Math.min(100, (m.current_value / m.target_value) * 100) : 0;
             return (
               <div key={m.id} className="glass-card p-6 border-2 border-primary/20 group">
@@ -303,9 +335,10 @@ export function NPSSurveysPage() {
   };
 
   // NPS calculation
-  const npsSurveys = (surveys ?? []).filter((s: any) => s.survey_type === "nps");
-  const promoters = npsSurveys.filter((s: any) => s.score >= 9).length;
-  const detractors = npsSurveys.filter((s: any) => s.score <= 6).length;
+  const npsSurveys = (surveys ?? []).filter((s: INpsSurvey) => s.survey_type === "nps");
+  const promoters = npsSurveys.filter((s: INpsSurvey) => s.score >= 9).length;
+  const detractors = npsSurveys.filter((s: INpsSurvey) => s.score <= 6).length;
+
   const npsScore = npsSurveys.length > 0 ? Math.round(((promoters - detractors) / npsSurveys.length) * 100) : null;
 
   const typeLabels: Record<string, string> = { nps: "NPS", csat: "CSAT", ces: "CES" };
@@ -376,7 +409,8 @@ export function NPSSurveysPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {(surveys ?? []).map((s: any) => (
+          {(surveys ?? []).map((s: INpsSurvey) => (
+
             <div key={s.id} className="glass-card p-4 flex items-center gap-4 group">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${s.survey_type === "nps" ? (s.score >= 9 ? "bg-green-500/10 text-green-500" : s.score <= 6 ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-500") : "bg-primary/10 text-primary"}`}>
                 {s.score}

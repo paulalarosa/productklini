@@ -17,88 +17,99 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { PageLoader } from "@/components/PageLoader";
 
 // ─── Lazy imports — cada página vira um chunk separado ───────────────────────
-const ShareViewPage          = lazy(() => import("./pages/ShareViewPage").then(m => ({ default: m.ShareViewPage as any })));
-const NotFound               = lazy(() => import("./pages/NotFound").then(m => ({ default: m.default as any })));
+const ShareViewPage          = lazy(() => import("./pages/ShareViewPage").then(m => ({ default: m.ShareViewPage as unknown as React.ComponentType<unknown> })));
+const NotFound               = lazy(() => import("./pages/NotFound").then(m => ({ default: m.default as unknown as React.ComponentType<unknown> })));
 
 // UX / Discovery
-const PesquisasPage          = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PesquisasPage as any })));
-const PersonasPage           = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PersonasPage as any })));
-const FluxosPage             = lazy(() => import("./pages/UXPages").then(m => ({ default: m.FluxosPage as any })));
-const EmpathyMapPage         = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.EmpathyMapPage as any })));
-const BenchmarkPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.BenchmarkPage as any })));
-const JTBDPage               = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.JTBDPage })));
-const CSDMatrixPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.CSDMatrixPage })));
-const HMWPage                = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.HMWPage })));
-const AffinityDiagramPage    = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.AffinityDiagramPage })));
-const BehaviorModelPage      = lazy(() => import("./pages/BehaviorModelPage").then(m => ({ default: m.BehaviorModelPage })));
-const UXPatternsPage         = lazy(() => import("./pages/UXPatternsPage"));
-const InterviewTranscriberPage = lazy(() => import("./pages/InterviewPage").then(m => ({ default: m.InterviewTranscriberPage })));
+const PesquisasPage          = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PesquisasPage as unknown as React.ComponentType<unknown> })));
+const PersonasPage           = lazy(() => import("./pages/UXPages").then(m => ({ default: m.PersonasPage as unknown as React.ComponentType<unknown> })));
+const FluxosPage             = lazy(() => import("./pages/UXPages").then(m => ({ default: m.FluxosPage as unknown as React.ComponentType<unknown> })));
+const EmpathyMapPage         = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.EmpathyMapPage as unknown as React.ComponentType<unknown> })));
+const BenchmarkPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.BenchmarkPage as unknown as React.ComponentType<unknown> })));
+const JTBDPage               = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.JTBDPage as unknown as React.ComponentType<unknown> })));
+const CSDMatrixPage          = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.CSDMatrixPage as unknown as React.ComponentType<unknown> })));
+const HMWPage                = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.HMWPage as unknown as React.ComponentType<unknown> })));
+const AffinityDiagramPage    = lazy(() => import("./pages/DiscoveryPages").then(m => ({ default: m.AffinityDiagramPage as unknown as React.ComponentType<unknown> })));
+const BehaviorModelPage      = lazy(() => import("./pages/BehaviorModelPage").then(m => ({ default: m.BehaviorModelPage as unknown as React.ComponentType<unknown> })));
+const UXPatternsPage         = lazy(() => import("./pages/UXPatternsPage").then(m => ({ default: m.default as unknown as React.ComponentType<unknown> })));
+const InterviewTranscriberPage = lazy(() => import("./pages/InterviewPage").then(m => ({ default: m.InterviewTranscriberPage as unknown as React.ComponentType<unknown> })));
+
+
+
 
 // UX Writing
-const ToneOfVoicePage        = lazy(() => import("./pages/UXWritingPages").then(m => ({ default: m.ToneOfVoicePage })));
-const MicrocopyLibraryPage   = lazy(() => import("./pages/UXWritingPages").then(m => ({ default: m.MicrocopyLibraryPage })));
-const ContentAuditPage       = lazy(() => import("./pages/UXWritingPages").then(m => ({ default: m.ContentAuditPage })));
-const MicrocopyValidatorPage = lazy(() => import("./pages/MicrocopyValidatorPage").then(m => ({ default: m.MicrocopyValidatorPage })));
+const ToneOfVoicePage        = lazy(() => import("./pages/UXWritingPages").then(m => ({ default: m.ToneOfVoicePage as unknown as React.ComponentType<unknown> })));
+const MicrocopyLibraryPage   = lazy(() => import("./pages/UXWritingPages").then(m => ({ default: m.MicrocopyLibraryPage as unknown as React.ComponentType<unknown> })));
+const ContentAuditPage       = lazy(() => import("./pages/UXWritingPages").then(m => ({ default: m.ContentAuditPage as unknown as React.ComponentType<unknown> })));
+const MicrocopyValidatorPage = lazy(() => import("./pages/MicrocopyValidatorPage").then(m => ({ default: m.MicrocopyValidatorPage as unknown as React.ComponentType<unknown> })));
 
 // Validation
-const HeuristicEvalPage      = lazy(() => import("./pages/ValidationPages").then(m => ({ default: m.HeuristicEvalPage })));
-const UsabilityTestPage      = lazy(() => import("./pages/ValidationPages").then(m => ({ default: m.UsabilityTestPage })));
-const WCAGChecklistPage      = lazy(() => import("./pages/ValidationPages").then(m => ({ default: m.WCAGChecklistPage })));
-const WCAGAuditorPage        = lazy(() => import("./pages/WCAGAuditorPage").then(m => ({ default: m.WCAGAuditorPage })));
+const HeuristicEvalPage      = lazy(() => import("./pages/ValidationPages").then(m => ({ default: m.HeuristicEvalPage as unknown as React.ComponentType<unknown> })));
+const UsabilityTestPage      = lazy(() => import("./pages/ValidationPages").then(m => ({ default: m.UsabilityTestPage as unknown as React.ComponentType<unknown> })));
+const WCAGChecklistPage      = lazy(() => import("./pages/ValidationPages").then(m => ({ default: m.WCAGChecklistPage as unknown as React.ComponentType<unknown> })));
 
 // IA / IxD
-const VisualSitemapPage      = lazy(() => import("./pages/VisualSitemapPage").then(m => ({ default: m.VisualSitemapPage })));
-const CardSortingPage        = lazy(() => import("./pages/CardSortingPage").then(m => ({ default: m.CardSortingPage })));
-const ComponentStatesPage    = lazy(() => import("./pages/InteractionDesignPages").then(m => ({ default: m.ComponentStatesPage })));
-const TaskFlowsPage          = lazy(() => import("./pages/InteractionDesignPages").then(m => ({ default: m.TaskFlowsPage })));
+
+const VisualSitemapPage      = lazy(() => import("./pages/VisualSitemapPage").then(m => ({ default: m.VisualSitemapPage as unknown as React.ComponentType<unknown> })));
+const CardSortingPage        = lazy(() => import("./pages/CardSortingPage").then(m => ({ default: m.CardSortingPage as unknown as React.ComponentType<unknown> })));
+const ComponentStatesPage    = lazy(() => import("./pages/InteractionDesignPages").then(m => ({ default: m.ComponentStatesPage as unknown as React.ComponentType<unknown> })));
+const TaskFlowsPage          = lazy(() => import("./pages/InteractionDesignPages").then(m => ({ default: m.TaskFlowsPage as unknown as React.ComponentType<unknown> })));
 
 // Strategy
-const PrioritizationMatrixPage = lazy(() => import("./pages/StrategyPages").then(m => ({ default: m.PrioritizationMatrixPage })));
-const SitemapPage            = lazy(() => import("./pages/StrategyPages").then(m => ({ default: m.SitemapPage })));
-const BusinessModelCanvasPage = lazy(() => import("./pages/BusinessModelCanvasPage"));
+const PrioritizationMatrixPage = lazy(() => import("./pages/StrategyPages").then(m => ({ default: m.PrioritizationMatrixPage as unknown as React.ComponentType<unknown> })));
+const SitemapPage            = lazy(() => import("./pages/StrategyPages").then(m => ({ default: m.SitemapPage as unknown as React.ComponentType<unknown> })));
+const BusinessModelCanvasPage = lazy(() => import("./pages/BusinessModelCanvasPage").then(m => ({ default: m.default as unknown as React.ComponentType<unknown> })));
+
+
 
 // UI
-const DesignSystemPage       = lazy(() => import("./pages/UIPages").then(m => ({ default: m.DesignSystemPage })));
-const TelasPage              = lazy(() => import("./pages/UIPages").then(m => ({ default: m.TelasPage })));
-const HandoffPage            = lazy(() => import("./pages/UIPages").then(m => ({ default: m.HandoffPage })));
-const DesignSystemHubPage    = lazy(() => import("./pages/DesignSystemHubPage").then(m => ({ default: m.DesignSystemHubPage })));
-const VisualCheckerPage      = lazy(() => import("./pages/VisualCheckerPage").then(m => ({ default: m.VisualCheckerPage })));
-const MotionGalleryPage      = lazy(() => import("./pages/MotionGalleryPage").then(m => ({ default: m.MotionGalleryPage })));
-const SVGManagerPage         = lazy(() => import("./pages/SVGManagerPage").then(m => ({ default: m.SVGManagerPage })));
+const DesignSystemPage       = lazy(() => import("./pages/UIPages").then(m => ({ default: m.DesignSystemPage as unknown as React.ComponentType<unknown> })));
+const TelasPage              = lazy(() => import("./pages/UIPages").then(m => ({ default: m.TelasPage as unknown as React.ComponentType<unknown> })));
+const HandoffPage            = lazy(() => import("./pages/UIPages").then(m => ({ default: m.HandoffPage as unknown as React.ComponentType<unknown> })));
+const DesignSystemHubPage    = lazy(() => import("./pages/DesignSystemHubPage").then(m => ({ default: m.DesignSystemHubPage as unknown as React.ComponentType<unknown> })));
+const VisualCheckerPage      = lazy(() => import("./pages/VisualCheckerPage").then(m => ({ default: m.VisualCheckerPage as unknown as React.ComponentType<unknown> })));
+const MotionGalleryPage      = lazy(() => import("./pages/MotionGalleryPage").then(m => ({ default: m.MotionGalleryPage as unknown as React.ComponentType<unknown> })));
+const SVGManagerPage         = lazy(() => import("./pages/SVGManagerPage").then(m => ({ default: m.SVGManagerPage as unknown as React.ComponentType<unknown> })));
+const WCAGAuditorPage        = lazy(() => import("./pages/WCAGAuditorPage").then(m => ({ default: m.WCAGAuditorPage as unknown as React.ComponentType<unknown> })));
 
-// Dev
-const KanbanPage             = lazy(() => import("./pages/DevPages").then(m => ({ default: m.KanbanPage })));
-const QAPage                 = lazy(() => import("./pages/DevPages").then(m => ({ default: m.QAPage })));
-const TeamMetricsPage        = lazy(() => import("./pages/DevPages").then(m => ({ default: m.TeamMetricsPage })));
+// Analytics & Insights
+const AnalyticsHubPage       = lazy(() => import("./pages/AnalyticsHubPage").then(m => ({ default: m.AnalyticsHubPage as unknown as React.ComponentType<unknown> })));
+const VoiceOfCustomerPage    = lazy(() => import("./pages/VoiceOfCustomerPage").then(m => ({ default: m.VoiceOfCustomerPage as unknown as React.ComponentType<unknown> })));
+const ABTestingPage          = lazy(() => import("./pages/ABTestingPage").then(m => ({ default: m.ABTestingPage as unknown as React.ComponentType<unknown> })));
 
-// Analytics & extras
-const AnalyticsHubPage       = lazy(() => import("./pages/AnalyticsHubPage").then(m => ({ default: m.AnalyticsHubPage })));
-const VoiceOfCustomerPage    = lazy(() => import("./pages/VoiceOfCustomerPage").then(m => ({ default: m.VoiceOfCustomerPage })));
-const ABTestingPage          = lazy(() => import("./pages/ABTestingPage").then(m => ({ default: m.ABTestingPage })));
-const ResponsiveAuditPage    = lazy(() => import("./pages/ResponsiveAuditPage").then(m => ({ default: m.ResponsiveAuditPage })));
-const UXAnalysisPage         = lazy(() => import("./pages/UXAnalysisPage").then(m => ({ default: m.UXAnalysisPage })));
-const EnhancedReportPage     = lazy(() => import("./pages/EnhancedReportPage").then(m => ({ default: m.EnhancedReportPage })));
-const GitSyncHubPage         = lazy(() => import("./pages/GitSyncHubPage").then(m => ({ default: m.GitSyncHubPage })));
-const AIDesignStudioPage     = lazy(() => import("./pages/AIStudioPage").then(m => ({ default: m.AIDesignStudioPage })));
-const ConfigPage             = lazy(() => import("./pages/ConfigPage").then(m => ({ default: m.ConfigPage })));
+
+const ResponsiveAuditPage    = lazy(() => import("./pages/ResponsiveAuditPage").then(m => ({ default: m.ResponsiveAuditPage as unknown as React.ComponentType<unknown> })));
+const UXAnalysisPage         = lazy(() => import("./pages/UXAnalysisPage").then(m => ({ default: m.UXAnalysisPage as unknown as React.ComponentType<unknown> })));
+const EnhancedReportPage     = lazy(() => import("./pages/EnhancedReportPage").then(m => ({ default: m.EnhancedReportPage as unknown as React.ComponentType<unknown> })));
+const GitSyncHubPage         = lazy(() => import("./pages/GitSyncHubPage").then(m => ({ default: m.GitSyncHubPage as unknown as React.ComponentType<unknown> })));
+const AIDesignStudioPage     = lazy(() => import("./pages/AIStudioPage").then(m => ({ default: m.AIDesignStudioPage as unknown as React.ComponentType<unknown> })));
+const ConfigPage             = lazy(() => import("./pages/ConfigPage").then(m => ({ default: m.ConfigPage as unknown as React.ComponentType<unknown> })));
 
 // Research
-const DiaryStudiesPage       = lazy(() => import("./pages/ResearchPages").then(m => ({ default: m.DiaryStudiesPage })));
-const StakeholderMapPage     = lazy(() => import("./pages/ResearchPages").then(m => ({ default: m.StakeholderMapPage })));
+const DiaryStudiesPage       = lazy(() => import("./pages/ResearchPages").then(m => ({ default: m.DiaryStudiesPage as unknown as React.ComponentType<unknown> })));
+const StakeholderMapPage     = lazy(() => import("./pages/ResearchPages").then(m => ({ default: m.StakeholderMapPage as unknown as React.ComponentType<unknown> })));
 
 // Metrics
-const HEARTFrameworkPage     = lazy(() => import("./pages/MetricsPages").then(m => ({ default: m.HEARTFrameworkPage })));
-const NorthStarPage          = lazy(() => import("./pages/MetricsPages").then(m => ({ default: m.NorthStarPage })));
-const NPSSurveysPage         = lazy(() => import("./pages/MetricsPages").then(m => ({ default: m.NPSSurveysPage })));
+const HEARTFrameworkPage     = lazy(() => import("./pages/MetricsPages").then(m => ({ default: m.HEARTFrameworkPage as unknown as React.ComponentType<unknown> })));
+const NorthStarPage          = lazy(() => import("./pages/MetricsPages").then(m => ({ default: m.NorthStarPage as unknown as React.ComponentType<unknown> })));
+const NPSSurveysPage         = lazy(() => import("./pages/MetricsPages").then(m => ({ default: m.NPSSurveysPage as unknown as React.ComponentType<unknown> })));
+
 
 // Product Management
-const RoadmapPage            = lazy(() => import("./pages/ProductManagementPages").then(m => ({ default: m.RoadmapPage })));
-const OKRsPage               = lazy(() => import("./pages/ProductManagementPages").then(m => ({ default: m.OKRsPage })));
+const RoadmapPage            = lazy(() => import("./pages/ProductManagementPages").then(m => ({ default: m.RoadmapPage as unknown as React.ComponentType<unknown> })));
+const OKRsPage               = lazy(() => import("./pages/ProductManagementPages").then(m => ({ default: m.OKRsPage as unknown as React.ComponentType<unknown> })));
+
+// Dev
+const KanbanPage             = lazy(() => import("./pages/DevPages").then(m => ({ default: m.KanbanPage as unknown as React.ComponentType<unknown> })));
+const QAPage                 = lazy(() => import("./pages/DevPages").then(m => ({ default: m.QAPage as unknown as React.ComponentType<unknown> })));
+const TeamMetricsPage        = lazy(() => import("./pages/DevPages").then(m => ({ default: m.TeamMetricsPage as unknown as React.ComponentType<unknown> })));
+
 
 // Knowledge
-const DesignPrinciplesPage   = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DesignPrinciplesPage })));
-const DecisionLogPage        = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DecisionLogPage })));
-const DesignCritiquesPage    = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DesignCritiquesPage })));
+const DesignPrinciplesPage   = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DesignPrinciplesPage as unknown as React.ComponentType<unknown> })));
+const DecisionLogPage        = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DecisionLogPage as unknown as React.ComponentType<unknown> })));
+const DesignCritiquesPage    = lazy(() => import("./pages/KnowledgePages").then(m => ({ default: m.DesignCritiquesPage as unknown as React.ComponentType<unknown> })));
+
 
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({

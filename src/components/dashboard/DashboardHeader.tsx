@@ -1,5 +1,5 @@
+import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bot, LogOut, User, ChevronDown, X } from "lucide-react";
 import { useProject, useTeamMembers } from "@/hooks/useProjectData";

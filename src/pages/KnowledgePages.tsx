@@ -7,6 +7,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+interface IDesignPrinciple {
+  id: string;
+  title: string;
+  description: string;
+  example: string;
+  sort_order: number;
+}
+
+interface IDecisionLog {
+  id: string;
+  title: string;
+  context: string;
+  decision: string;
+  alternatives: string[];
+  rationale: string;
+  impact: string;
+  decided_by: string;
+  decided_at: string;
+}
+
+interface IDesignCritique {
+  id: string;
+  screen_name: string;
+  critique_type: string;
+  feedback: string;
+  severity: string;
+  status: string;
+  reviewer: string;
+  created_at: string;
+}
+
+
 // ─── Design Principles ───
 export function DesignPrinciplesPage() {
   const projectId = useCurrentProjectId();
@@ -88,7 +120,8 @@ export function DesignPrinciplesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-          {(principles ?? []).map((p: any, i: number) => (
+          {(principles ?? []).map((p: IDesignPrinciple, i: number) => (
+
             <div key={p.id} className="glass-card p-5 group animate-slide-up">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-3">
@@ -206,7 +239,8 @@ export function DecisionLogPage() {
         </div>
       ) : (
         <div className="space-y-3 stagger-children">
-          {(decisions ?? []).map((d: any) => (
+          {(decisions ?? []).map((d: IDecisionLog) => (
+
             <div key={d.id} className="glass-card p-5 group animate-slide-up">
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -323,7 +357,8 @@ export function DesignCritiquesPage() {
         </div>
       ) : (
         <div className="space-y-2 stagger-children">
-          {(critiques ?? []).map((c: any) => (
+          {(critiques ?? []).map((c: IDesignCritique) => (
+
             <div key={c.id} className="glass-card p-4 group animate-slide-up">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2 flex-wrap">

@@ -7,6 +7,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+interface IRoadmapItem {
+  id: string;
+  title: string;
+  description: string;
+  quarter: string;
+  status: string;
+  priority: string;
+  effort: string;
+  impact: string;
+  category: string;
+}
+
+interface IKeyResult {
+  id: string;
+  description: string;
+  progress: number;
+}
+
+interface IOKR {
+  id: string;
+  objective: string;
+  key_results: IKeyResult[];
+  quarter: string;
+  owner: string;
+  status: string;
+}
+
+
 // ─── Roadmap ───
 const statusColors: Record<string, string> = { planned: "bg-secondary text-muted-foreground", in_progress: "bg-blue-500/10 text-blue-500", done: "bg-green-500/10 text-green-500", blocked: "bg-destructive/10 text-destructive" };
 const statusLabels: Record<string, string> = { planned: "Planejado", in_progress: "Em andamento", done: "Concluído", blocked: "Bloqueado" };
@@ -45,7 +73,9 @@ export function RoadmapPage() {
     toast.success("Removido");
   };
 
-  const quarters = [...new Set((items ?? []).map((i: any) => i.quarter))].sort();
+  const quarters = [...new Set((items ?? []).map((i: IRoadmapItem) => i.quarter))].sort();
+
+
 
   return (
     <ModulePage
@@ -107,7 +137,8 @@ export function RoadmapPage() {
             <div key={q}>
               <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Flag className="w-4 h-4 text-primary" />{q}</h3>
               <div className="space-y-2">
-                {(items ?? []).filter((i: any) => i.quarter === q).map((i: any) => (
+                {(items ?? []).filter((i: IRoadmapItem) => i.quarter === q).map((i: IRoadmapItem) => (
+
                   <div key={i.id} className="glass-card p-4 flex items-center gap-4 group">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -216,9 +247,10 @@ export function OKRsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {(okrs ?? []).map((okr: any) => {
+          {(okrs ?? []).map((okr: IOKR) => {
             const krs = Array.isArray(okr.key_results) ? okr.key_results : [];
-            const avgProgress = krs.length > 0 ? krs.reduce((sum: number, kr: any) => sum + (kr.progress || 0), 0) / krs.length : 0;
+            const avgProgress = krs.length > 0 ? krs.reduce((sum: number, kr: IKeyResult) => sum + (kr.progress || 0), 0) / krs.length : 0;
+
             return (
               <div key={okr.id} className="glass-card p-5 group">
                 <div className="flex items-start justify-between mb-3">
@@ -232,7 +264,8 @@ export function OKRsPage() {
                   <button onClick={() => handleDelete(okr.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                 </div>
                 <div className="space-y-2">
-                  {krs.map((kr: any, i: number) => (
+                  {krs.map((kr: IKeyResult, i: number) => (
+
                     <div key={kr.id || i} className="flex items-center gap-3">
                       <span className="text-xs text-muted-foreground w-5 shrink-0">KR{i + 1}</span>
                       <div className="flex-1">
