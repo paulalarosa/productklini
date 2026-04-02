@@ -94,10 +94,11 @@ const navGroups: NavGroup[] = [
   {
     title: "Estratégia & Produto",
     items: [
-      { label: "Priorização",           icon: ArrowUpDown, path: "/strategy/prioritization" },
-      { label: "Business Model Canvas", icon: Briefcase,   path: "/strategy/business-model" },
-      { label: "Roadmap",               icon: Map,         path: "/product/roadmap" },
-      { label: "OKRs",                  icon: Target,      path: "/product/okrs" },
+      { label: "Priorização",           icon: ArrowUpDown,   path: "/strategy/prioritization" },
+      { label: "Impact vs Effort",      icon: ExternalLink,  path: "/strategy/impact-effort" },
+      { label: "Business Model Canvas", icon: Briefcase,     path: "/strategy/business-model" },
+      { label: "Roadmap",               icon: Map,           path: "/product/roadmap" },
+      { label: "OKRs",                  icon: Target,        path: "/product/okrs" },
     ],
   },
   {
