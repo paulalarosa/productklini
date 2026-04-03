@@ -10,7 +10,7 @@ import {
   BrainCircuit, MonitorSmartphone, Microscope, MessageSquareDot, BookMarked,
   Users2, Star, Target, Map, FileText, MessageSquareMore, BookOpen,
   FlaskConical, PenTool, Compass, GalleryHorizontal, Image, Globe,
-  Flag, Activity, Eye, ExternalLink,
+  Flag, Activity, Eye, ExternalLink, Rocket, ShieldAlert, RotateCcw, Code2,
 } from "lucide-react";
 import { useTasks } from "@/hooks/useProjectData";
 
