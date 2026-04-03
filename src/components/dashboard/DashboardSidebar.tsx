@@ -10,7 +10,7 @@ import {
   BrainCircuit, MonitorSmartphone, Microscope, MessageSquareDot, BookMarked,
   Users2, Star, Target, Map, FileText, MessageSquareMore, BookOpen,
   FlaskConical, PenTool, Compass, GalleryHorizontal, Image, Globe,
-  Flag, Activity, Eye, ExternalLink,
+  Flag, Activity, Eye, ExternalLink, Rocket, ShieldAlert, RotateCcw, Code2,
 } from "lucide-react";
 import { useTasks } from "@/hooks/useProjectData";
 
@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
     title: "Geral",
     items: [
       { label: "Visão Geral",      icon: LayoutDashboard, path: "/" },
+      { label: "Product Pipeline", icon: Rocket,          path: "/pipeline" },
       { label: "AI Design Studio", icon: Sparkles,        path: "/ai-studio" },
     ],
   },
@@ -97,8 +98,11 @@ const navGroups: NavGroup[] = [
       { label: "Priorização",           icon: ArrowUpDown,   path: "/strategy/prioritization" },
       { label: "Impact vs Effort",      icon: ExternalLink,  path: "/strategy/impact-effort" },
       { label: "Business Model Canvas", icon: Briefcase,     path: "/strategy/business-model" },
+      { label: "Customer Journey",      icon: Map,           path: "/product/customer-journey" },
       { label: "Roadmap",               icon: Map,           path: "/product/roadmap" },
       { label: "OKRs",                  icon: Target,        path: "/product/okrs" },
+      { label: "Risk Register",         icon: ShieldAlert,   path: "/product/risk-register" },
+      { label: "Sprint Retro",          icon: RotateCcw,     path: "/product/sprint-retro" },
     ],
   },
   {
@@ -111,19 +115,22 @@ const navGroups: NavGroup[] = [
       { label: "Assets SVG",       icon: Grid3X3,               path: "/ui/svg-manager" },
       { label: "Telas",            icon: Layers,                path: "/ui/telas" },
       { label: "Handoff",          icon: ArrowRightLeft,        path: "/ui/handoff" },
+      { label: "Handoff Specs",    icon: Code2,                 path: "/product/design-handoff" },
     ],
   },
   {
     title: "Validação & Experimentos",
     items: [
-      { label: "A/B Testing",        icon: CircleDot,       path: "/ab-testing" },
-      { label: "Feature Flags",      icon: Flag,            path: "/testing/feature-flags" },
-      { label: "Heatmap Viewer",     icon: Activity,        path: "/testing/heatmap" },
-      { label: "Session Recording",  icon: Eye,             path: "/testing/session-recording" },
-      { label: "Audit Responsivo",   icon: MonitorSmartphone,path: "/responsive-audit" },
-      { label: "Análise UX (IA)",    icon: Microscope,      path: "/ux-analysis" },
-      { label: "Analytics Hub",      icon: BarChart3,       path: "/analytics" },
-      { label: "Voice of Customer",  icon: MessageSquareDot,path: "/voice-of-customer" },
+      { label: "A/B Testing",          icon: CircleDot,       path: "/ab-testing" },
+      { label: "Feature Flags",        icon: Flag,            path: "/testing/feature-flags" },
+      { label: "Heatmap Viewer",       icon: Activity,        path: "/testing/heatmap" },
+      { label: "Session Recording",    icon: Eye,             path: "/testing/session-recording" },
+      { label: "Accessibility Score",  icon: Accessibility,   path: "/testing/accessibility-score" },
+      { label: "Component Analytics",  icon: BarChart3,       path: "/testing/component-analytics" },
+      { label: "Audit Responsivo",     icon: MonitorSmartphone,path: "/responsive-audit" },
+      { label: "Análise UX (IA)",      icon: Microscope,      path: "/ux-analysis" },
+      { label: "Analytics Hub",        icon: BarChart3,       path: "/analytics" },
+      { label: "Voice of Customer",    icon: MessageSquareDot,path: "/voice-of-customer" },
     ],
   },
   {

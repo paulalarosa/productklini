@@ -123,6 +123,15 @@ const SessionRecordingPage   = lazy(() => import("./pages/TestingValidationPages
 // Competitive
 const CompetitiveLandscapePage = lazy(() => import("./pages/CompetitiveLandscapePage").then(m => ({ default: m.CompetitiveLandscapePage as unknown as React.ComponentType<unknown> })));
 
+// New modules
+const CustomerJourneyPage    = lazy(() => import("./pages/CustomerJourneyPage").then(m => ({ default: m.CustomerJourneyPage as unknown as React.ComponentType<unknown> })));
+const SprintRetroPage        = lazy(() => import("./pages/SprintRetroPage").then(m => ({ default: m.SprintRetroPage as unknown as React.ComponentType<unknown> })));
+const RiskRegisterPage       = lazy(() => import("./pages/RiskRegisterPage").then(m => ({ default: m.RiskRegisterPage as unknown as React.ComponentType<unknown> })));
+const DesignHandoffSpecsPage = lazy(() => import("./pages/DesignHandoffPage").then(m => ({ default: m.DesignHandoffPage as unknown as React.ComponentType<unknown> })));
+const AccessibilityScorePage = lazy(() => import("./pages/AccessibilityScorePage").then(m => ({ default: m.AccessibilityScorePage as unknown as React.ComponentType<unknown> })));
+const ComponentAnalyticsPage = lazy(() => import("./pages/ComponentAnalyticsPage").then(m => ({ default: m.ComponentAnalyticsPage as unknown as React.ComponentType<unknown> })));
+const ProductPipelinePage    = lazy(() => import("./pages/ProductPipelinePage").then(m => ({ default: m.ProductPipelinePage as unknown as React.ComponentType<unknown> })));
+
 
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({
@@ -219,6 +228,13 @@ const App = () => (
                 <Route path="/testing/feature-flags" element={<FeatureFlagsPage />} />
                 <Route path="/testing/heatmap" element={<HeatmapViewerPage />} />
                 <Route path="/testing/session-recording" element={<SessionRecordingPage />} />
+                <Route path="/product/customer-journey" element={<CustomerJourneyPage />} />
+                <Route path="/product/sprint-retro" element={<SprintRetroPage />} />
+                <Route path="/product/risk-register" element={<RiskRegisterPage />} />
+                <Route path="/product/design-handoff" element={<DesignHandoffSpecsPage />} />
+                <Route path="/testing/accessibility-score" element={<AccessibilityScorePage />} />
+                <Route path="/testing/component-analytics" element={<ComponentAnalyticsPage />} />
+                <Route path="/pipeline" element={<ProductPipelinePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
