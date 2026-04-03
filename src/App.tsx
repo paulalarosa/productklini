@@ -228,6 +228,13 @@ const App = () => (
                 <Route path="/testing/feature-flags" element={<FeatureFlagsPage />} />
                 <Route path="/testing/heatmap" element={<HeatmapViewerPage />} />
                 <Route path="/testing/session-recording" element={<SessionRecordingPage />} />
+                <Route path="/product/customer-journey" element={<CustomerJourneyPage />} />
+                <Route path="/product/sprint-retro" element={<SprintRetroPage />} />
+                <Route path="/product/risk-register" element={<RiskRegisterPage />} />
+                <Route path="/product/design-handoff" element={<DesignHandoffSpecsPage />} />
+                <Route path="/testing/accessibility-score" element={<AccessibilityScorePage />} />
+                <Route path="/testing/component-analytics" element={<ComponentAnalyticsPage />} />
+                <Route path="/pipeline" element={<ProductPipelinePage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
