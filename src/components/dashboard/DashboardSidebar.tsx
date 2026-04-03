@@ -26,6 +26,7 @@ const navGroups: NavGroup[] = [
     title: "Geral",
     items: [
       { label: "Visão Geral",      icon: LayoutDashboard, path: "/" },
+      { label: "Product Pipeline", icon: Rocket,          path: "/pipeline" },
       { label: "AI Design Studio", icon: Sparkles,        path: "/ai-studio" },
     ],
   },
