@@ -115,8 +115,8 @@ const navGroups: NavGroup[] = [
       { label: "Assets SVG",       icon: Grid3X3,               path: "/ui/svg-manager" },
       { label: "Telas",            icon: Layers,                path: "/ui/telas" },
       { label: "Handoff",          icon: ArrowRightLeft,        path: "/ui/handoff" },
+      { label: "Handoff Specs",    icon: Code2,                 path: "/product/design-handoff" },
     ],
-  },
   {
     title: "Validação & Experimentos",
     items: [
