@@ -117,6 +117,7 @@ const navGroups: NavGroup[] = [
       { label: "Handoff",          icon: ArrowRightLeft,        path: "/ui/handoff" },
       { label: "Handoff Specs",    icon: Code2,                 path: "/product/design-handoff" },
     ],
+  },
   {
     title: "Validação & Experimentos",
     items: [
