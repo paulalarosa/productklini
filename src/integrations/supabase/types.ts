@@ -632,6 +632,45 @@ export type Database = {
         }
         Relationships: []
       }
+      component_usage_analytics: {
+        Row: {
+          component_name: string
+          consistency_score: number
+          created_at: string
+          id: string
+          last_updated_by: string
+          notes: string
+          project_id: string
+          screens_used: string[]
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          component_name: string
+          consistency_score?: number
+          created_at?: string
+          id?: string
+          last_updated_by?: string
+          notes?: string
+          project_id: string
+          screens_used?: string[]
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          component_name?: string
+          consistency_score?: number
+          created_at?: string
+          id?: string
+          last_updated_by?: string
+          notes?: string
+          project_id?: string
+          screens_used?: string[]
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       csd_matrices: {
         Row: {
           category: string
@@ -669,6 +708,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      customer_journeys: {
+        Row: {
+          created_at: string
+          description: string
+          emotions: Json
+          id: string
+          journey_name: string
+          opportunities: string[]
+          pain_points: string[]
+          persona: string
+          project_id: string
+          stages: Json
+          status: string
+          touchpoints: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          emotions?: Json
+          id?: string
+          journey_name: string
+          opportunities?: string[]
+          pain_points?: string[]
+          persona?: string
+          project_id: string
+          stages?: Json
+          status?: string
+          touchpoints?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          emotions?: Json
+          id?: string
+          journey_name?: string
+          opportunities?: string[]
+          pain_points?: string[]
+          persona?: string
+          project_id?: string
+          stages?: Json
+          status?: string
+          touchpoints?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       decision_log: {
         Row: {
@@ -772,6 +859,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      design_handoff_specs: {
+        Row: {
+          colors: Json
+          component_name: string
+          created_at: string
+          id: string
+          interactions: string
+          notes: string
+          project_id: string
+          screen_name: string
+          spacing: Json
+          specs: Json
+          status: string
+          typography: Json
+          updated_at: string
+        }
+        Insert: {
+          colors?: Json
+          component_name?: string
+          created_at?: string
+          id?: string
+          interactions?: string
+          notes?: string
+          project_id: string
+          screen_name: string
+          spacing?: Json
+          specs?: Json
+          status?: string
+          typography?: Json
+          updated_at?: string
+        }
+        Update: {
+          colors?: Json
+          component_name?: string
+          created_at?: string
+          id?: string
+          interactions?: string
+          notes?: string
+          project_id?: string
+          screen_name?: string
+          spacing?: Json
+          specs?: Json
+          status?: string
+          typography?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       design_principles: {
         Row: {
@@ -1586,31 +1721,40 @@ export type Database = {
           created_at: string
           goals: string[]
           id: string
+          interview_count: number
           name: string
           pain_points: string[]
           project_id: string
           role: string
           updated_at: string
+          validation_notes: string
+          validation_status: string
         }
         Insert: {
           created_at?: string
           goals?: string[]
           id?: string
+          interview_count?: number
           name: string
           pain_points?: string[]
           project_id: string
           role: string
           updated_at?: string
+          validation_notes?: string
+          validation_status?: string
         }
         Update: {
           created_at?: string
           goals?: string[]
           id?: string
+          interview_count?: number
           name?: string
           pain_points?: string[]
           project_id?: string
           role?: string
           updated_at?: string
+          validation_notes?: string
+          validation_status?: string
         }
         Relationships: [
           {
@@ -1621,6 +1765,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      product_pipeline: {
+        Row: {
+          checklist_state: Json
+          created_at: string
+          current_step: number
+          id: string
+          project_id: string
+          steps_completed: Json
+          updated_at: string
+        }
+        Insert: {
+          checklist_state?: Json
+          created_at?: string
+          current_step?: number
+          id?: string
+          project_id: string
+          steps_completed?: Json
+          updated_at?: string
+        }
+        Update: {
+          checklist_state?: Json
+          created_at?: string
+          current_step?: number
+          id?: string
+          project_id?: string
+          steps_completed?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       project_documents: {
         Row: {
@@ -1800,6 +1974,51 @@ export type Database = {
           },
         ]
       }
+      risk_register: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          impact: string
+          mitigation_plan: string
+          owner: string
+          probability: string
+          project_id: string
+          risk_title: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact?: string
+          mitigation_plan?: string
+          owner?: string
+          probability?: string
+          project_id: string
+          risk_title: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact?: string
+          mitigation_plan?: string
+          owner?: string
+          probability?: string
+          project_id?: string
+          risk_title?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       roadmap_items: {
         Row: {
           category: string
@@ -1944,6 +2163,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sprint_retrospectives: {
+        Row: {
+          action_items: Json
+          created_at: string
+          date: string
+          id: string
+          project_id: string
+          sprint_name: string
+          sprint_number: number
+          team_mood: string
+          to_improve: string[]
+          updated_at: string
+          went_well: string[]
+        }
+        Insert: {
+          action_items?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          project_id: string
+          sprint_name: string
+          sprint_number?: number
+          team_mood?: string
+          to_improve?: string[]
+          updated_at?: string
+          went_well?: string[]
+        }
+        Update: {
+          action_items?: Json
+          created_at?: string
+          date?: string
+          id?: string
+          project_id?: string
+          sprint_name?: string
+          sprint_number?: number
+          team_mood?: string
+          to_improve?: string[]
+          updated_at?: string
+          went_well?: string[]
+        }
+        Relationships: []
       }
       stakeholder_maps: {
         Row: {
