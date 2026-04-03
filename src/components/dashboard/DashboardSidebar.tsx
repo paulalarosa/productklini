@@ -98,8 +98,11 @@ const navGroups: NavGroup[] = [
       { label: "Priorização",           icon: ArrowUpDown,   path: "/strategy/prioritization" },
       { label: "Impact vs Effort",      icon: ExternalLink,  path: "/strategy/impact-effort" },
       { label: "Business Model Canvas", icon: Briefcase,     path: "/strategy/business-model" },
+      { label: "Customer Journey",      icon: Map,           path: "/product/customer-journey" },
       { label: "Roadmap",               icon: Map,           path: "/product/roadmap" },
       { label: "OKRs",                  icon: Target,        path: "/product/okrs" },
+      { label: "Risk Register",         icon: ShieldAlert,   path: "/product/risk-register" },
+      { label: "Sprint Retro",          icon: RotateCcw,     path: "/product/sprint-retro" },
     ],
   },
   {
