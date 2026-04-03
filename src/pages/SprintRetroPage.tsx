@@ -38,7 +38,7 @@ export function SprintRetroPage() {
     queryFn: async () => {
       if (!projectId) return [];
       const { data } = await supabase.from("sprint_retrospectives").select("*").eq("project_id", projectId).order("sprint_number", { ascending: false });
-      return (data ?? []) as Retro[];
+      return (data ?? []) as unknown as Retro[];
     },
     enabled: !!projectId,
   });

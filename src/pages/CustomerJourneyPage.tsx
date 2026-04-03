@@ -36,7 +36,7 @@ export function CustomerJourneyPage() {
     queryFn: async () => {
       if (!projectId) return [];
       const { data } = await supabase.from("customer_journeys").select("*").eq("project_id", projectId).order("created_at", { ascending: false });
-      return (data ?? []) as Journey[];
+      return (data ?? []) as unknown as Journey[];
     },
     enabled: !!projectId,
   });
