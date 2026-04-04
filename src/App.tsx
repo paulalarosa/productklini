@@ -131,7 +131,7 @@ const DesignHandoffSpecsPage = lazy(() => import("./pages/DesignHandoffPage").th
 const AccessibilityScorePage = lazy(() => import("./pages/AccessibilityScorePage").then(m => ({ default: m.AccessibilityScorePage as unknown as React.ComponentType<unknown> })));
 const ComponentAnalyticsPage = lazy(() => import("./pages/ComponentAnalyticsPage").then(m => ({ default: m.ComponentAnalyticsPage as unknown as React.ComponentType<unknown> })));
 const ProductPipelinePage    = lazy(() => import("./pages/ProductPipelinePage").then(m => ({ default: m.ProductPipelinePage as unknown as React.ComponentType<unknown> })));
-
+const StrategicContextPage   = lazy(() => import("./pages/StrategicContextPage").then(m => ({ default: m.StrategicContextPage as unknown as React.ComponentType<unknown> })));
 
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({
