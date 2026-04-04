@@ -131,7 +131,7 @@ const DesignHandoffSpecsPage = lazy(() => import("./pages/DesignHandoffPage").th
 const AccessibilityScorePage = lazy(() => import("./pages/AccessibilityScorePage").then(m => ({ default: m.AccessibilityScorePage as unknown as React.ComponentType<unknown> })));
 const ComponentAnalyticsPage = lazy(() => import("./pages/ComponentAnalyticsPage").then(m => ({ default: m.ComponentAnalyticsPage as unknown as React.ComponentType<unknown> })));
 const ProductPipelinePage    = lazy(() => import("./pages/ProductPipelinePage").then(m => ({ default: m.ProductPipelinePage as unknown as React.ComponentType<unknown> })));
-
+const StrategicContextPage   = lazy(() => import("./pages/StrategicContextPage").then(m => ({ default: m.StrategicContextPage as unknown as React.ComponentType<unknown> })));
 
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({
@@ -235,6 +235,7 @@ const App = () => (
                 <Route path="/testing/accessibility-score" element={<AccessibilityScorePage />} />
                 <Route path="/testing/component-analytics" element={<ComponentAnalyticsPage />} />
                 <Route path="/pipeline" element={<ProductPipelinePage />} />
+                <Route path="/strategy/strategic-context" element={<StrategicContextPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
