@@ -7,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
 import {
   ChevronRight, ChevronLeft, Check, Rocket, Search, Lightbulb,
   PenTool, FlaskConical, Code2, Sparkles, BookOpen, Target, HelpCircle,
-  ChevronDown, ExternalLink,
+  ChevronDown, ExternalLink, Save, Compass, Eye, Users, Banknote, Trophy,
+  Star, TrendingUp, BarChart3, AlertTriangle, Layers, ArrowUpRight, Zap,
+  Columns3, ShieldCheck, Building2, MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import type { Json } from "@/integrations/supabase/types";
 
 interface PipelineChecklist {
   key: string;
@@ -36,6 +40,36 @@ interface PipelineStep {
   proTip: string;
   checklist: PipelineChecklist[];
 }
+
+// ---- Strategic Context Blocks (integrated into flow) ----
+interface StrategicBlock {
+  id: string; title: string; subtitle: string; icon: React.ElementType;
+  questions: string[]; fieldKey: string; phase: "discovery" | "define";
+}
+
+const STRATEGIC_BLOCKS: StrategicBlock[] = [
+  // Discovery phase blocks
+  { id: "cenario", title: "Cenário Atual", subtitle: "Visão ampla dos processos e desafios", icon: Compass, questions: ["A empresa está em transformação digital?", "Existem restrições que podem impactar?", "Existe dependência de sistema legado?"], fieldKey: "current_scenario", phase: "discovery" },
+  { id: "visao", title: "Visão de Produto", subtitle: "Maturidade e direcionamento estratégico", icon: Eye, questions: ["Existe uma visão de produto atual?", "Está atualizada e conectada à visão de negócio?"], fieldKey: "product_vision", phase: "discovery" },
+  { id: "atores", title: "Atores / Personas", subtitle: "Envolvidos na jornada do produto", icon: Users, questions: ["Quem são os atores envolvidos?", "Quem é o público final?", "Quem tem maior contato com o cliente?"], fieldKey: "actors_personas", phase: "discovery" },
+  { id: "modelo", title: "Modelo de Negócio", subtitle: "Como a empresa cobra e lucra", icon: Banknote, questions: ["Qual o modelo de negócio?", "Como é a composição de preço?"], fieldKey: "business_model", phase: "discovery" },
+  { id: "posicionamento", title: "Posicionamento no Mercado", subtitle: "Liderança vs desafiante", icon: Trophy, questions: ["Quais os principais concorrentes?", "O que fazemos melhor?", "Onde deixamos a desejar?"], fieldKey: "market_position", phase: "discovery" },
+  { id: "diferenciais", title: "Diferenciais", subtitle: "Proposta de valor única", icon: Star, questions: ["Qual a proposta de valor?", "O que fazemos que ninguém oferece?"], fieldKey: "differentials", phase: "discovery" },
+  { id: "tendencias", title: "Tendências do Mercado", subtitle: "Como o mercado se movimenta", icon: TrendingUp, questions: ["Quais as tendências do segmento?", "Quão distantes estamos da inovação?"], fieldKey: "market_trends", phase: "discovery" },
+  { id: "resultados", title: "Resultados Relevantes", subtitle: "Performance e métricas atuais", icon: BarChart3, questions: ["Onde a empresa performa bem?", "Quais resultados abaixo das metas?"], fieldKey: "relevant_results", phase: "discovery" },
+  { id: "ameacas", title: "Ameaças Internas", subtitle: "Fricções organizacionais", icon: AlertTriangle, questions: ["As áreas colaboram ou são siladas?", "Existe disputa pelos resultados?"], fieldKey: "internal_threats", phase: "discovery" },
+  { id: "ecossistema", title: "Produtos Próximos", subtitle: "Posição no ecossistema", icon: Layers, questions: ["Quais estruturas próximas?", "Como se relacionam?"], fieldKey: "ecosystem", phase: "discovery" },
+  // Define phase blocks
+  { id: "oportunidades", title: "Oportunidades Mapeadas", subtitle: "Esforços anteriores e possibilidades", icon: Lightbulb, questions: ["Quais oportunidades já mapeadas?", "São táticas, operacionais ou estratégicas?"], fieldKey: "opportunities", phase: "define" },
+  { id: "dores", title: "Dores Atuais", subtitle: "Problemas de negócio e produto", icon: AlertTriangle, questions: ["Quais as dores de negócio?", "Quais as dores do produto?"], fieldKey: "current_pains", phase: "define" },
+  { id: "necessidade", title: "Necessidade", subtitle: "Ponto A — onde estamos hoje", icon: Target, questions: ["Qual a necessidade principal?", "Todos alinhados sobre o problema?"], fieldKey: "necessity", phase: "define" },
+  { id: "objetivo", title: "Objetivo", subtitle: "Ponto B — visão de longo prazo", icon: ArrowUpRight, questions: ["O que queremos alcançar?", "Quais indicadores de sucesso?"], fieldKey: "objective", phase: "define" },
+  { id: "movimento", title: "Movimento Estratégico", subtitle: "O que fazer para ir de A a B", icon: Zap, questions: ["Qual a declaração do movimento?", "Ela direciona o projeto?"], fieldKey: "strategic_movement", phase: "define" },
+  { id: "pilares", title: "Pilares", subtitle: "Forças que sustentam a estratégia", icon: Columns3, questions: ["O que é esse pilar?", "Como resolve a dor?"], fieldKey: "pillars", phase: "define" },
+  { id: "premissas", title: "Premissas", subtitle: "Elementos transversais ao processo", icon: ShieldCheck, questions: ["Quais premissas orientam o plano tático?"], fieldKey: "premises", phase: "define" },
+  { id: "estruturas", title: "Principais Estruturas", subtitle: "Soluções que mudam a dinâmica", icon: Building2, questions: ["Quais estruturas materializam o movimento?", "Qual a visão de sistema?"], fieldKey: "main_structures", phase: "define" },
+  { id: "horizontes", title: "Horizontes", subtitle: "Evolução curto, médio e longo prazo", icon: MapPin, questions: ["Como cada estrutura evolui?", "O que entregar em cada horizonte?"], fieldKey: "horizons", phase: "define" },
+];
 
 const PIPELINE_STEPS: PipelineStep[] = [
   {
@@ -201,6 +235,41 @@ export function ProductPipelinePage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(true);
+  const [showStrategic, setShowStrategic] = useState(false);
+  const [strategicLocal, setStrategicLocal] = useState<Record<string, string>>({});
+
+  // Load strategic context doc
+  const { data: strategicDoc } = useQuery({
+    queryKey: ["strategic-context", projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const { data } = await supabase.from("project_documents").select("*").eq("project_id", projectId).eq("doc_type", "strategic_context").maybeSingle();
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  const strategicContent: Record<string, string> = strategicDoc?.content ? (() => { try { return JSON.parse(strategicDoc.content); } catch { return {}; } })() : {};
+  const getStrategicValue = (key: string) => strategicLocal[key] ?? strategicContent[key] ?? "";
+
+  const saveStrategicField = async (fieldKey: string) => {
+    if (!projectId) return;
+    const newContent = { ...strategicContent, ...strategicLocal };
+    const payload = {
+      project_id: projectId, doc_type: "strategic_context",
+      title: "Investigação Contextual & Imersão",
+      content: JSON.stringify(newContent), metadata: {} as Json,
+    };
+    if (strategicDoc?.id) {
+      const { error } = await supabase.from("project_documents").update(payload).eq("id", strategicDoc.id);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from("project_documents").insert(payload);
+      if (error) { toast.error(error.message); return; }
+    }
+    qc.invalidateQueries({ queryKey: ["strategic-context"] });
+    toast.success("Salvo!");
+  };
 
   const { data: pipeline } = useQuery({
     queryKey: ["product-pipeline", projectId],
@@ -450,7 +519,91 @@ export function ProductPipelinePage() {
         </Card>
       )}
 
-      {/* Navigation */}
+      {/* Strategic Context — embedded in Discovery & Define phases */}
+      {step && (step.id === "discovery" || step.id === "define") && (
+        <Collapsible open={showStrategic} onOpenChange={setShowStrategic}>
+          <Card className="border-primary/20">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-accent/30 transition-colors py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Compass className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm">
+                        {step.id === "discovery" ? "Investigação Contextual" : "Imersão Estratégica"}
+                      </CardTitle>
+                      <p className="text-[11px] text-muted-foreground">
+                        {step.id === "discovery"
+                          ? "Mapeie cenário, atores, modelo de negócio e posicionamento"
+                          : "Defina dores, necessidade, objetivo e movimento estratégico"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[9px]">
+                      {STRATEGIC_BLOCKS.filter(b => b.phase === step.id && (strategicContent[b.fieldKey] || "").trim().length > 0).length}/
+                      {STRATEGIC_BLOCKS.filter(b => b.phase === step.id).length}
+                    </Badge>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showStrategic ? "rotate-180" : ""}`} />
+                  </div>
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-3">
+                {STRATEGIC_BLOCKS.filter(b => b.phase === step.id).map(block => {
+                  const val = getStrategicValue(block.fieldKey);
+                  const filled = val.trim().length > 0;
+                  return (
+                    <Collapsible key={block.id}>
+                      <CollapsibleTrigger className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent/30 transition-colors">
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${filled ? "bg-green-500/10" : "bg-secondary"}`}>
+                          <block.icon className={`w-3.5 h-3.5 ${filled ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`} />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                            {block.title}
+                            {filled && <span className="text-[8px] text-green-600 dark:text-green-400">✓</span>}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground">{block.subtitle}</p>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="ml-9 space-y-2 pb-3">
+                          <div className="bg-primary/5 rounded-lg p-2.5">
+                            <ul className="space-y-0.5">
+                              {block.questions.map((q, i) => (
+                                <li key={i} className="text-[10px] text-muted-foreground flex gap-1">
+                                  <span className="text-primary">•</span> {q}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <Textarea
+                            value={val}
+                            onChange={e => setStrategicLocal(p => ({ ...p, [block.fieldKey]: e.target.value }))}
+                            placeholder={`Descreva ${block.title.toLowerCase()}...`}
+                            className="min-h-[80px] text-xs"
+                          />
+                          <div className="flex justify-end">
+                            <Button size="sm" variant="outline" onClick={() => saveStrategicField(block.fieldKey)} className="text-[10px] h-7">
+                              <Save className="w-3 h-3 mr-1" />Salvar
+                            </Button>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
       <div className="flex justify-between">
         <Button
           variant="outline"

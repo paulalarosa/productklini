@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
@@ -235,7 +235,7 @@ const App = () => (
                 <Route path="/testing/accessibility-score" element={<AccessibilityScorePage />} />
                 <Route path="/testing/component-analytics" element={<ComponentAnalyticsPage />} />
                 <Route path="/pipeline" element={<ProductPipelinePage />} />
-                <Route path="/strategy/strategic-context" element={<StrategicContextPage />} />
+                <Route path="/strategy/strategic-context" element={<Navigate to="/pipeline" replace />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

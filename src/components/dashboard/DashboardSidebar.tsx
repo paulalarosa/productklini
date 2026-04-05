@@ -95,7 +95,7 @@ const navGroups: NavGroup[] = [
   {
     title: "Estratégia & Produto",
     items: [
-      { label: "Contexto Estratégico", icon: Compass,        path: "/strategy/strategic-context" },
+      // Contexto Estratégico agora está integrado ao Pipeline (Discovery & Define)
       { label: "Priorização",           icon: ArrowUpDown,   path: "/strategy/prioritization" },
       { label: "Impact vs Effort",      icon: ExternalLink,  path: "/strategy/impact-effort" },
       { label: "Business Model Canvas", icon: Briefcase,     path: "/strategy/business-model" },
