@@ -41,6 +41,36 @@ interface PipelineStep {
   checklist: PipelineChecklist[];
 }
 
+// ---- Strategic Context Blocks (integrated into flow) ----
+interface StrategicBlock {
+  id: string; title: string; subtitle: string; icon: React.ElementType;
+  questions: string[]; fieldKey: string; phase: "discovery" | "define";
+}
+
+const STRATEGIC_BLOCKS: StrategicBlock[] = [
+  // Discovery phase blocks
+  { id: "cenario", title: "Cenário Atual", subtitle: "Visão ampla dos processos e desafios", icon: Compass, questions: ["A empresa está em transformação digital?", "Existem restrições que podem impactar?", "Existe dependência de sistema legado?"], fieldKey: "current_scenario", phase: "discovery" },
+  { id: "visao", title: "Visão de Produto", subtitle: "Maturidade e direcionamento estratégico", icon: Eye, questions: ["Existe uma visão de produto atual?", "Está atualizada e conectada à visão de negócio?"], fieldKey: "product_vision", phase: "discovery" },
+  { id: "atores", title: "Atores / Personas", subtitle: "Envolvidos na jornada do produto", icon: Users, questions: ["Quem são os atores envolvidos?", "Quem é o público final?", "Quem tem maior contato com o cliente?"], fieldKey: "actors_personas", phase: "discovery" },
+  { id: "modelo", title: "Modelo de Negócio", subtitle: "Como a empresa cobra e lucra", icon: Banknote, questions: ["Qual o modelo de negócio?", "Como é a composição de preço?"], fieldKey: "business_model", phase: "discovery" },
+  { id: "posicionamento", title: "Posicionamento no Mercado", subtitle: "Liderança vs desafiante", icon: Trophy, questions: ["Quais os principais concorrentes?", "O que fazemos melhor?", "Onde deixamos a desejar?"], fieldKey: "market_position", phase: "discovery" },
+  { id: "diferenciais", title: "Diferenciais", subtitle: "Proposta de valor única", icon: Star, questions: ["Qual a proposta de valor?", "O que fazemos que ninguém oferece?"], fieldKey: "differentials", phase: "discovery" },
+  { id: "tendencias", title: "Tendências do Mercado", subtitle: "Como o mercado se movimenta", icon: TrendingUp, questions: ["Quais as tendências do segmento?", "Quão distantes estamos da inovação?"], fieldKey: "market_trends", phase: "discovery" },
+  { id: "resultados", title: "Resultados Relevantes", subtitle: "Performance e métricas atuais", icon: BarChart3, questions: ["Onde a empresa performa bem?", "Quais resultados abaixo das metas?"], fieldKey: "relevant_results", phase: "discovery" },
+  { id: "ameacas", title: "Ameaças Internas", subtitle: "Fricções organizacionais", icon: AlertTriangle, questions: ["As áreas colaboram ou são siladas?", "Existe disputa pelos resultados?"], fieldKey: "internal_threats", phase: "discovery" },
+  { id: "ecossistema", title: "Produtos Próximos", subtitle: "Posição no ecossistema", icon: Layers, questions: ["Quais estruturas próximas?", "Como se relacionam?"], fieldKey: "ecosystem", phase: "discovery" },
+  // Define phase blocks
+  { id: "oportunidades", title: "Oportunidades Mapeadas", subtitle: "Esforços anteriores e possibilidades", icon: Lightbulb, questions: ["Quais oportunidades já mapeadas?", "São táticas, operacionais ou estratégicas?"], fieldKey: "opportunities", phase: "define" },
+  { id: "dores", title: "Dores Atuais", subtitle: "Problemas de negócio e produto", icon: AlertTriangle, questions: ["Quais as dores de negócio?", "Quais as dores do produto?"], fieldKey: "current_pains", phase: "define" },
+  { id: "necessidade", title: "Necessidade", subtitle: "Ponto A — onde estamos hoje", icon: Target, questions: ["Qual a necessidade principal?", "Todos alinhados sobre o problema?"], fieldKey: "necessity", phase: "define" },
+  { id: "objetivo", title: "Objetivo", subtitle: "Ponto B — visão de longo prazo", icon: ArrowUpRight, questions: ["O que queremos alcançar?", "Quais indicadores de sucesso?"], fieldKey: "objective", phase: "define" },
+  { id: "movimento", title: "Movimento Estratégico", subtitle: "O que fazer para ir de A a B", icon: Zap, questions: ["Qual a declaração do movimento?", "Ela direciona o projeto?"], fieldKey: "strategic_movement", phase: "define" },
+  { id: "pilares", title: "Pilares", subtitle: "Forças que sustentam a estratégia", icon: Columns3, questions: ["O que é esse pilar?", "Como resolve a dor?"], fieldKey: "pillars", phase: "define" },
+  { id: "premissas", title: "Premissas", subtitle: "Elementos transversais ao processo", icon: ShieldCheck, questions: ["Quais premissas orientam o plano tático?"], fieldKey: "premises", phase: "define" },
+  { id: "estruturas", title: "Principais Estruturas", subtitle: "Soluções que mudam a dinâmica", icon: Building2, questions: ["Quais estruturas materializam o movimento?", "Qual a visão de sistema?"], fieldKey: "main_structures", phase: "define" },
+  { id: "horizontes", title: "Horizontes", subtitle: "Evolução curto, médio e longo prazo", icon: MapPin, questions: ["Como cada estrutura evolui?", "O que entregar em cada horizonte?"], fieldKey: "horizons", phase: "define" },
+];
+
 const PIPELINE_STEPS: PipelineStep[] = [
   {
     id: "discovery",
