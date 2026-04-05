@@ -519,7 +519,91 @@ export function ProductPipelinePage() {
         </Card>
       )}
 
-      {/* Navigation */}
+      {/* Strategic Context — embedded in Discovery & Define phases */}
+      {step && (step.id === "discovery" || step.id === "define") && (
+        <Collapsible open={showStrategic} onOpenChange={setShowStrategic}>
+          <Card className="border-primary/20">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-accent/30 transition-colors py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Compass className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-sm">
+                        {step.id === "discovery" ? "Investigação Contextual" : "Imersão Estratégica"}
+                      </CardTitle>
+                      <p className="text-[11px] text-muted-foreground">
+                        {step.id === "discovery"
+                          ? "Mapeie cenário, atores, modelo de negócio e posicionamento"
+                          : "Defina dores, necessidade, objetivo e movimento estratégico"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-[9px]">
+                      {STRATEGIC_BLOCKS.filter(b => b.phase === step.id && (strategicContent[b.fieldKey] || "").trim().length > 0).length}/
+                      {STRATEGIC_BLOCKS.filter(b => b.phase === step.id).length}
+                    </Badge>
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showStrategic ? "rotate-180" : ""}`} />
+                  </div>
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 space-y-3">
+                {STRATEGIC_BLOCKS.filter(b => b.phase === step.id).map(block => {
+                  const val = getStrategicValue(block.fieldKey);
+                  const filled = val.trim().length > 0;
+                  return (
+                    <Collapsible key={block.id}>
+                      <CollapsibleTrigger className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent/30 transition-colors">
+                        <div className={`w-6 h-6 rounded-md flex items-center justify-center ${filled ? "bg-green-500/10" : "bg-secondary"}`}>
+                          <block.icon className={`w-3.5 h-3.5 ${filled ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`} />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                            {block.title}
+                            {filled && <span className="text-[8px] text-green-600 dark:text-green-400">✓</span>}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground">{block.subtitle}</p>
+                        </div>
+                        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="ml-9 space-y-2 pb-3">
+                          <div className="bg-primary/5 rounded-lg p-2.5">
+                            <ul className="space-y-0.5">
+                              {block.questions.map((q, i) => (
+                                <li key={i} className="text-[10px] text-muted-foreground flex gap-1">
+                                  <span className="text-primary">•</span> {q}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <Textarea
+                            value={val}
+                            onChange={e => setStrategicLocal(p => ({ ...p, [block.fieldKey]: e.target.value }))}
+                            placeholder={`Descreva ${block.title.toLowerCase()}...`}
+                            className="min-h-[80px] text-xs"
+                          />
+                          <div className="flex justify-end">
+                            <Button size="sm" variant="outline" onClick={() => saveStrategicField(block.fieldKey)} className="text-[10px] h-7">
+                              <Save className="w-3 h-3 mr-1" />Salvar
+                            </Button>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
       <div className="flex justify-between">
         <Button
           variant="outline"
