@@ -235,6 +235,41 @@ export function ProductPipelinePage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(true);
+  const [showStrategic, setShowStrategic] = useState(false);
+  const [strategicLocal, setStrategicLocal] = useState<Record<string, string>>({});
+
+  // Load strategic context doc
+  const { data: strategicDoc } = useQuery({
+    queryKey: ["strategic-context", projectId],
+    queryFn: async () => {
+      if (!projectId) return null;
+      const { data } = await supabase.from("project_documents").select("*").eq("project_id", projectId).eq("doc_type", "strategic_context").maybeSingle();
+      return data;
+    },
+    enabled: !!projectId,
+  });
+
+  const strategicContent: Record<string, string> = strategicDoc?.content ? (() => { try { return JSON.parse(strategicDoc.content); } catch { return {}; } })() : {};
+  const getStrategicValue = (key: string) => strategicLocal[key] ?? strategicContent[key] ?? "";
+
+  const saveStrategicField = async (fieldKey: string) => {
+    if (!projectId) return;
+    const newContent = { ...strategicContent, ...strategicLocal };
+    const payload = {
+      project_id: projectId, doc_type: "strategic_context",
+      title: "Investigação Contextual & Imersão",
+      content: JSON.stringify(newContent), metadata: {} as Json,
+    };
+    if (strategicDoc?.id) {
+      const { error } = await supabase.from("project_documents").update(payload).eq("id", strategicDoc.id);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from("project_documents").insert(payload);
+      if (error) { toast.error(error.message); return; }
+    }
+    qc.invalidateQueries({ queryKey: ["strategic-context"] });
+    toast.success("Salvo!");
+  };
 
   const { data: pipeline } = useQuery({
     queryKey: ["product-pipeline", projectId],
