@@ -7,16 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
 import {
   ChevronRight, ChevronLeft, Check, Rocket, Search, Lightbulb,
   PenTool, FlaskConical, Code2, Sparkles, BookOpen, Target, HelpCircle,
-  ChevronDown, ExternalLink,
+  ChevronDown, ExternalLink, Save, Compass, Eye, Users, Banknote, Trophy,
+  Star, TrendingUp, BarChart3, AlertTriangle, Layers, ArrowUpRight, Zap,
+  Columns3, ShieldCheck, Building2, MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import type { Json } from "@/integrations/supabase/types";
 
 interface PipelineChecklist {
   key: string;
