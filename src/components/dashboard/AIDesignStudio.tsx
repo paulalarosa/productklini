@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   Sparkles, Send, History, Wand2, Users, Route, CreditCard, LayoutDashboard,
   Loader2, Code2, Save, FileDown, ChevronRight, Compass, Blocks,
   Map, UserCircle, GitBranch, ArrowRight, CheckCircle2,
   Monitor, Smartphone, Tablet, Move, MousePointer, Type, Square,
-  Circle, Minus, Copy, Trash2, Download,
+  Circle, Minus, Copy, Trash2, Download, Palette, SlidersHorizontal,
+  RotateCw, AlignLeft, Bold, Italic, Lock, Unlock, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +14,8 @@ import { getAuthHeaders } from "@/lib/authHeaders";
 import type { Json } from "@/integrations/supabase/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getProjectId } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 
 const getStudioUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/design-studio`;
 
@@ -25,6 +28,9 @@ interface PreviewElement {
   type: "rect" | "circle" | "text" | "line";
   x: number; y: number; width: number; height: number;
   fill: string; fontSize?: number; text?: string;
+  opacity?: number; rotation?: number; cornerRadius?: number;
+  strokeColor?: string; strokeWidth?: number;
+  locked?: boolean;
 }
 
 interface StudioResult {
@@ -73,6 +79,13 @@ const flowNodeColors: Record<string, string> = {
   screen: "bg-primary/10 border-primary",
 };
 
+// ---- Preset Colors ----
+const PRESET_COLORS = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316",
+  "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#ffffff",
+  "#000000", "#6b7280", "#1e293b", "#0f172a", "#fef3c7",
+];
+
 // ---- Save to DS Hub ----
 async function saveComponentToDS(result: StudioResult, prompt: string) {
   const projectId = await getProjectId();
@@ -92,9 +105,6 @@ function generateFlutterFromReact(code: string, name: string): string {
 
 /// Generated from AI Design Studio
 /// Component: ${name}
-/// 
-/// This is a Flutter equivalent of the React component.
-/// Adjust the styling and logic as needed for your Flutter project.
 
 class ${name.replace(/[^a-zA-Z0-9]/g, '')}Widget extends StatelessWidget {
   const ${name.replace(/[^a-zA-Z0-9]/g, '')}Widget({super.key});
@@ -102,7 +112,6 @@ class ${name.replace(/[^a-zA-Z0-9]/g, '')}Widget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -113,38 +122,133 @@ class ${name.replace(/[^a-zA-Z0-9]/g, '')}Widget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${name}',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text('${name}', style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(
-            'Flutter adaptation of the generated component.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-            ),
-          ),
+          Text('Flutter adaptation of the generated component.', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(0.7))),
           const SizedBox(height: 16),
-          // TODO: Implement the full Flutter version
-          // Reference the React code for component structure
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Adapte o código React gerado para este widget Flutter.',
-              style: TextStyle(fontSize: 12),
-            ),
+            decoration: BoxDecoration(color: theme.colorScheme.primaryContainer.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
+            child: const Text('Adapte o código React gerado para este widget Flutter.', style: TextStyle(fontSize: 12)),
           ),
         ],
       ),
     );
   }
 }`;
+}
+
+// ---- Properties Panel ----
+function PropertiesPanel({ element, index, onUpdate, onDelete, onDuplicate }: {
+  element: PreviewElement; index: number;
+  onUpdate: (idx: number, updates: Partial<PreviewElement>) => void;
+  onDelete: (idx: number) => void;
+  onDuplicate: (idx: number) => void;
+}) {
+  return (
+    <div className="w-[200px] border-l border-border bg-card flex flex-col overflow-y-auto">
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Propriedades</span>
+        <div className="flex gap-0.5">
+          <button onClick={() => onDuplicate(index)} title="Duplicar" className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground"><Copy className="w-3 h-3" /></button>
+          <button onClick={() => onUpdate(index, { locked: !element.locked })} title={element.locked ? "Desbloquear" : "Bloquear"} className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground">
+            {element.locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+          </button>
+          <button onClick={() => onDelete(index)} title="Excluir" className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="w-3 h-3" /></button>
+        </div>
+      </div>
+
+      <div className="p-3 space-y-3 text-[11px]">
+        {/* Position */}
+        <div>
+          <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Posição</label>
+          <div className="grid grid-cols-2 gap-1.5">
+            <div>
+              <span className="text-[8px] text-muted-foreground">X</span>
+              <Input type="number" value={Math.round(element.x)} onChange={e => onUpdate(index, { x: Number(e.target.value) })} className="h-6 text-[10px] px-1.5" />
+            </div>
+            <div>
+              <span className="text-[8px] text-muted-foreground">Y</span>
+              <Input type="number" value={Math.round(element.y)} onChange={e => onUpdate(index, { y: Number(e.target.value) })} className="h-6 text-[10px] px-1.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Size */}
+        <div>
+          <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Tamanho</label>
+          <div className="grid grid-cols-2 gap-1.5">
+            <div>
+              <span className="text-[8px] text-muted-foreground">W</span>
+              <Input type="number" value={Math.round(element.width)} onChange={e => onUpdate(index, { width: Number(e.target.value) })} className="h-6 text-[10px] px-1.5" />
+            </div>
+            <div>
+              <span className="text-[8px] text-muted-foreground">H</span>
+              <Input type="number" value={Math.round(element.height)} onChange={e => onUpdate(index, { height: Number(e.target.value) })} className="h-6 text-[10px] px-1.5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Fill Color */}
+        <div>
+          <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Cor de preenchimento</label>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <input type="color" value={element.fill} onChange={e => onUpdate(index, { fill: e.target.value })} className="w-6 h-6 rounded border border-border cursor-pointer" />
+            <Input value={element.fill} onChange={e => onUpdate(index, { fill: e.target.value })} className="h-6 text-[10px] px-1.5 font-mono flex-1" />
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {PRESET_COLORS.map(c => (
+              <button key={c} onClick={() => onUpdate(index, { fill: c })}
+                className={`w-4 h-4 rounded-sm border border-border/50 hover:scale-110 transition-transform ${element.fill === c ? "ring-1 ring-primary ring-offset-1" : ""}`}
+                style={{ backgroundColor: c }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Stroke */}
+        <div>
+          <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Borda</label>
+          <div className="flex items-center gap-1.5">
+            <input type="color" value={element.strokeColor || "#000000"} onChange={e => onUpdate(index, { strokeColor: e.target.value })} className="w-6 h-6 rounded border border-border cursor-pointer" />
+            <Input type="number" value={element.strokeWidth ?? 0} onChange={e => onUpdate(index, { strokeWidth: Number(e.target.value) })} className="h-6 text-[10px] px-1.5 w-12" placeholder="0" />
+            <span className="text-[8px] text-muted-foreground">px</span>
+          </div>
+        </div>
+
+        {/* Opacity */}
+        <div>
+          <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Opacidade: {Math.round((element.opacity ?? 1) * 100)}%</label>
+          <Slider value={[Math.round((element.opacity ?? 1) * 100)]} onValueChange={([v]) => onUpdate(index, { opacity: v / 100 })} min={0} max={100} step={1} className="w-full" />
+        </div>
+
+        {/* Corner Radius (rect only) */}
+        {element.type === "rect" && (
+          <div>
+            <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Raio: {element.cornerRadius ?? 4}px</label>
+            <Slider value={[element.cornerRadius ?? 4]} onValueChange={([v]) => onUpdate(index, { cornerRadius: v })} min={0} max={60} step={1} className="w-full" />
+          </div>
+        )}
+
+        {/* Rotation */}
+        <div>
+          <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Rotação: {element.rotation ?? 0}°</label>
+          <Slider value={[element.rotation ?? 0]} onValueChange={([v]) => onUpdate(index, { rotation: v })} min={0} max={360} step={1} className="w-full" />
+        </div>
+
+        {/* Text properties */}
+        {element.type === "text" && (
+          <div>
+            <label className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Texto</label>
+            <Input value={element.text || ""} onChange={e => onUpdate(index, { text: e.target.value })} className="h-6 text-[10px] px-1.5 mb-1.5" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[8px] text-muted-foreground">Size</span>
+              <Input type="number" value={element.fontSize || 14} onChange={e => onUpdate(index, { fontSize: Number(e.target.value) })} className="h-6 text-[10px] px-1.5 w-12" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ---- Main Component ----
@@ -163,9 +267,133 @@ export function AIDesignStudio() {
   const [canvasElements, setCanvasElements] = useState<PreviewElement[]>([]);
   const [selectedElement, setSelectedElement] = useState<number | null>(null);
 
+  // Drag state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; elX: number; elY: number } | null>(null);
+  // Resize state
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  // Inline text editing
+  const [editingTextIdx, setEditingTextIdx] = useState<number | null>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
+
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const chips = mode === "ux-pilot" ? UX_CHIPS : UI_CHIPS;
   const loadingMsgs = mode === "ux-pilot" ? UX_LOADING : UI_LOADING;
   const currentSaved = iterations.length > 0 && iterations[0]?.savedToDS;
+
+  const getSVGPoint = useCallback((e: React.MouseEvent) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const rect = svg.getBoundingClientRect();
+    const vw = deviceWidths[deviceFrame].w;
+    const vh = 500;
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * vw,
+      y: ((e.clientY - rect.top) / rect.height) * vh,
+    };
+  }, [deviceFrame]);
+
+  const updateElement = useCallback((idx: number, updates: Partial<PreviewElement>) => {
+    setCanvasElements(prev => prev.map((el, i) => i === idx ? { ...el, ...updates } : el));
+  }, []);
+
+  const duplicateElement = useCallback((idx: number) => {
+    setCanvasElements(prev => {
+      const el = prev[idx];
+      const dup = { ...el, x: el.x + 20, y: el.y + 20 };
+      return [...prev, dup];
+    });
+    setSelectedElement(canvasElements.length);
+  }, [canvasElements.length]);
+
+  const deleteElement = useCallback((idx: number) => {
+    setCanvasElements(prev => prev.filter((_, i) => i !== idx));
+    setSelectedElement(null);
+  }, []);
+
+  // Mouse handlers for drag/resize
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    const pt = getSVGPoint(e);
+
+    if (canvasTool !== "select" && canvasTool !== "move") {
+      // Create new element
+      const newEl: PreviewElement = {
+        type: canvasTool === "circle" ? "circle" : canvasTool === "text" ? "text" : canvasTool === "line" ? "line" : "rect",
+        x: pt.x, y: pt.y,
+        width: canvasTool === "text" ? 100 : 120,
+        height: canvasTool === "line" ? 0 : 60,
+        fill: canvasTool === "text" ? "#ffffff" : "#6366f1",
+        opacity: 1, rotation: 0, cornerRadius: 4,
+        ...(canvasTool === "text" ? { text: "Texto", fontSize: 14 } : {}),
+      };
+      setCanvasElements(prev => [...prev, newEl]);
+      setSelectedElement(canvasElements.length);
+      return;
+    }
+
+    // Select mode — find element under cursor (reverse order for z-index)
+    for (let i = canvasElements.length - 1; i >= 0; i--) {
+      const el = canvasElements[i];
+      if (el.locked) continue;
+      const inX = pt.x >= el.x && pt.x <= el.x + el.width;
+      const inY = pt.y >= el.y && pt.y <= el.y + el.height;
+      if (inX && inY) {
+        setSelectedElement(i);
+        setIsDragging(true);
+        setDragStart({ x: pt.x, y: pt.y, elX: el.x, elY: el.y });
+        return;
+      }
+    }
+    setSelectedElement(null);
+  }, [canvasTool, canvasElements, getSVGPoint]);
+
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<SVGSVGElement>) => {
+    if (isDragging && dragStart && selectedElement !== null) {
+      const pt = getSVGPoint(e);
+      const dx = pt.x - dragStart.x;
+      const dy = pt.y - dragStart.y;
+      updateElement(selectedElement, { x: dragStart.elX + dx, y: dragStart.elY + dy });
+    }
+    if (isResizing && resizeStart && selectedElement !== null) {
+      const pt = getSVGPoint(e);
+      const dx = pt.x - resizeStart.x;
+      const dy = pt.y - resizeStart.y;
+      updateElement(selectedElement, {
+        width: Math.max(20, resizeStart.w + dx),
+        height: Math.max(10, resizeStart.h + dy),
+      });
+    }
+  }, [isDragging, isResizing, dragStart, resizeStart, selectedElement, getSVGPoint, updateElement]);
+
+  const handleCanvasMouseUp = useCallback(() => {
+    setIsDragging(false);
+    setDragStart(null);
+    setIsResizing(false);
+    setResizeStart(null);
+  }, []);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent, idx: number) => {
+    e.stopPropagation();
+    const pt = getSVGPoint(e);
+    const el = canvasElements[idx];
+    setSelectedElement(idx);
+    setIsResizing(true);
+    setResizeStart({ x: pt.x, y: pt.y, w: el.width, h: el.height });
+  }, [canvasElements, getSVGPoint]);
+
+  const handleDoubleClick = useCallback((idx: number) => {
+    if (canvasElements[idx].type === "text") {
+      setEditingTextIdx(idx);
+      setTimeout(() => textInputRef.current?.focus(), 50);
+    }
+  }, [canvasElements]);
+
+  // Focus text input when editing
+  useEffect(() => {
+    if (editingTextIdx !== null) textInputRef.current?.focus();
+  }, [editingTextIdx]);
 
   const generate = useCallback(async (inputPrompt?: string) => {
     const text = inputPrompt || prompt;
@@ -191,7 +419,6 @@ export function AIDesignStudio() {
       const data = await resp.json();
       const r = data.result as StudioResult;
 
-      // Generate Flutter code if UI component
       if (mode === "ui-make" && r.code) {
         r.flutter_code = generateFlutterFromReact(r.code, r.component_name || "Component");
       }
@@ -252,44 +479,18 @@ export function AIDesignStudio() {
     toast.success("SVG exportado!");
   };
 
-  // Canvas interaction
-  const handleCanvasClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (canvasTool === "select") {
-      setSelectedElement(null);
-      return;
-    }
-
-    const svg = e.currentTarget;
-    const rect = svg.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 800;
-    const y = ((e.clientY - rect.top) / rect.height) * 500;
-
-    const newEl: PreviewElement = {
-      type: canvasTool === "circle" ? "circle" : canvasTool === "text" ? "text" : canvasTool === "line" ? "line" : "rect",
-      x, y, width: canvasTool === "text" ? 100 : 120, height: canvasTool === "line" ? 0 : 60,
-      fill: canvasTool === "text" ? "#ffffff" : "hsl(250, 80%, 60%)",
-      ...(canvasTool === "text" ? { text: "Texto", fontSize: 14 } : {}),
-    };
-    setCanvasElements(prev => [...prev, newEl]);
-    setSelectedElement(canvasElements.length);
-  };
-
-  const deleteSelected = () => {
-    if (selectedElement === null) return;
-    setCanvasElements(prev => prev.filter((_, i) => i !== selectedElement));
-    setSelectedElement(null);
-  };
-
   const deviceWidths: Record<DeviceFrame, { w: number; label: string }> = {
     desktop: { w: 800, label: "1440px" },
     tablet: { w: 600, label: "768px" },
     mobile: { w: 375, label: "375px" },
   };
 
+  const selectedEl = selectedElement !== null ? canvasElements[selectedElement] : null;
+
   return (
     <div className="flex h-[calc(100vh-140px)] gap-0 overflow-hidden rounded-lg border border-border">
       {/* LEFT PANEL */}
-      <div className="w-[30%] min-w-[280px] flex flex-col bg-card border-r border-border">
+      <div className="w-[28%] min-w-[260px] flex flex-col bg-card border-r border-border">
         {/* Mode Tabs */}
         <div className="flex border-b border-border">
           {(["ux-pilot", "ui-make"] as StudioMode[]).map(m => (
@@ -313,14 +514,14 @@ export function AIDesignStudio() {
         </div>
 
         {/* Prompt */}
-        <div className="p-4 space-y-3 flex-1 flex flex-col">
+        <div className="p-4 space-y-3 flex-1 flex flex-col min-h-0">
           <div className="relative flex-1 min-h-0">
             <textarea value={prompt} onChange={e => setPrompt(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) generate(); }}
               placeholder={mode === "ux-pilot"
                 ? "Descreva o artefato UX...\nEx: Crie uma persona para um app de fitness"
                 : "Descreva a tela ou componente...\nEx: Uma tela de login completa com social login"}
-              className="w-full h-full min-h-[120px] bg-background border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none resize-none font-mono focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+              className="w-full h-full min-h-[100px] bg-background border border-border rounded-lg px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none resize-none font-mono focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
             />
             <button onClick={() => generate()} disabled={isLoading || !prompt.trim()}
               className="absolute bottom-3 right-3 p-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-30 transition-all">
@@ -347,10 +548,11 @@ export function AIDesignStudio() {
           {/* Canvas Tools (UI Make) */}
           {mode === "ui-make" && (
             <div className="space-y-1.5 border-t border-border pt-3">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Canvas Tools</p>
-              <div className="flex gap-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ferramentas</p>
+              <div className="flex gap-1 flex-wrap">
                 {([
                   { tool: "select" as CanvasTool, icon: MousePointer, label: "Selecionar" },
+                  { tool: "move" as CanvasTool, icon: Move, label: "Mover" },
                   { tool: "rect" as CanvasTool, icon: Square, label: "Retângulo" },
                   { tool: "circle" as CanvasTool, icon: Circle, label: "Círculo" },
                   { tool: "text" as CanvasTool, icon: Type, label: "Texto" },
@@ -361,12 +563,10 @@ export function AIDesignStudio() {
                     <t.icon className="w-3.5 h-3.5" />
                   </button>
                 ))}
-                {selectedElement !== null && (
-                  <button onClick={deleteSelected} title="Deletar" className="p-1.5 rounded-md bg-destructive/10 text-destructive hover:bg-destructive/20">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
+              {selectedElement !== null && (
+                <p className="text-[9px] text-primary">Dica: arraste para mover, clique duplo para editar texto, canto inferior-direito para redimensionar</p>
+              )}
             </div>
           )}
         </div>
@@ -402,7 +602,7 @@ export function AIDesignStudio() {
         </div>
       </div>
 
-      {/* RIGHT PANEL: Canvas */}
+      {/* CANVAS AREA */}
       <div className="flex-1 flex flex-col bg-background overflow-hidden">
         {/* Canvas Header */}
         {result && (
@@ -420,7 +620,6 @@ export function AIDesignStudio() {
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              {/* Device Frame Selector */}
               {mode === "ui-make" && (
                 <div className="flex items-center gap-0.5 bg-secondary rounded-md p-0.5 mr-2">
                   {(["desktop", "tablet", "mobile"] as DeviceFrame[]).map(d => (
@@ -432,21 +631,11 @@ export function AIDesignStudio() {
                 </div>
               )}
 
-              {/* Code View Tabs */}
               {mode === "ui-make" && result.code && (
                 <div className="flex items-center gap-0.5 bg-secondary rounded-md p-0.5">
-                  <button onClick={() => setCodeView("preview")}
-                    className={`px-2 py-1 rounded text-[10px] transition-colors ${codeView === "preview" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-                    Preview
-                  </button>
-                  <button onClick={() => setCodeView("react")}
-                    className={`px-2 py-1 rounded text-[10px] transition-colors ${codeView === "react" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-                    React
-                  </button>
-                  <button onClick={() => setCodeView("flutter")}
-                    className={`px-2 py-1 rounded text-[10px] transition-colors ${codeView === "flutter" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-                    Flutter
-                  </button>
+                  <button onClick={() => setCodeView("preview")} className={`px-2 py-1 rounded text-[10px] transition-colors ${codeView === "preview" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Preview</button>
+                  <button onClick={() => setCodeView("react")} className={`px-2 py-1 rounded text-[10px] transition-colors ${codeView === "react" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>React</button>
+                  <button onClick={() => setCodeView("flutter")} className={`px-2 py-1 rounded text-[10px] transition-colors ${codeView === "flutter" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>Flutter</button>
                 </div>
               )}
 
@@ -466,125 +655,187 @@ export function AIDesignStudio() {
         )}
 
         {/* Canvas Content */}
-        <div className="flex-1 overflow-auto relative">
-          <div className="absolute inset-0" style={{
-            backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }} />
+        <div className="flex-1 overflow-auto relative flex">
+          <div className="flex-1 relative">
+            <div className="absolute inset-0" style={{
+              backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }} />
 
-          <div className="relative z-10 p-6 min-h-full flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              {/* Loading */}
-              {isLoading && (
-                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-2xl space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-primary-foreground animate-pulse" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Gerando...</p>
-                      <motion.p key={loadingStep} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-primary">
-                        {loadingMsgs[loadingStep]}
-                      </motion.p>
-                    </div>
-                  </div>
-                  {[1, 2, 3].map(i => (
-                    <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.2 }}
-                      className="border border-border rounded-lg p-5 bg-card space-y-3">
-                      <div className="h-4 bg-secondary rounded w-1/3 animate-pulse" />
-                      <div className="h-3 bg-secondary/70 rounded w-2/3 animate-pulse" />
-                      <div className="h-3 bg-secondary/50 rounded w-1/2 animate-pulse" />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-
-              {/* Empty */}
-              {!isLoading && !result && (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-primary mx-auto mb-4 flex items-center justify-center opacity-40">
-                    {mode === "ux-pilot" ? <Compass className="w-8 h-8 text-primary-foreground" /> : <Blocks className="w-8 h-8 text-primary-foreground" />}
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground/40 mb-1">{mode === "ux-pilot" ? "UX Pilot" : "UI Make"}</h3>
-                  <p className="text-sm text-muted-foreground/60">Descreva o que vamos construir hoje</p>
-                  <p className="text-[10px] text-muted-foreground/40 mt-2">Use os atalhos rápidos ou escreva seu prompt</p>
-                </motion.div>
-              )}
-
-              {/* UX Pilot Result */}
-              {!isLoading && result && mode === "ux-pilot" && (
-                <motion.div key="ux" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-4xl">
-                  {result.artifact_type === "persona" && <PersonaView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                  {result.artifact_type === "journey_map" && <JourneyMapView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                  {result.artifact_type === "user_flow" && <UserFlowView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                  {result.artifact_type === "sitemap" && <SitemapView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                  {result.artifact_type === "wireframe_concept" && <GenericView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                </motion.div>
-              )}
-
-              {/* UI Make Result */}
-              {!isLoading && result && mode === "ui-make" && (
-                <motion.div key="ui" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-4xl">
-                  {codeView === "preview" && (
-                    <div className="mx-auto transition-all" style={{ maxWidth: deviceWidths[deviceFrame].w }}>
-                      <div className="text-center mb-2">
-                        <span className="text-[9px] text-muted-foreground">{deviceWidths[deviceFrame].label}</span>
+            <div className="relative z-10 p-6 min-h-full flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                {/* Loading */}
+                {isLoading && (
+                  <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-2xl space-y-4">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-primary-foreground animate-pulse" />
                       </div>
-                      <div className="border border-border rounded-lg bg-card p-2" style={{ boxShadow: "0 8px 32px hsl(0 0% 0% / 0.3)" }}>
-                        <svg id="studio-canvas-svg" width={deviceWidths[deviceFrame].w} height="500"
-                          viewBox={`0 0 ${deviceWidths[deviceFrame].w} 500`} className="w-full cursor-crosshair"
-                          style={{ background: "hsl(var(--background))", borderRadius: "8px" }}
-                          onClick={handleCanvasClick}>
-                          <defs>
-                            <pattern id="sg" width="20" height="20" patternUnits="userSpaceOnUse">
-                              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" />
-                            </pattern>
-                          </defs>
-                          <rect width={deviceWidths[deviceFrame].w} height="500" fill="url(#sg)" />
-                          {canvasElements.map((el, i) => (
-                            <g key={i} onClick={(e) => { e.stopPropagation(); setSelectedElement(i); setCanvasTool("select"); }}
-                              className="cursor-pointer">
-                              {el.type === "rect" && (
-                                <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill} rx={4}
-                                  stroke={selectedElement === i ? "hsl(var(--primary))" : "none"} strokeWidth={2} />
-                              )}
-                              {el.type === "circle" && (
-                                <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2}
-                                  fill={el.fill} stroke={selectedElement === i ? "hsl(var(--primary))" : "none"} strokeWidth={2} />
-                              )}
-                              {el.type === "text" && (
-                                <text x={el.x} y={el.y + (el.fontSize || 14)} fill={el.fill} fontSize={el.fontSize || 14}
-                                  fontFamily="Inter, sans-serif" stroke={selectedElement === i ? "hsl(var(--primary))" : "none"} strokeWidth={0.5}>
-                                  {el.text}
-                                </text>
-                              )}
-                              {el.type === "line" && (
-                                <line x1={el.x} y1={el.y} x2={el.x + el.width} y2={el.y + el.height}
-                                  stroke={el.fill} strokeWidth={selectedElement === i ? 4 : 2} />
-                              )}
-                            </g>
-                          ))}
-                        </svg>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Gerando...</p>
+                        <motion.p key={loadingStep} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-primary">
+                          {loadingMsgs[loadingStep]}
+                        </motion.p>
                       </div>
                     </div>
-                  )}
+                    {[1, 2, 3].map(i => (
+                      <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.2 }}
+                        className="border border-border rounded-lg p-5 bg-card space-y-3">
+                        <div className="h-4 bg-secondary rounded w-1/3 animate-pulse" />
+                        <div className="h-3 bg-secondary/70 rounded w-2/3 animate-pulse" />
+                        <div className="h-3 bg-secondary/50 rounded w-1/2 animate-pulse" />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
 
-                  {codeView === "react" && result.code && (
-                    <CodePanel code={result.code} name={`${result.component_name || "Component"}.tsx`} lang="react" onCopy={() => copyCode(result.code!)} />
-                  )}
+                {/* Empty */}
+                {!isLoading && !result && (
+                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-primary mx-auto mb-4 flex items-center justify-center opacity-40">
+                      {mode === "ux-pilot" ? <Compass className="w-8 h-8 text-primary-foreground" /> : <Blocks className="w-8 h-8 text-primary-foreground" />}
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground/40 mb-1">{mode === "ux-pilot" ? "UX Pilot" : "UI Make"}</h3>
+                    <p className="text-sm text-muted-foreground/60">Descreva o que vamos construir hoje</p>
+                    <p className="text-[10px] text-muted-foreground/40 mt-2">Use os atalhos rápidos ou escreva seu prompt</p>
+                  </motion.div>
+                )}
 
-                  {codeView === "flutter" && (
-                    <CodePanel
-                      code={result.flutter_code || generateFlutterFromReact(result.code || "", result.component_name || "Component")}
-                      name={`${(result.component_name || "component").toLowerCase()}_widget.dart`}
-                      lang="flutter"
-                      onCopy={() => copyCode(result.flutter_code || "")}
-                    />
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                {/* UX Pilot Result */}
+                {!isLoading && result && mode === "ux-pilot" && (
+                  <motion.div key="ux" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-4xl">
+                    {result.artifact_type === "persona" && <PersonaView data={result.data} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "journey_map" && <JourneyMapView data={result.data} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "user_flow" && <UserFlowView data={result.data} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "sitemap" && <SitemapView data={result.data} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "wireframe_concept" && <GenericView data={result.data} title={result.title || ""} description={result.description || ""} />}
+                  </motion.div>
+                )}
+
+                {/* UI Make Result */}
+                {!isLoading && result && mode === "ui-make" && (
+                  <motion.div key="ui" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-4xl">
+                    {codeView === "preview" && (
+                      <div className="mx-auto transition-all" style={{ maxWidth: deviceWidths[deviceFrame].w }}>
+                        <div className="text-center mb-2">
+                          <span className="text-[9px] text-muted-foreground">{deviceWidths[deviceFrame].label}</span>
+                        </div>
+                        <div className="border border-border rounded-lg bg-card p-2" style={{ boxShadow: "0 8px 32px hsl(0 0% 0% / 0.3)" }}>
+                          {/* Inline text edit overlay */}
+                          {editingTextIdx !== null && canvasElements[editingTextIdx] && (
+                            <div className="absolute z-50" style={{ top: 0, left: 0 }}>
+                              <input
+                                ref={textInputRef}
+                                value={canvasElements[editingTextIdx].text || ""}
+                                onChange={e => updateElement(editingTextIdx, { text: e.target.value })}
+                                onBlur={() => setEditingTextIdx(null)}
+                                onKeyDown={e => { if (e.key === "Enter") setEditingTextIdx(null); }}
+                                className="bg-primary text-primary-foreground px-2 py-1 text-xs rounded border-2 border-primary outline-none"
+                                style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", minWidth: 200 }}
+                              />
+                            </div>
+                          )}
+                          <svg id="studio-canvas-svg" ref={svgRef}
+                            width={deviceWidths[deviceFrame].w} height="500"
+                            viewBox={`0 0 ${deviceWidths[deviceFrame].w} 500`}
+                            className={`w-full ${canvasTool === "select" || canvasTool === "move" ? "cursor-default" : "cursor-crosshair"}`}
+                            style={{ background: "hsl(var(--background))", borderRadius: "8px" }}
+                            onMouseDown={handleCanvasMouseDown}
+                            onMouseMove={handleCanvasMouseMove}
+                            onMouseUp={handleCanvasMouseUp}
+                            onMouseLeave={handleCanvasMouseUp}>
+                            <defs>
+                              <pattern id="sg" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="hsl(var(--border))" strokeWidth="0.5" />
+                              </pattern>
+                            </defs>
+                            <rect width={deviceWidths[deviceFrame].w} height="500" fill="url(#sg)" />
+                            {canvasElements.map((el, i) => {
+                              const transform = el.rotation ? `rotate(${el.rotation} ${el.x + el.width / 2} ${el.y + el.height / 2})` : undefined;
+                              const opacity = el.opacity ?? 1;
+                              const isSelected = selectedElement === i;
+                              return (
+                                <g key={i}
+                                  onDoubleClick={() => handleDoubleClick(i)}
+                                  style={{ cursor: el.locked ? "not-allowed" : canvasTool === "select" ? "move" : "pointer" }}
+                                  transform={transform} opacity={opacity}>
+                                  {el.type === "rect" && (
+                                    <rect x={el.x} y={el.y} width={el.width} height={el.height} fill={el.fill}
+                                      rx={el.cornerRadius ?? 4}
+                                      stroke={isSelected ? "hsl(var(--primary))" : el.strokeColor || "none"}
+                                      strokeWidth={isSelected ? 2 : el.strokeWidth || 0} />
+                                  )}
+                                  {el.type === "circle" && (
+                                    <ellipse cx={el.x + el.width / 2} cy={el.y + el.height / 2} rx={el.width / 2} ry={el.height / 2}
+                                      fill={el.fill}
+                                      stroke={isSelected ? "hsl(var(--primary))" : el.strokeColor || "none"}
+                                      strokeWidth={isSelected ? 2 : el.strokeWidth || 0} />
+                                  )}
+                                  {el.type === "text" && (
+                                    <text x={el.x} y={el.y + (el.fontSize || 14)} fill={el.fill} fontSize={el.fontSize || 14}
+                                      fontFamily="Inter, sans-serif"
+                                      stroke={isSelected ? "hsl(var(--primary))" : "none"} strokeWidth={0.5}>
+                                      {el.text}
+                                    </text>
+                                  )}
+                                  {el.type === "line" && (
+                                    <line x1={el.x} y1={el.y} x2={el.x + el.width} y2={el.y + el.height}
+                                      stroke={el.fill} strokeWidth={isSelected ? 4 : el.strokeWidth || 2} />
+                                  )}
+                                  {/* Selection handles */}
+                                  {isSelected && !el.locked && (
+                                    <>
+                                      <rect x={el.x - 1} y={el.y - 1} width={el.width + 2} height={el.height + 2}
+                                        fill="none" stroke="hsl(var(--primary))" strokeWidth={1} strokeDasharray="4 2" />
+                                      {/* Resize handle bottom-right */}
+                                      <rect x={el.x + el.width - 4} y={el.y + el.height - 4} width={8} height={8}
+                                        fill="hsl(var(--primary))" rx={1} className="cursor-se-resize"
+                                        onMouseDown={(e) => handleResizeStart(e, i)} />
+                                      {/* Corner handles */}
+                                      <rect x={el.x - 3} y={el.y - 3} width={6} height={6} fill="white" stroke="hsl(var(--primary))" strokeWidth={1} rx={1} />
+                                      <rect x={el.x + el.width - 3} y={el.y - 3} width={6} height={6} fill="white" stroke="hsl(var(--primary))" strokeWidth={1} rx={1} />
+                                      <rect x={el.x - 3} y={el.y + el.height - 3} width={6} height={6} fill="white" stroke="hsl(var(--primary))" strokeWidth={1} rx={1} />
+                                    </>
+                                  )}
+                                  {el.locked && isSelected && (
+                                    <text x={el.x + el.width / 2} y={el.y - 6} textAnchor="middle" fill="hsl(var(--muted-foreground))" fontSize={8}>🔒</text>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </svg>
+                        </div>
+                      </div>
+                    )}
+
+                    {codeView === "react" && result.code && (
+                      <CodePanel code={result.code} name={`${result.component_name || "Component"}.tsx`} lang="react" onCopy={() => copyCode(result.code!)} />
+                    )}
+
+                    {codeView === "flutter" && (
+                      <CodePanel
+                        code={result.flutter_code || generateFlutterFromReact(result.code || "", result.component_name || "Component")}
+                        name={`${(result.component_name || "component").toLowerCase()}_widget.dart`}
+                        lang="flutter"
+                        onCopy={() => copyCode(result.flutter_code || "")}
+                      />
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
+
+          {/* Properties Panel — right side */}
+          {mode === "ui-make" && selectedEl && codeView === "preview" && (
+            <PropertiesPanel
+              element={selectedEl}
+              index={selectedElement!}
+              onUpdate={updateElement}
+              onDelete={deleteElement}
+              onDuplicate={duplicateElement}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -678,7 +929,6 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
           );
         })}
       </div>
-      {/* Emotion curve */}
       <div className="border border-border rounded-lg p-4 bg-card">
         <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Curva Emocional</h4>
         <div className="flex items-end gap-1 h-16">
