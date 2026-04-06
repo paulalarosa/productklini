@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/authHeaders";
+import { useAiMessages } from "@/hooks/useProjectData";
+import { saveAiMessage } from "@/lib/api";
 import type { Json } from "@/integrations/supabase/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getProjectId } from "@/lib/api";
@@ -260,6 +262,30 @@ export function AIDesignStudio() {
   const [result, setResult] = useState<StudioResult | null>(null);
   const [iterations, setIterations] = useState<Iteration[]>([]);
   const [codeView, setCodeView] = useState<"preview" | "react" | "flutter">("preview");
+  const { data: aiHistory } = useAiMessages();
+
+  useEffect(() => {
+    if (!aiHistory) return;
+    const pairs = [];
+    for (let i = 0; i < aiHistory.length - 1; i += 2) {
+      const userMsg = aiHistory[i] as { role: string; content: string; created_at: string };
+      const assistantMsg = aiHistory[i + 1] as { role: string; content: string };
+      if (userMsg?.role === "user" && assistantMsg?.role === "assistant") {
+        try {
+          const parsed = JSON.parse(assistantMsg.content);
+          pairs.push({
+            id: userMsg.created_at,
+            mode: parsed.mode as StudioMode,
+            prompt: userMsg.content,
+            result: parsed.result as StudioResult,
+            timestamp: new Date(userMsg.created_at),
+            savedToDS: false,
+          });
+        } catch { /* ignore */ }
+      }
+    }
+    if (pairs.length > 0) setIterations(pairs);
+  }, [aiHistory]);
   const [showHistory, setShowHistory] = useState(false);
   const [savingToDS, setSavingToDS] = useState(false);
   const [deviceFrame, setDeviceFrame] = useState<DeviceFrame>("desktop");
@@ -442,6 +468,13 @@ export function AIDesignStudio() {
       }
 
       setIterations(prev => [iteration, ...prev]);
+
+      try {
+        await saveAiMessage("user", text);
+        await saveAiMessage("assistant", JSON.stringify({ mode, result: r }));
+      } catch (e) {
+        console.error("Erro ao persistir historico no app:", e);
+      }
     } catch { clearInterval(interval); toast.error("Erro ao gerar artefato"); }
     setIsLoading(false);
   }, [prompt, mode, isLoading, loadingMsgs.length]);
@@ -580,7 +613,13 @@ export function AIDesignStudio() {
           </button>
           <AnimatePresence>
             {showHistory && (
-              <motion.div initial={{ height: 0 }} animate={{ height: "auto", maxHeight: 200 }} exit={{ height: 0 }} className="overflow-y-auto border-t border-border/50">
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="overflow-hidden border-t border-border/50"
+                style={{ maxHeight: 200, overflowY: "auto" }}>
                 {iterations.length === 0 ? (
                   <p className="text-[10px] text-muted-foreground text-center py-4">Nenhuma iteração</p>
                 ) : iterations.map(iter => (
@@ -673,18 +712,17 @@ export function AIDesignStudio() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">Gerando...</p>
-                        <motion.p key={loadingStep} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-primary">
+                        <p key={loadingStep} className="text-xs text-primary animate-fade-in">
                           {loadingMsgs[loadingStep]}
-                        </motion.p>
+                        </p>
                       </div>
                     </div>
                     {[1, 2, 3].map(i => (
-                      <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.2 }}
-                        className="border border-border rounded-lg p-5 bg-card space-y-3">
+                      <div key={i} className="border border-border rounded-lg p-5 bg-card space-y-3 animate-slide-up" style={{ animationDelay: `${i * 200}ms` }}>
                         <div className="h-4 bg-secondary rounded w-1/3 animate-pulse" />
                         <div className="h-3 bg-secondary/70 rounded w-2/3 animate-pulse" />
                         <div className="h-3 bg-secondary/50 rounded w-1/2 animate-pulse" />
-                      </motion.div>
+                      </div>
                     ))}
                   </motion.div>
                 )}
@@ -703,18 +741,18 @@ export function AIDesignStudio() {
 
                 {/* UX Pilot Result */}
                 {!isLoading && result && mode === "ux-pilot" && (
-                  <motion.div key="ux" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-4xl">
+                  <div key="ux" className="w-full max-w-4xl animate-slide-up">
                     {result.artifact_type === "persona" && <PersonaView data={result.data} title={result.title || ""} description={result.description || ""} />}
                     {result.artifact_type === "journey_map" && <JourneyMapView data={result.data} title={result.title || ""} description={result.description || ""} />}
                     {result.artifact_type === "user_flow" && <UserFlowView data={result.data} title={result.title || ""} description={result.description || ""} />}
                     {result.artifact_type === "sitemap" && <SitemapView data={result.data} title={result.title || ""} description={result.description || ""} />}
                     {result.artifact_type === "wireframe_concept" && <GenericView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* UI Make Result */}
                 {!isLoading && result && mode === "ui-make" && (
-                  <motion.div key="ui" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="w-full max-w-4xl">
+                  <div key="ui" className="w-full max-w-4xl animate-slide-up">
                     {codeView === "preview" && (
                       <div className="mx-auto transition-all" style={{ maxWidth: deviceWidths[deviceFrame].w }}>
                         <div className="text-center mb-2">
@@ -820,7 +858,7 @@ export function AIDesignStudio() {
                         onCopy={() => copyCode(result.flutter_code || "")}
                       />
                     )}
-                  </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
@@ -909,8 +947,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
         {stages.map((stage: any, i: number) => {
           const em = emotionColors[stage.emotion] || emotionColors.neutral;
           return (
-            <motion.div key={i} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-              className="min-w-[200px] border border-border rounded-lg p-4 bg-card flex flex-col gap-2 relative">
+            <div key={i} className="min-w-[200px] border border-border rounded-lg p-4 bg-card flex flex-col gap-2 relative animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
               {i < stages.length - 1 && <div className="absolute -right-3 top-1/2 -translate-y-1/2 z-20"><ArrowRight className="w-4 h-4 text-muted-foreground/40" /></div>}
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Fase {i + 1}</span>
@@ -925,7 +962,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
                   <div className="bg-primary/5 rounded px-2 py-1"><span className="text-[8px] font-semibold uppercase text-primary">Oportunidade</span><p className="text-[10px] text-foreground">{stage.opportunity}</p></div>
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </div>
@@ -937,10 +974,9 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
             const h = levels[stage.emotion] || 50;
             const em = emotionColors[stage.emotion] || emotionColors.neutral;
             return (
-              <motion.div key={i} initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ delay: i * 0.1, duration: 0.4 }}
-                className={`flex-1 rounded-t ${em.bg} relative group`} title={`${stage.name}: ${stage.emotion}`}>
+              <div key={i} className={`flex-1 rounded-t ${em.bg} relative group`} title={`${stage.name}: ${stage.emotion}`} style={{ height: `${h}%`, transition: `height 0.4s ease-out ${i * 0.1}s` }}>
                 <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs opacity-0 group-hover:opacity-100 transition-opacity">{em.emoji}</span>
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -959,14 +995,13 @@ function UserFlowView({ data, title, description }: { data: any; title: string; 
           {steps.map((step: any, i: number) => {
             const color = flowNodeColors[step.type] || flowNodeColors.action;
             return (
-              <motion.div key={step.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.06 }}
-                className="flex items-center gap-2">
+              <div key={step.id} className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
                 <div className={`px-4 py-2.5 rounded-lg border-2 bg-card ${color} min-w-[120px] text-center ${step.type === "decision" ? "border-dashed" : ""}`}>
                   <span className="text-[8px] font-bold uppercase text-muted-foreground">{step.type}</span>
                   <p className="text-[11px] font-medium text-foreground mt-0.5">{step.label}</p>
                 </div>
                 {i < steps.length - 1 && <ArrowRight className="w-4 h-4 text-muted-foreground/40 shrink-0" />}
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -983,8 +1018,7 @@ function SitemapView({ data, title, description }: { data: any; title: string; d
       <div className="border border-border rounded-lg p-6 bg-card">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {pages.map((page: any, i: number) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="border border-border rounded-lg p-3 bg-card hover:border-primary/30 transition-colors">
+            <div key={i} className="border border-border rounded-lg p-3 bg-card hover:border-primary/30 transition-colors animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
               <div className="flex items-center gap-1.5 mb-2"><div className="w-2 h-2 rounded-full bg-primary" /><span className="text-xs font-semibold text-foreground">{page.name}</span></div>
               <p className="text-[9px] text-muted-foreground font-mono">{page.path}</p>
               {page.children?.length > 0 && (
@@ -994,7 +1028,7 @@ function SitemapView({ data, title, description }: { data: any; title: string; d
                   ))}
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

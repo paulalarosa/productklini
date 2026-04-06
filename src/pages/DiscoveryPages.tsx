@@ -15,6 +15,34 @@ import { DocumentManager } from "@/components/dashboard/DocumentManager";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageSkeleton } from "@/components/ui/skeletons";
+
+// ─── Helper: grid vazio com dashed border ─────────────────────────────────────
+// Mantém o estilo visual original mas usa EmptyState internamente
+function DashedEmpty({
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  action: React.ReactNode;
+}) {
+  return (
+    <div className="col-span-full py-16 text-center border-2 border-dashed border-muted rounded-xl">
+      <Icon className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+      <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{description}</p>
+      {action}
+    </div>
+  );
+}
+
+// ─── EmpathyMapPage ───────────────────────────────────────────────────────────
 
 export function EmpathyMapPage() {
   const projectId = useCurrentProjectId();
@@ -23,46 +51,53 @@ export function EmpathyMapPage() {
 
   const handleDelete = (id: string) => {
     if (!projectId) return;
-    deleteMap({ id, projectId }, {
-      onSuccess: () => toast.success("Mapa excluído"),
-    });
+    deleteMap({ id, projectId }, { onSuccess: () => toast.success("Mapa excluído") });
   };
 
+  if (isLoading) return <PageSkeleton />;
+
   return (
-    <ModulePage 
-      title="Mapa de Empatia" 
-      subtitle="O que o usuário pensa, sente, vê e faz" 
+    <ModulePage
+      title="Mapa de Empatia"
+      subtitle="O que o usuário pensa, sente, vê e faz"
       icon={<Heart className="w-4 h-4 text-primary-foreground" />}
       actions={
         <AIGenerateButton
-          prompt="Crie um mapa de empatia completo e detalhado para a persona principal do projeto. Use a ferramenta create_empathy_map para inserir diretamente na tabela empathy_maps. Baseie-se no contexto do projeto, nas personas existentes e nos dados disponíveis. Preencha todos os quadrantes (pensa e sente, escuta, vê, fala e faz, dores, ganhos) com pelo menos 3-4 itens cada."
+          prompt="Crie um mapa de empatia completo e detalhado para a persona principal do projeto. Use a ferramenta create_empathy_map para inserir diretamente na tabela empathy_maps. Preencha todos os quadrantes com pelo menos 3-4 itens cada."
           label="Gerar Mapa de Empatia"
-          invalidateKeys={[["empathy-maps", projectId || ""]]}
+          invalidateKeys={[["empathy-maps", projectId ?? ""]]}
           size="sm"
         />
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {maps?.map((map) => (
-          <EmpathyMapCard key={map.id} map={map} onDelete={handleDelete} />
-        ))}
-        
-        {!isLoading && (!maps || maps.length === 0) && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-muted rounded-xl">
-            <Heart className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum Mapa Criado</h3>
-            <p className="text-sm text-muted-foreground mb-4">Gere um mapa de empatia automaticamente ou peça ao Mentor IA.</p>
-            <AIGenerateButton
-              prompt="Crie um mapa de empatia completo e detalhado para a persona principal do projeto. Use a ferramenta create_empathy_map para inserir diretamente na tabela empathy_maps. Preencha todos os quadrantes com pelo menos 3-4 itens cada."
-              label="Gerar Mapa de Empatia"
-              invalidateKeys={[["empathy-maps", projectId || ""]]}
-            />
-          </div>
-        )}
-      </div>
+      <ErrorBoundary level="section">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {maps && maps.length > 0
+            ? maps.map(map => (
+                <EmpathyMapCard key={map.id} map={map} onDelete={handleDelete} />
+              ))
+            : (
+              <DashedEmpty
+                icon={Heart}
+                title="Nenhum Mapa Criado"
+                description="Gere um mapa de empatia automaticamente ou peça ao Mentor IA."
+                action={
+                  <AIGenerateButton
+                    prompt="Crie um mapa de empatia completo para a persona principal. Use create_empathy_map. Preencha todos os quadrantes com pelo menos 3-4 itens cada."
+                    label="Gerar Mapa de Empatia"
+                    invalidateKeys={[["empathy-maps", projectId ?? ""]]}
+                  />
+                }
+              />
+            )
+          }
+        </div>
+      </ErrorBoundary>
     </ModulePage>
   );
 }
+
+// ─── BenchmarkPage ────────────────────────────────────────────────────────────
 
 export function BenchmarkPage() {
   const projectId = useCurrentProjectId();
@@ -71,46 +106,53 @@ export function BenchmarkPage() {
 
   const handleDelete = (id: string) => {
     if (!projectId) return;
-    deleteBenchmark({ id, projectId }, {
-      onSuccess: () => toast.success("Benchmark excluído"),
-    });
+    deleteBenchmark({ id, projectId }, { onSuccess: () => toast.success("Benchmark excluído") });
   };
 
+  if (isLoading) return <PageSkeleton />;
+
   return (
-    <ModulePage 
-      title="Benchmark" 
-      subtitle="Análise competitiva e referências de mercado" 
+    <ModulePage
+      title="Benchmark"
+      subtitle="Análise competitiva e referências de mercado"
       icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}
       actions={
         <AIGenerateButton
-          prompt="Realize uma análise de benchmark competitiva completa para o projeto. Use a ferramenta create_benchmark para inserir diretamente na tabela benchmarks. Identifique 3-5 concorrentes reais do mercado, analise forças e fraquezas de cada um, compare funcionalidades-chave e gere insights estratégicos acionáveis."
+          prompt="Realize uma análise de benchmark competitiva completa para o projeto. Use create_benchmark. Identifique 3-5 concorrentes reais, analise forças/fraquezas, compare funcionalidades e gere insights estratégicos."
           label="Gerar Benchmark"
-          invalidateKeys={[["benchmarks", projectId || ""]]}
+          invalidateKeys={[["benchmarks", projectId ?? ""]]}
           size="sm"
         />
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {benchmarks?.map((b) => (
-          <BenchmarkCard key={b.id} benchmark={b} onDelete={handleDelete} />
-        ))}
-        
-        {!isLoading && (!benchmarks || benchmarks.length === 0) && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-muted rounded-xl">
-            <BarChart3 className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-1">Análise Vazia</h3>
-            <p className="text-sm text-muted-foreground mb-4">Gere uma análise de benchmark automaticamente ou peça ao Mentor IA.</p>
-            <AIGenerateButton
-              prompt="Realize uma análise de benchmark competitiva completa para o projeto. Use a ferramenta create_benchmark. Identifique 3-5 concorrentes reais, analise forças/fraquezas, compare funcionalidades e gere insights."
-              label="Gerar Benchmark"
-              invalidateKeys={[["benchmarks", projectId || ""]]}
-            />
-          </div>
-        )}
-      </div>
+      <ErrorBoundary level="section">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {benchmarks && benchmarks.length > 0
+            ? benchmarks.map(b => (
+                <BenchmarkCard key={b.id} benchmark={b} onDelete={handleDelete} />
+              ))
+            : (
+              <DashedEmpty
+                icon={BarChart3}
+                title="Análise Vazia"
+                description="Gere uma análise de benchmark automaticamente ou peça ao Mentor IA."
+                action={
+                  <AIGenerateButton
+                    prompt="Realize uma análise de benchmark competitiva. Use create_benchmark. Identifique 3-5 concorrentes reais e gere insights."
+                    label="Gerar Benchmark"
+                    invalidateKeys={[["benchmarks", projectId ?? ""]]}
+                  />
+                }
+              />
+            )
+          }
+        </div>
+      </ErrorBoundary>
     </ModulePage>
   );
 }
+
+// ─── JTBDPage ─────────────────────────────────────────────────────────────────
 
 export function JTBDPage() {
   const projectId = useCurrentProjectId();
@@ -118,46 +160,53 @@ export function JTBDPage() {
   const { mutate: deleteJTBD } = useDeleteJTBD();
 
   const handleDelete = (id: string) => {
-    deleteJTBD({ id }, {
-      onSuccess: () => toast.success("JTBD excluído"),
-    });
+    deleteJTBD({ id }, { onSuccess: () => toast.success("JTBD excluído") });
   };
 
+  if (isLoading) return <PageSkeleton />;
+
   return (
-    <ModulePage 
-      title="Jobs To Be Done" 
-      subtitle="Motivações e contextos de uso dos usuários" 
+    <ModulePage
+      title="Jobs To Be Done"
+      subtitle="Motivações e contextos de uso dos usuários"
       icon={<Briefcase className="w-4 h-4 text-primary-foreground" />}
       actions={
         <AIGenerateButton
-          prompt="Crie 3 frameworks JTBD (Jobs To Be Done) para o projeto. Use a ferramenta create_jtbd para cada um. Considere jobs funcionais, emocionais e sociais. Para cada job, defina claramente: situação, motivação e resultado esperado. Baseie-se no contexto do projeto e nas personas existentes."
+          prompt="Crie 3 frameworks JTBD para o projeto. Use create_jtbd para cada um. Considere jobs funcionais, emocionais e sociais."
           label="Gerar JTBD"
-          invalidateKeys={[["jtbd", projectId || ""]]}
+          invalidateKeys={[["jtbd", projectId ?? ""]]}
           size="sm"
         />
       }
     >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {frameworks?.map((jtbd) => (
-          <JTBDCard key={jtbd.id} jtbd={jtbd} onDelete={handleDelete} />
-        ))}
-        
-        {!isLoading && (!frameworks || frameworks.length === 0) && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-muted rounded-xl">
-            <Briefcase className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhum JTBD Criado</h3>
-            <p className="text-sm text-muted-foreground mb-4">Gere frameworks JTBD automaticamente ou peça ao Mentor IA.</p>
-            <AIGenerateButton
-              prompt="Crie 3 frameworks JTBD para o projeto. Use create_jtbd para cada um. Considere jobs funcionais, emocionais e sociais."
-              label="Gerar JTBD"
-              invalidateKeys={[["jtbd", projectId || ""]]}
-            />
-          </div>
-        )}
-      </div>
+      <ErrorBoundary level="section">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {frameworks && frameworks.length > 0
+            ? frameworks.map(jtbd => (
+                <JTBDCard key={jtbd.id} jtbd={jtbd} onDelete={handleDelete} />
+              ))
+            : (
+              <DashedEmpty
+                icon={Briefcase}
+                title="Nenhum JTBD Criado"
+                description="Gere frameworks JTBD automaticamente ou peça ao Mentor IA."
+                action={
+                  <AIGenerateButton
+                    prompt="Crie 3 frameworks JTBD para o projeto. Use create_jtbd para cada um."
+                    label="Gerar JTBD"
+                    invalidateKeys={[["jtbd", projectId ?? ""]]}
+                  />
+                }
+              />
+            )
+          }
+        </div>
+      </ErrorBoundary>
     </ModulePage>
   );
 }
+
+// ─── CSDMatrixPage ────────────────────────────────────────────────────────────
 
 export function CSDMatrixPage() {
   const projectId = useCurrentProjectId();
@@ -165,46 +214,51 @@ export function CSDMatrixPage() {
   const { mutate: deleteCSD } = useDeleteCSD();
 
   const handleDelete = (id: string) => {
-    deleteCSD({ id }, {
-      onSuccess: () => toast.success("Item excluído"),
-    });
+    deleteCSD({ id }, { onSuccess: () => toast.success("Item excluído") });
   };
 
+  if (isLoading) return <PageSkeleton />;
+
   return (
-    <ModulePage 
-      title="Matriz CSD" 
-      subtitle="Certezas, Suposições e Dúvidas" 
+    <ModulePage
+      title="Matriz CSD"
+      subtitle="Certezas, Suposições e Dúvidas"
       icon={<Grid3X3 className="w-4 h-4 text-primary-foreground" />}
       actions={
         <AIGenerateButton
-          prompt="Crie uma Matriz CSD completa para o projeto. Use a ferramenta create_csd_matrix. Gere pelo menos 3 Certezas, 4 Suposições e 3 Dúvidas baseadas no contexto do projeto, cada uma com nível de impacto (Low, Medium, High)."
+          prompt="Crie uma Matriz CSD completa para o projeto. Use create_csd_matrix. Gere pelo menos 3 Certezas, 4 Suposições e 3 Dúvidas, cada uma com nível de impacto."
           label="Gerar Matriz CSD"
-          invalidateKeys={[["csd", projectId || ""]]}
+          invalidateKeys={[["csd", projectId ?? ""]]}
           size="sm"
         />
       }
     >
-      {isLoading ? (
-        <div className="h-40 flex items-center justify-center">Carregando matriz...</div>
-      ) : (
-        <CSDMatrix items={items || []} onDelete={handleDelete} />
-      )}
-      
-      {!isLoading && (!items || items.length === 0) && (
-        <div className="mt-8 py-20 text-center border-2 border-dashed border-muted rounded-xl">
-          <Grid3X3 className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">Matriz Vazia</h3>
-          <p className="text-sm text-muted-foreground mb-4">Gere uma Matriz CSD automaticamente ou peça ao Mentor IA.</p>
-          <AIGenerateButton
-            prompt="Crie uma Matriz CSD completa para o projeto. Use create_csd_matrix. Gere pelo menos 3 Certezas, 4 Suposições e 3 Dúvidas."
-            label="Gerar Matriz CSD"
-            invalidateKeys={[["csd", projectId || ""]]}
-          />
-        </div>
-      )}
+      <ErrorBoundary level="section">
+        {items && items.length > 0
+          ? <CSDMatrix items={items} onDelete={handleDelete} />
+          : (
+            <div className="mt-4">
+              <DashedEmpty
+                icon={Grid3X3}
+                title="Matriz Vazia"
+                description="Gere uma Matriz CSD automaticamente ou peça ao Mentor IA."
+                action={
+                  <AIGenerateButton
+                    prompt="Crie uma Matriz CSD completa. Use create_csd_matrix. Gere pelo menos 3 Certezas, 4 Suposições e 3 Dúvidas."
+                    label="Gerar Matriz CSD"
+                    invalidateKeys={[["csd", projectId ?? ""]]}
+                  />
+                }
+              />
+            </div>
+          )
+        }
+      </ErrorBoundary>
     </ModulePage>
   );
 }
+
+// ─── HMWPage ──────────────────────────────────────────────────────────────────
 
 export function HMWPage() {
   const projectId = useCurrentProjectId();
@@ -212,64 +266,82 @@ export function HMWPage() {
   const { mutate: deleteHMW } = useDeleteHMW();
 
   const handleDelete = (id: string) => {
-    deleteHMW({ id }, {
-      onSuccess: () => toast.success("HMW excluído"),
-    });
+    deleteHMW({ id }, { onSuccess: () => toast.success("HMW excluído") });
   };
 
+  if (isLoading) return <PageSkeleton />;
+
   return (
-    <ModulePage 
-      title="How Might We" 
-      subtitle="Perguntas de oportunidade para ideação" 
+    <ModulePage
+      title="How Might We"
+      subtitle="Perguntas de oportunidade para ideação"
       icon={<HelpCircle className="w-4 h-4 text-primary-foreground" />}
       actions={
         <AIGenerateButton
-          prompt="Crie 5 perguntas How Might We para o projeto. Use a ferramenta create_hmw. Baseie-se nos problemas e dores identificados. Cada pergunta deve ter um problem statement claro e prioridade (P1, P2 ou P3)."
+          prompt="Crie 5 perguntas How Might We para o projeto. Use create_hmw. Cada pergunta deve ter um problem statement claro e prioridade (P1, P2 ou P3)."
           label="Gerar HMW"
-          invalidateKeys={[["hmw", projectId || ""]]}
+          invalidateKeys={[["hmw", projectId ?? ""]]}
           size="sm"
         />
       }
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {questions?.map((hmw) => (
-          <HMWCard key={hmw.id} hmw={hmw} onDelete={handleDelete} />
-        ))}
-        
-        {!isLoading && (!questions || questions.length === 0) && (
-          <div className="col-span-full py-20 text-center border-2 border-dashed border-muted rounded-xl">
-            <Lightbulb className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-1">Nenhuma Pergunta</h3>
-            <p className="text-sm text-muted-foreground mb-4">Gere perguntas How Might We automaticamente ou peça ao Mentor IA.</p>
-            <AIGenerateButton
-              prompt="Crie 5 perguntas How Might We para o projeto. Use create_hmw. Transforme problemas em oportunidades."
-              label="Gerar HMW"
-              invalidateKeys={[["hmw", projectId || ""]]}
-            />
-          </div>
-        )}
-      </div>
+      <ErrorBoundary level="section">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {questions && questions.length > 0
+            ? questions.map(hmw => (
+                <HMWCard key={hmw.id} hmw={hmw} onDelete={handleDelete} />
+              ))
+            : (
+              <DashedEmpty
+                icon={Lightbulb}
+                title="Nenhuma Pergunta"
+                description="Gere perguntas How Might We automaticamente ou peça ao Mentor IA."
+                action={
+                  <AIGenerateButton
+                    prompt="Crie 5 perguntas How Might We. Use create_hmw. Transforme problemas em oportunidades."
+                    label="Gerar HMW"
+                    invalidateKeys={[["hmw", projectId ?? ""]]}
+                  />
+                }
+              />
+            )
+          }
+        </div>
+      </ErrorBoundary>
     </ModulePage>
   );
 }
 
+// ─── AffinityDiagramPage ──────────────────────────────────────────────────────
+
 export function AffinityDiagramPage() {
-  const { data: docs } = useDocuments("affinity_diagram");
+  const { data: docs, isLoading } = useDocuments("affinity_diagram");
+
+  if (isLoading) return <PageSkeleton />;
+
   return (
-    <ModulePage 
-      title="Diagrama de Afinidade" 
-      subtitle="Agrupamento de insights em clusters temáticos" 
+    <ModulePage
+      title="Diagrama de Afinidade"
+      subtitle="Agrupamento de insights em clusters temáticos"
       icon={<Lightbulb className="w-4 h-4 text-primary-foreground" />}
       actions={
         <AIGenerateButton
-          prompt="Crie um diagrama de afinidade para o projeto. Use create_document com doc_type='affinity_diagram'. Agrupe os insights disponíveis em clusters temáticos."
+          prompt="Crie um diagrama de afinidade para o projeto. Use create_document com doc_type='affinity_diagram'. Agrupe os insights em clusters temáticos."
           label="Gerar Diagrama"
           invalidateKeys={[["documents"]]}
           size="sm"
         />
       }
     >
-      <DocumentManager documents={docs ?? []} docType="affinity_diagram" docTypeLabel="Diagrama de Afinidade" emptyIcon={<Lightbulb className="w-10 h-10 text-muted-foreground/30 mx-auto" />} emptyMessage="Nenhum diagrama de afinidade criado" />
+      <ErrorBoundary level="section">
+        <DocumentManager
+          documents={docs ?? []}
+          docType="affinity_diagram"
+          docTypeLabel="Diagrama de Afinidade"
+          emptyIcon={<Lightbulb className="w-10 h-10 text-muted-foreground/30 mx-auto" />}
+          emptyMessage="Nenhum diagrama de afinidade criado"
+        />
+      </ErrorBoundary>
     </ModulePage>
   );
 }

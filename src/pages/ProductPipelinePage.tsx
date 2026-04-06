@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -271,7 +271,7 @@ export function ProductPipelinePage() {
     toast.success("Salvo!");
   };
 
-  const { data: pipeline } = useQuery({
+  const { data: pipeline, isLoading } = useQuery({
     queryKey: ["product-pipeline", projectId],
     queryFn: async () => {
       if (!projectId) return null;
@@ -315,6 +315,19 @@ export function ProductPipelinePage() {
   const overallProgress = Math.round(
     (PIPELINE_STEPS.reduce((sum, s) => sum + s.checklist.filter(c => checklistState[c.key]).length, 0) /
       PIPELINE_STEPS.reduce((sum, s) => sum + s.checklist.length, 0)) * 100
+  );
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <div className="h-10 w-64 rounded-md bg-muted animate-pulse" />
+      <div className="flex gap-1">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-9 w-24 rounded-lg bg-muted animate-pulse" />
+        ))}
+      </div>
+      <div className="h-48 rounded-xl bg-muted animate-pulse" />
+      <div className="h-64 rounded-xl bg-muted animate-pulse" />
+    </div>
   );
 
   return (
@@ -375,15 +388,9 @@ export function ProductPipelinePage() {
       </div>
 
       {/* Educational Guide */}
-      <AnimatePresence>
-        {showGuide && step && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <Card className="border-primary/20 bg-primary/5">
+      {showGuide && step && (
+        <div className="animate-slide-up">
+          <Card className="border-primary/20 bg-primary/5">
               <CardContent className="pt-5 space-y-4">
                 {/* What is */}
                 <div className="space-y-2">
@@ -455,14 +462,14 @@ export function ProductPipelinePage() {
                 </div>
               </CardContent>
             </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
 
       {/* Current step detail */}
       {step && (
-        <Card>
-          <CardHeader>
+        <ErrorBoundary level="section">
+          <Card>
+            <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -517,12 +524,14 @@ export function ProductPipelinePage() {
             </div>
           </CardContent>
         </Card>
+        </ErrorBoundary>
       )}
 
       {/* Strategic Context — embedded in Discovery & Define phases */}
       {step && (step.id === "discovery" || step.id === "define") && (
-        <Collapsible open={showStrategic} onOpenChange={setShowStrategic}>
-          <Card className="border-primary/20">
+        <ErrorBoundary level="section">
+          <Collapsible open={showStrategic} onOpenChange={setShowStrategic}>
+            <Card className="border-primary/20">
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-accent/30 transition-colors py-3">
                 <div className="flex items-center justify-between">
@@ -601,7 +610,8 @@ export function ProductPipelinePage() {
               </CardContent>
             </CollapsibleContent>
           </Card>
-        </Collapsible>
+          </Collapsible>
+        </ErrorBoundary>
       )}
 
       <div className="flex justify-between">
