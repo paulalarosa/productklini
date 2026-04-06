@@ -11,6 +11,7 @@ import {
   Users2, Star, Target, Map, FileText, MessageSquareMore, BookOpen,
   FlaskConical, PenTool, Compass, GalleryHorizontal, Image, Globe,
   Flag, Activity, Eye, ExternalLink, Rocket, ShieldAlert, RotateCcw, Code2,
+  FolderSearch, CheckSquare, ScrollText,
 } from "lucide-react";
 import { useTasks } from "@/hooks/useProjectData";
 
@@ -19,7 +20,7 @@ import { useTasks } from "@/hooks/useProjectData";
 interface NavItem  { label: string; icon: React.ElementType; path: string; }
 interface NavGroup { title: string; items: NavItem[]; }
 
-// ─── Mapa de navegação ────────────────────────────────────────────────────────
+// ─── Mapa de navegação (reorganizado) ─────────────────────────────────────────
 
 const navGroups: NavGroup[] = [
   {
@@ -33,36 +34,35 @@ const navGroups: NavGroup[] = [
   {
     title: "Discovery & Research",
     items: [
-      { label: "Pesquisas",        icon: Search,       path: "/ux/pesquisas" },
-      { label: "Entrevistas",      icon: Mic,          path: "/ux/interviews" },
-      { label: "Diary Studies",    icon: BookOpen,     path: "/research/diary-studies" },
-      { label: "Stakeholder Map",  icon: Users2,       path: "/research/stakeholder-map" },
-      { label: "Personas",         icon: Users,        path: "/ux/personas" },
-      { label: "Mapa de Empatia",  icon: Heart,        path: "/ux/empathy-map" },
-      { label: "Benchmark",        icon: BarChart3,    path: "/ux/benchmark" },
-      { label: "JTBD",             icon: Briefcase,    path: "/ux/jtbd" },
-      { label: "Matriz CSD",       icon: Grid3X3,      path: "/ux/csd" },
-      { label: "How Might We",     icon: HelpCircle,   path: "/ux/hmw" },
-      { label: "Afinidade",        icon: Lightbulb,    path: "/ux/affinity" },
-      { label: "Behavior Model",   icon: BrainCircuit, path: "/ux/behavior-model" },
-      { label: "UX Patterns",      icon: BookMarked,   path: "/ux/patterns" },
-      { label: "Fluxos de Jornada",icon: Route,        path: "/ux/fluxos" },
+      { label: "Pesquisas",         icon: Search,          path: "/ux/pesquisas" },
+      { label: "Entrevistas",       icon: Mic,             path: "/ux/interviews" },
+      { label: "Diary Studies",     icon: BookOpen,        path: "/research/diary-studies" },
+      { label: "Stakeholder Map",   icon: Users2,          path: "/research/stakeholder-map" },
+      { label: "Personas",          icon: Users,           path: "/ux/personas" },
+      { label: "Mapa de Empatia",   icon: Heart,           path: "/ux/empathy-map" },
+      { label: "Customer Journey",  icon: Map,             path: "/product/customer-journey" },
+      { label: "Voice of Customer", icon: MessageSquareDot,path: "/voice-of-customer" },
+      { label: "Análise Competitiva",icon: Globe,          path: "/knowledge/competitive-landscape" },
+      { label: "JTBD",              icon: Briefcase,       path: "/ux/jtbd" },
+      { label: "Matriz CSD",        icon: Grid3X3,         path: "/ux/csd" },
+      { label: "How Might We",      icon: HelpCircle,      path: "/ux/hmw" },
     ],
   },
   {
-    title: "Métricas & KPIs",
+    title: "Definição",
     items: [
-      { label: "HEART Framework",  icon: Heart,    path: "/metrics/heart" },
-      { label: "North Star",       icon: Compass,  path: "/metrics/north-star" },
-      { label: "NPS / CSAT / CES", icon: BarChart3,path: "/metrics/nps" },
+      { label: "Afinidade",           icon: Lightbulb,   path: "/ux/affinity" },
+      { label: "Behavior Model",      icon: BrainCircuit,path: "/ux/behavior-model" },
+      { label: "Benchmark",           icon: BarChart3,   path: "/ux/benchmark" },
+      { label: "Research Repository", icon: FolderSearch, path: "/research/repository" },
+      { label: "Priorização",         icon: ArrowUpDown, path: "/strategy/prioritization" },
     ],
   },
   {
     title: "Arq. Informação",
     items: [
-      { label: "Sitemap Visual",   icon: Network,    path: "/ia/sitemap-visual" },
-      { label: "Sitemap (Doc)",    icon: FileText,   path: "/strategy/sitemap" },
-      { label: "Card Sorting",     icon: LayoutGrid, path: "/ia/card-sorting" },
+      { label: "Sitemap",       icon: Network,    path: "/ia/sitemap-visual" },
+      { label: "Card Sorting",  icon: LayoutGrid, path: "/ia/card-sorting" },
     ],
   },
   {
@@ -70,7 +70,6 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Tom de Voz",          icon: MessageSquare, path: "/ux/tone" },
       { label: "Microcopy",           icon: PenTool,       path: "/ux/microcopy" },
-      { label: "Validador Microcopy", icon: Type,          path: "/ux/microcopy-validator" },
       { label: "Inventário Conteúdo", icon: ClipboardList, path: "/ux/content-audit" },
     ],
   },
@@ -78,69 +77,63 @@ const navGroups: NavGroup[] = [
     title: "Interaction Design",
     items: [
       { label: "User Flow Editor",    icon: GitBranch, path: "/design/user-flows" },
-      { label: "Estados Componentes", icon: Columns,    path: "/ixd/states" },
-      { label: "Task Flows",          icon: GitBranch,  path: "/ixd/task-flows" },
-      { label: "Moodboard",           icon: Image,      path: "/design/moodboard" },
-    ],
-  },
-  {
-    title: "Validação & Teste",
-    items: [
-      { label: "Heurísticas Nielsen", icon: ListChecks,   path: "/ux/heuristics" },
-      { label: "Teste Usabilidade",   icon: PlayCircle,   path: "/ux/usability-test" },
-      { label: "WCAG Checklist",      icon: Accessibility,path: "/ux/wcag" },
-      { label: "Auditor WCAG (IA)",   icon: Shield,       path: "/ux/wcag-auditor" },
-    ],
-  },
-  {
-    title: "Estratégia & Produto",
-    items: [
-      // Contexto Estratégico agora está integrado ao Pipeline (Discovery & Define)
-      { label: "Priorização",           icon: ArrowUpDown,   path: "/strategy/prioritization" },
-      { label: "Impact vs Effort",      icon: ExternalLink,  path: "/strategy/impact-effort" },
-      { label: "Business Model Canvas", icon: Briefcase,     path: "/strategy/business-model" },
-      { label: "Customer Journey",      icon: Map,           path: "/product/customer-journey" },
-      { label: "Roadmap",               icon: Map,           path: "/product/roadmap" },
-      { label: "OKRs",                  icon: Target,        path: "/product/okrs" },
-      { label: "Risk Register",         icon: ShieldAlert,   path: "/product/risk-register" },
-      { label: "Sprint Retro",          icon: RotateCcw,     path: "/product/sprint-retro" },
+      { label: "Task Flows",          icon: GitBranch, path: "/ixd/task-flows" },
+      { label: "Fluxos de Jornada",   icon: Route,     path: "/ux/fluxos" },
+      { label: "Estados Componentes", icon: Columns,   path: "/ixd/states" },
     ],
   },
   {
     title: "UI Design",
     items: [
-      { label: "Design System",    icon: Palette,               path: "/ui/design-system" },
-      { label: "DS Hub",           icon: CircleDot,             path: "/ui/ds-hub" },
-      { label: "Verificador Visual",icon: FlaskConical,         path: "/ui/visual-checker" },
-      { label: "Motion Gallery",   icon: GalleryHorizontal,     path: "/ui/motion-gallery" },
-      { label: "Assets SVG",       icon: Grid3X3,               path: "/ui/svg-manager" },
-      { label: "Telas",            icon: Layers,                path: "/ui/telas" },
-      { label: "Handoff",          icon: ArrowRightLeft,        path: "/ui/handoff" },
-      { label: "Handoff Specs",    icon: Code2,                 path: "/product/design-handoff" },
+      { label: "Design System Hub",  icon: Palette,           path: "/ui/ds-hub" },
+      { label: "Moodboard",          icon: Image,             path: "/design/moodboard" },
+      { label: "Motion Gallery",     icon: GalleryHorizontal, path: "/ui/motion-gallery" },
+      { label: "Assets SVG",         icon: Grid3X3,           path: "/ui/svg-manager" },
+      { label: "Telas",              icon: Layers,            path: "/ui/telas" },
+      { label: "Verificador Visual", icon: FlaskConical,      path: "/ui/visual-checker" },
     ],
   },
   {
-    title: "Validação & Experimentos",
+    title: "Validação & Testes",
     items: [
-      { label: "A/B Testing",          icon: CircleDot,       path: "/ab-testing" },
-      { label: "Feature Flags",        icon: Flag,            path: "/testing/feature-flags" },
-      { label: "Heatmap Viewer",       icon: Activity,        path: "/testing/heatmap" },
-      { label: "Session Recording",    icon: Eye,             path: "/testing/session-recording" },
-      { label: "Accessibility Score",  icon: Accessibility,   path: "/testing/accessibility-score" },
-      { label: "Component Analytics",  icon: BarChart3,       path: "/testing/component-analytics" },
-      { label: "Audit Responsivo",     icon: MonitorSmartphone,path: "/responsive-audit" },
-      { label: "Análise UX (IA)",      icon: Microscope,      path: "/ux-analysis" },
-      { label: "Analytics Hub",        icon: BarChart3,       path: "/analytics" },
-      { label: "Voice of Customer",    icon: MessageSquareDot,path: "/voice-of-customer" },
+      { label: "Heurísticas Nielsen", icon: ListChecks,      path: "/ux/heuristics" },
+      { label: "Teste Usabilidade",   icon: PlayCircle,      path: "/ux/usability-test" },
+      { label: "Acessibilidade",      icon: Accessibility,   path: "/ux/wcag" },
+      { label: "A/B Testing",         icon: CircleDot,       path: "/ab-testing" },
+      { label: "Feature Flags",       icon: Flag,            path: "/testing/feature-flags" },
+      { label: "Design Critiques",    icon: MessageSquareMore,path: "/knowledge/design-critiques" },
+      { label: "Heatmap Viewer",      icon: Activity,        path: "/testing/heatmap" },
+      { label: "Session Recording",   icon: Eye,             path: "/testing/session-recording" },
     ],
   },
   {
-    title: "Knowledge Base",
+    title: "Métricas & Analytics",
     items: [
-      { label: "Design Principles",     icon: Star,             path: "/knowledge/design-principles" },
-      { label: "Decision Log",          icon: ClipboardList,    path: "/knowledge/decision-log" },
-      { label: "Design Critiques",      icon: MessageSquareMore,path: "/knowledge/design-critiques" },
-      { label: "Competitive Landscape", icon: Globe,            path: "/knowledge/competitive-landscape" },
+      { label: "HEART Framework",     icon: Heart,             path: "/metrics/heart" },
+      { label: "North Star",          icon: Compass,           path: "/metrics/north-star" },
+      { label: "NPS / CSAT / CES",    icon: BarChart3,         path: "/metrics/nps" },
+      { label: "Component Analytics", icon: BarChart3,         path: "/testing/component-analytics" },
+      { label: "Analytics Hub",       icon: BarChart3,         path: "/analytics" },
+      { label: "Audit Responsivo",    icon: MonitorSmartphone, path: "/responsive-audit" },
+      { label: "Análise UX (IA)",     icon: Microscope,        path: "/ux-analysis" },
+    ],
+  },
+  {
+    title: "Estratégia & Produto",
+    items: [
+      { label: "Business Model Canvas", icon: Briefcase, path: "/strategy/business-model" },
+      { label: "Roadmap",               icon: Map,       path: "/product/roadmap" },
+      { label: "OKRs",                  icon: Target,    path: "/product/okrs" },
+      { label: "Risk Register",         icon: ShieldAlert,path: "/product/risk-register" },
+      { label: "Sprint Retro",          icon: RotateCcw,  path: "/product/sprint-retro" },
+    ],
+  },
+  {
+    title: "Design Handoff",
+    items: [
+      { label: "Handoff & Specs",        icon: ArrowRightLeft, path: "/ui/handoff" },
+      { label: "Acceptance Criteria",    icon: CheckSquare,    path: "/handoff/acceptance-criteria" },
+      { label: "Release Notes",          icon: ScrollText,     path: "/handoff/release-notes" },
     ],
   },
   {
@@ -148,8 +141,16 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Kanban",       icon: Kanban,      path: "/dev/kanban" },
       { label: "QA",           icon: ShieldCheck, path: "/dev/qa" },
-      { label: "Métricas",     icon: BarChart3,   path: "/dev/metricas" },
+      { label: "Métricas Dev", icon: BarChart3,   path: "/dev/metricas" },
       { label: "Git Sync Hub", icon: GitBranch,   path: "/git-sync" },
+    ],
+  },
+  {
+    title: "Knowledge Base",
+    items: [
+      { label: "Design Principles", icon: Star,          path: "/knowledge/design-principles" },
+      { label: "Decision Log",      icon: ClipboardList, path: "/knowledge/decision-log" },
+      { label: "UX Patterns",       icon: BookMarked,    path: "/ux/patterns" },
     ],
   },
   {
@@ -201,19 +202,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const navigate  = useNavigate();
   const { data: tasks } = useTasks();
 
-  // Tarefas bloqueadas — badge na seção Desenvolvimento
   const blockedCount = useMemo(
     () => tasks?.filter(t => t.status === "blocked").length ?? 0,
     [tasks],
   );
 
-  // Estado de colapso — grupos abertos por padrão: "Geral" + grupo da rota atual
   const activeGroup = findActiveGroup(location.pathname);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     for (const g of navGroups) {
       const isOpen = ALWAYS_OPEN.has(g.title) || g.title === activeGroup;
-      init[g.title] = !isOpen; // true = colapsado
+      init[g.title] = !isOpen;
     }
     return init;
   });
@@ -228,7 +227,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      {/* Logo */}
       <div className="px-3 md:px-4 py-3 md:py-4 border-b border-sidebar-border shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg gradient-primary flex items-center justify-center shrink-0">
@@ -240,21 +238,18 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <SearchButton />
 
-      {/* Navegação */}
       <nav className="flex-1 overflow-y-auto py-2 px-1.5 md:px-2 space-y-0.5 overscroll-contain">
         {navGroups.map((group) => {
           const isCollapsed = collapsed[group.title] ?? false;
 
           return (
             <div key={group.title}>
-              {/* Cabeçalho do grupo */}
               <button
                 onClick={() => toggle(group.title)}
                 className="w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
               >
                 <span className="flex items-center gap-1.5">
                   {group.title}
-                  {/* Badge de bloqueados na seção Desenvolvimento */}
                   {group.title === "Desenvolvimento" && blockedCount > 0 && (
                     <span className="inline-flex items-center justify-center h-3.5 min-w-[14px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold leading-none">
                       {blockedCount}
@@ -266,7 +261,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 />
               </button>
 
-              {/* Itens do grupo — animados */}
               <AnimatePresence initial={false}>
                 {!isCollapsed && (
                   <motion.div
@@ -313,7 +307,6 @@ export function DashboardSidebar() {
 
   return (
     <>
-      {/* Botão hambúrguer mobile */}
       <button
         onClick={() => setMobileOpen(true)}
         className="fixed top-2 left-2 z-50 p-2 rounded-lg bg-card border border-border md:hidden active:scale-95 transition-transform"
@@ -322,7 +315,6 @@ export function DashboardSidebar() {
         <Menu className="w-5 h-5 text-foreground" />
       </button>
 
-      {/* Sidebar mobile — drawer animado */}
       <AnimatePresence>
         {mobileOpen && (
           <>
@@ -350,7 +342,6 @@ export function DashboardSidebar() {
         )}
       </AnimatePresence>
 
-      {/* Sidebar desktop — fixo */}
       <aside className="hidden md:flex w-[220px] h-screen bg-sidebar border-r border-sidebar-border flex-col shrink-0">
         <SidebarContent />
       </aside>
