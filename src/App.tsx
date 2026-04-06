@@ -133,6 +133,11 @@ const ComponentAnalyticsPage = lazy(() => import("./pages/ComponentAnalyticsPage
 const ProductPipelinePage    = lazy(() => import("./pages/ProductPipelinePage").then(m => ({ default: m.ProductPipelinePage as unknown as React.ComponentType<unknown> })));
 const StrategicContextPage   = lazy(() => import("./pages/StrategicContextPage").then(m => ({ default: m.StrategicContextPage as unknown as React.ComponentType<unknown> })));
 
+// New modules (etapa 2)
+const ResearchRepositoryPage  = lazy(() => import("./pages/ResearchRepositoryPage").then(m => ({ default: m.ResearchRepositoryPage as unknown as React.ComponentType<unknown> })));
+const AcceptanceCriteriaPage  = lazy(() => import("./pages/AcceptanceCriteriaPage").then(m => ({ default: m.AcceptanceCriteriaPage as unknown as React.ComponentType<unknown> })));
+const ReleaseNotesPage        = lazy(() => import("./pages/ReleaseNotesPage").then(m => ({ default: m.ReleaseNotesPage as unknown as React.ComponentType<unknown> })));
+
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -235,7 +240,17 @@ const App = () => (
                 <Route path="/testing/accessibility-score" element={<AccessibilityScorePage />} />
                 <Route path="/testing/component-analytics" element={<ComponentAnalyticsPage />} />
                 <Route path="/pipeline" element={<ProductPipelinePage />} />
+                <Route path="/research/repository" element={<ResearchRepositoryPage />} />
+                <Route path="/handoff/acceptance-criteria" element={<AcceptanceCriteriaPage />} />
+                <Route path="/handoff/release-notes" element={<ReleaseNotesPage />} />
+                {/* Redirects for merged routes */}
                 <Route path="/strategy/strategic-context" element={<Navigate to="/pipeline" replace />} />
+                <Route path="/strategy/impact-effort" element={<Navigate to="/strategy/prioritization" replace />} />
+                <Route path="/ui/design-system" element={<Navigate to="/ui/ds-hub" replace />} />
+                <Route path="/product/design-handoff" element={<Navigate to="/ui/handoff" replace />} />
+                <Route path="/ux/wcag-auditor" element={<Navigate to="/ux/wcag" replace />} />
+                <Route path="/ux/microcopy-validator" element={<Navigate to="/ux/microcopy" replace />} />
+                <Route path="/strategy/sitemap" element={<Navigate to="/ia/sitemap-visual" replace />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
