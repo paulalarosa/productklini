@@ -95,10 +95,8 @@ export function ResearchRepositoryPage() {
       actions={
         <div className="flex gap-2">
           <AIGenerateButton
-            module="research_repository"
-            projectId={projectId ?? ""}
-            onGenerated={() => queryClient.invalidateQueries({ queryKey: ["research-repository"] })}
             prompt="Analise as pesquisas, entrevistas e personas do projeto e gere insights de pesquisa categorizados (comportamentos, pain points, necessidades, oportunidades e padrões encontrados). Para cada insight inclua uma citação representativa, fonte e tags."
+            invalidateKeys={[["research-repository"]]}
           />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

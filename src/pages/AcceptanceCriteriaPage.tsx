@@ -94,10 +94,8 @@ export function AcceptanceCriteriaPage() {
       actions={
         <div className="flex gap-2">
           <AIGenerateButton
-            module="acceptance_criteria"
-            projectId={projectId ?? ""}
-            onGenerated={() => queryClient.invalidateQueries({ queryKey: ["acceptance-criteria"] })}
             prompt="Com base nas tarefas, user stories e requisitos do projeto, gere critérios de aceite detalhados no formato Given/When/Then para cada feature principal. Inclua cenários positivos, negativos e edge cases."
+            invalidateKeys={[["acceptance-criteria"]]}
           />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

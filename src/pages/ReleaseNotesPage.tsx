@@ -91,10 +91,8 @@ export function ReleaseNotesPage() {
       actions={
         <div className="flex gap-2">
           <AIGenerateButton
-            module="release_notes"
-            projectId={projectId ?? ""}
-            onGenerated={() => queryClient.invalidateQueries({ queryKey: ["release-notes"] })}
             prompt="Com base nas tarefas concluídas, bugs corrigidos e melhorias implementadas no projeto, gere release notes organizadas por features novas, correções de bugs e melhorias. Use linguagem clara e orientada ao usuário final."
+            invalidateKeys={[["release-notes"]]}
           />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
