@@ -14,6 +14,7 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { notify } from "@/lib/notifications";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -120,6 +121,13 @@ export function AcceptanceCriteriaPage() {
 
     if (error) { toast.error("Erro ao atualizar critério"); return; }
     queryClient.invalidateQueries({ queryKey: ["acceptance-criteria"] });
+
+    if (allPassed) {
+      await notify.success(
+        "✅ Critérios aprovados",
+        `Todos os critérios de "${item.feature}" foram validados. A feature está pronta para dev!`
+      );
+    }
   };
 
   return (

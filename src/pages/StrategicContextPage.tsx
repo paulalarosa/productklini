@@ -12,7 +12,7 @@ import {
   Compass, Eye, Users, Banknote, Trophy, Star, TrendingUp,
   BarChart3, AlertTriangle, Layers, ChevronDown, Save,
   Target, Lightbulb, Zap, Columns3, ShieldCheck, Building2,
-  MapPin, ArrowUpRight,
+  MapPin, ArrowUpRight, FileDown, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
@@ -55,6 +55,8 @@ const IMMERSION_BLOCKS: StrategicBlock[] = [
 export function StrategicContextPage() {
   const projectId = useCurrentProjectId();
   const qc = useQueryClient();
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   const { data: doc } = useQuery({
     queryKey: ["strategic-context", projectId],
@@ -99,6 +101,48 @@ export function StrategicContextPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const handleExportPdf = async () => {
+    if (!reportRef.current || filledCount === 0) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d0e12",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL("image/png");
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`product-strategy-${projectId}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const [localValues, setLocalValues] = useState<Record<string, string>>({});
   const getValue = (key: string) => localValues[key] ?? content[key] ?? "";
   const handleSave = (key: string) => {
@@ -120,6 +164,19 @@ export function StrategicContextPage() {
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary">{filledCount}/{allBlocks.length} preenchidos</Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || filledCount === 0}
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-1.5" />
+            )}
+            PDF
+          </Button>
           <AIGenerateButton
             prompt="Analise o projeto e preencha todos os campos do framework de estratégia para Product Designers incluindo cenário atual, visão de produto, atores, modelo de negócio, posicionamento, diferenciais, tendências, resultados, ameaças, ecossistema, oportunidades, dores, necessidade, objetivo, movimento estratégico, pilares, premissas, estruturas e horizontes."
             label="Preencher com IA"
@@ -128,27 +185,37 @@ export function StrategicContextPage() {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 1</span>
-          Investigação Contextual
-        </h2>
-        <p className="text-xs text-muted-foreground">O que precisamos compreender para gerar insumos estratégicos?</p>
-        {INVESTIGATION_BLOCKS.map(block => (
-          <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
-        ))}
+      <div ref={reportRef} className="space-y-8">
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 1</span>
+            Investigação Contextual
+          </h2>
+          <p className="text-xs text-muted-foreground">O que precisamos compreender para gerar insumos estratégicos?</p>
+          {INVESTIGATION_BLOCKS.map(block => (
+            <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 2</span>
+            Imersão
+          </h2>
+          <p className="text-xs text-muted-foreground">Materializando informações em decisões estratégicas.</p>
+          {IMMERSION_BLOCKS.map(block => (
+            <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
+          ))}
+        </div>
       </div>
 
-      <div className="space-y-3">
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 2</span>
-          Imersão
-        </h2>
-        <p className="text-xs text-muted-foreground">Materializando informações em decisões estratégicas.</p>
-        {IMMERSION_BLOCKS.map(block => (
-          <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
-        ))}
-      </div>
+      <style>{`
+        @media print {
+          body { background: white !important; color: black !important; }
+          .print\\:hidden { display: none !important; }
+          .break-inside-avoid { break-inside: avoid; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -161,7 +228,7 @@ function BlockCard({ block, value, onChange, onSave, isSaving }: {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className={filled ? "border-green-500/20" : ""}>
+      <Card className={filled ? "border-green-500/20 break-inside-avoid" : "break-inside-avoid"}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-accent/30 transition-colors py-3">
             <div className="flex items-center justify-between">
@@ -196,7 +263,7 @@ function BlockCard({ block, value, onChange, onSave, isSaving }: {
             </div>
             <Textarea value={value} onChange={e => onChange(e.target.value)} placeholder={`Descreva ${block.title.toLowerCase()}...`} className="min-h-[100px] text-sm" />
             <div className="flex justify-end">
-              <Button size="sm" onClick={onSave} disabled={isSaving}>
+              <Button size="sm" onClick={onSave} disabled={isSaving} className="print:hidden">
                 <Save className="w-3.5 h-3.5 mr-1" />Salvar
               </Button>
             </div>

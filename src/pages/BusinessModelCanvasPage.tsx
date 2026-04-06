@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowLeft, Plus, Briefcase, Edit, Trash2, Calendar, Users } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowLeft, Plus, Briefcase, Edit, Trash2, Calendar, Users, FileDown, Loader2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,9 @@ export default function BusinessModelCanvasPage() {
   const { data: selectedCanvas, isLoading: isLoadingCanvas } = useBusinessModelCanvas(canvasId || undefined);
   const { mutate: createCanvas, isPending: isCreating } = useCreateBusinessModelCanvas();
   const { mutate: deleteCanvas } = useDeleteBusinessModelCanvas();
+  
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   const handleCreateCanvas = () => {
     if (!newCanvasName.trim()) return;
@@ -75,6 +78,37 @@ export default function BusinessModelCanvasPage() {
     });
   };
 
+  const handleExportPdf = async () => {
+    if (!reportRef.current || !selectedCanvas) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d0e12",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("l", "mm", "a4"); // Landscape for BMC
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, 297, (canvas.height * 297) / canvas.width);
+
+      pdf.save(`bmc-${selectedCanvas.name.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (canvasId && selectedCanvas) {
     return (
       <div
@@ -99,6 +133,21 @@ export default function BusinessModelCanvasPage() {
               <p className="text-xs text-muted-foreground">Colaboração em tempo real</p>
             </div>
           </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={exporting || isLoadingCanvas}
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-1.5" />
+              )}
+              PDF
+            </Button>
+          </div>
         </div>
 
         {isLoadingCanvas ? (
@@ -106,8 +155,17 @@ export default function BusinessModelCanvasPage() {
             <div className="text-muted-foreground">Carregando canvas...</div>
           </div>
         ) : (
-          <BusinessModelCanvasView canvas={selectedCanvas} />
+          <div ref={reportRef}>
+            <BusinessModelCanvasView canvas={selectedCanvas} />
+          </div>
         )}
+
+        <style>{`
+          @media print {
+            body { background: white !important; color: black !important; }
+            .print\\:hidden { display: none !important; }
+          }
+        `}</style>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
@@ -10,7 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Plus, Trash2, MapPin, ArrowRight } from "lucide-react";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageHeader } from "@/components/ui/responsive-layout";
+import { Plus, Trash2, MapPin, ArrowRight, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -25,11 +27,19 @@ interface Journey {
   status: string;
 }
 
+const EMOTION_COLORS: Record<string, string> = { 
+  positive: "text-green-500", 
+  neutral: "text-muted-foreground", 
+  negative: "text-destructive" 
+};
+
 export function CustomerJourneyPage() {
   const projectId = useCurrentProjectId();
   const qc = useQueryClient();
+  const reportRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ journey_name: "", persona: "", description: "", stages: "" as string, pain_points: "", opportunities: "" });
+  const [exporting, setExporting] = useState(false);
+  const [form, setForm] = useState({ journey_name: "", persona: "", description: "", stages: "", pain_points: "", opportunities: "" });
 
   const { data: journeys = [], isLoading } = useQuery({
     queryKey: ["customer-journeys", projectId],
@@ -65,78 +75,177 @@ export function CustomerJourneyPage() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["customer-journeys"] }); toast.success("Removida!"); },
   });
 
-  const emotionColors: Record<string, string> = { positive: "text-green-500", neutral: "text-muted-foreground", negative: "text-destructive" };
+  const handleExportPdf = async () => {
+    if (!reportRef.current || journeys.length === 0) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: "#0d0e12" });
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save(`customer-journey-${projectId}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Customer Journey Map</h1>
-          <p className="text-sm text-muted-foreground">Mapeie a jornada completa do usuário com touchpoints e emoções</p>
-        </div>
-        <div className="flex gap-2">
-          <AIGenerateButton prompt="Crie um Customer Journey Map completo baseado nas personas existentes do projeto. Inclua pelo menos 5 estágios com ações, pensamentos e emoções para cada um. Identifique pain points e oportunidades de melhoria." label="Gerar com IA" invalidateKeys={[["customer-journeys"]]} variant="outline" size="sm" />
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" />Nova Jornada</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nova Customer Journey</DialogTitle></DialogHeader>
-              <div className="space-y-3">
-                <div><Label>Nome da Jornada</Label><Input value={form.journey_name} onChange={e => setForm(f => ({ ...f, journey_name: e.target.value }))} placeholder="Ex: Onboarding do novo usuário" /></div>
-                <div><Label>Persona</Label><Input value={form.persona} onChange={e => setForm(f => ({ ...f, persona: e.target.value }))} placeholder="Ex: Ana, Designer Jr." /></div>
-                <div><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Contexto da jornada..." /></div>
-                <div><Label>Etapas (uma por linha)</Label><Textarea value={form.stages} onChange={e => setForm(f => ({ ...f, stages: e.target.value }))} placeholder="Descoberta\nCadastro\nPrimeiro uso\nRetenção" /></div>
-                <div><Label>Pain Points (um por linha)</Label><Textarea value={form.pain_points} onChange={e => setForm(f => ({ ...f, pain_points: e.target.value }))} /></div>
-                <div><Label>Oportunidades (uma por linha)</Label><Textarea value={form.opportunities} onChange={e => setForm(f => ({ ...f, opportunities: e.target.value }))} /></div>
-                <Button onClick={() => createMut.mutate()} disabled={!form.journey_name || createMut.isPending} className="w-full">{createMut.isPending ? "Criando..." : "Criar Jornada"}</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {isLoading ? <p className="text-sm text-muted-foreground">Carregando...</p> : journeys.length === 0 ? (
-        <EmptyState icon={MapPin} title="Nenhuma jornada mapeada" description="Crie uma Customer Journey Map para visualizar a experiência do usuário" />
-      ) : (
-        <div className="space-y-6">
-          {journeys.map(j => (
-            <Card key={j.id}>
-              <CardHeader className="flex flex-row items-start justify-between">
-                <div>
-                  <CardTitle className="text-base">{j.journey_name}</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">Persona: {j.persona || "N/A"}</p>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => deleteMut.mutate(j.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {j.description && <p className="text-sm text-muted-foreground">{j.description}</p>}
-                {/* Stages timeline */}
-                {Array.isArray(j.stages) && j.stages.length > 0 && (
-                  <div className="flex items-start gap-2 overflow-x-auto pb-2">
-                    {j.stages.map((s: { name: string; emotions?: string }, idx: number) => (
-                      <div key={idx} className="flex items-center gap-2 shrink-0">
-                        <div className="flex flex-col items-center gap-1 min-w-[100px]">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{idx + 1}</div>
-                          <span className="text-xs text-center font-medium">{s.name}</span>
-                          <span className={`text-[10px] ${emotionColors[s.emotions || "neutral"] || "text-muted-foreground"}`}>{s.emotions || "neutral"}</span>
-                        </div>
-                        {idx < j.stages.length - 1 && <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-3" />}
-                      </div>
-                    ))}
+      <PageHeader
+        title="Customer Journey Map"
+        description="Mapeie a jornada completa do usuário com touchpoints e emoções"
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={exporting || journeys.length === 0}
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-1.5" />
+              )}
+              PDF
+            </Button>
+            <AIGenerateButton
+              prompt="Crie um Customer Journey Map completo baseado nas personas existentes do projeto. Inclua pelo menos 5 estágios com ações, pensamentos e emoções para cada um. Identifique pain points e oportunidades de melhoria."
+              label="Gerar com IA"
+              invalidateKeys={[["customer-journeys"]]}
+              variant="outline"
+              size="sm"
+            />
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="w-4 h-4 mr-1" />Nova Jornada</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova Customer Journey</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Nome da Jornada</Label>
+                    <Input value={form.journey_name} onChange={e => setForm(f => ({ ...f, journey_name: e.target.value }))} placeholder="Ex: Onboarding do novo usuário" />
                   </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {j.pain_points.length > 0 && (
-                    <div><span className="text-xs font-semibold text-destructive">Pain Points</span><div className="flex flex-wrap gap-1 mt-1">{j.pain_points.map((p, i) => <Badge key={i} variant="destructive" className="text-[10px]">{p}</Badge>)}</div></div>
-                  )}
-                  {j.opportunities.length > 0 && (
-                    <div><span className="text-xs font-semibold text-primary">Oportunidades</span><div className="flex flex-wrap gap-1 mt-1">{j.opportunities.map((o, i) => <Badge key={i} variant="secondary" className="text-[10px]">{o}</Badge>)}</div></div>
-                  )}
+                  <div>
+                    <Label>Persona</Label>
+                    <Input value={form.persona} onChange={e => setForm(f => ({ ...f, persona: e.target.value }))} placeholder="Ex: Ana, Designer Jr." />
+                  </div>
+                  <div>
+                    <Label>Descrição</Label>
+                    <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Contexto da jornada..." />
+                  </div>
+                  <div>
+                    <Label>Etapas (uma por linha)</Label>
+                    <Textarea value={form.stages} onChange={e => setForm(f => ({ ...f, stages: e.target.value }))} placeholder="Descoberta\nCadastro\nPrimeiro uso\nRetenção" />
+                  </div>
+                  <div>
+                    <Label>Pain Points (um por linha)</Label>
+                    <Textarea value={form.pain_points} onChange={e => setForm(f => ({ ...f, pain_points: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>Oportunidades (uma por linha)</Label>
+                    <Textarea value={form.opportunities} onChange={e => setForm(f => ({ ...f, opportunities: e.target.value }))} />
+                  </div>
+                  <Button onClick={() => createMut.mutate()} disabled={!form.journey_name || createMut.isPending} className="w-full">
+                    {createMut.isPending ? "Criando..." : "Criar Jornada"}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
+
+      <ErrorBoundary level="section">
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando...</p>
+        ) : journeys.length === 0 ? (
+          <EmptyState
+            icon={MapPin}
+            title="Nenhuma jornada mapeada"
+            description="Crie uma Customer Journey Map para visualizar a experiência do usuário"
+          />
+        ) : (
+          <div ref={reportRef} className="space-y-6">
+            {journeys.map(j => (
+              <Card key={j.id} className="break-inside-avoid">
+                <CardHeader className="flex flex-row items-start justify-between">
+                  <div>
+                    <CardTitle className="text-base">{j.journey_name}</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">Persona: {j.persona || "N/A"}</p>
+                  </div>
+                  <Button
+                    variant="ghost" size="icon"
+                    onClick={() => deleteMut.mutate(j.id)}
+                    className="print:hidden"
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {j.description && <p className="text-sm text-muted-foreground">{j.description}</p>}
+                  {Array.isArray(j.stages) && j.stages.length > 0 && (
+                    <div className="flex items-start gap-2 overflow-x-auto pb-2">
+                      {j.stages.map((s: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-col items-center gap-1 min-w-[100px]">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{idx + 1}</div>
+                            <span className="text-xs text-center font-medium">{s.name}</span>
+                            <span className={`text-[10px] ${EMOTION_COLORS[s.emotions] || "text-muted-foreground"}`}>{s.emotions || "neutral"}</span>
+                          </div>
+                          {idx < j.stages.length - 1 && <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0 mt-3" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {j.pain_points.length > 0 && (
+                      <div>
+                        <span className="text-xs font-semibold text-destructive">Pain Points</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {j.pain_points.map((p, i) => (
+                            <Badge key={i} variant="destructive" className="text-[10px]">{p}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {j.opportunities.length > 0 && (
+                      <div>
+                        <span className="text-xs font-semibold text-primary">Oportunidades</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {j.opportunities.map((o, i) => (
+                            <Badge key={i} variant="secondary" className="text-[10px]">{o}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
+      <style>{`@media print { .print\\:hidden { display: none !important; } }`}</style>
     </div>
   );
 }

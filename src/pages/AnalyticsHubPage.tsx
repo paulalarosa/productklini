@@ -24,6 +24,7 @@ import {
   useAppReviews,
 } from "@/hooks/useProjectData";
 import { PageHeader, ActionBar, MetricCard } from "@/components/ui/responsive-layout";
+import { notify } from "@/lib/notifications";
 
 const SENTIMENT_COLORS = {
   positive: "hsl(160, 70%, 50%)",
@@ -271,6 +272,10 @@ export function AnalyticsHubPage() {
       }
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
       toast.success(`${results.length} reviews analisadas por IA!`);
+      await notify.success(
+        "🤖 Análise de IA concluída",
+        `${results.length} reviews foram categorizadas automaticamente.`
+      );
     } catch (e) {
       const err = e as Error;
       if (err.message?.includes("429") || err.message?.includes("Rate limit")) {
@@ -310,6 +315,10 @@ export function AnalyticsHubPage() {
       await insertAppReviews(reviewsToInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
       toast.success(`${result.reviews.length} reviews importadas! Analisando com IA...`);
+      await notify.info(
+        "📥 Reviews importadas",
+        `${result.reviews.length} reviews da ${result.platform === "ios" ? "App Store" : "Play Store"} foram importadas e estão sendo analisadas.`
+      );
       setStoreUrl("");
       setShowImport(false);
       
@@ -373,6 +382,10 @@ export function AnalyticsHubPage() {
       await insertAppReviews(reviewsToInsert);
       queryClient.invalidateQueries({ queryKey: ["app-reviews"] });
       toast.success(`${reviewsToInsert.length} reviews importadas! Analisando com IA...`);
+      await notify.info(
+        "📥 Reviews importadas",
+        `${reviewsToInsert.length} reviews foram importadas via arquivo e estão sendo analisadas.`
+      );
       setShowImport(false);
 
       // Auto-analyze

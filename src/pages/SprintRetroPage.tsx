@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
@@ -11,8 +11,9 @@ import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageHeader } from "@/components/ui/responsive-layout";
-import { Plus, Trash2, RotateCcw, ThumbsUp, AlertTriangle, Zap } from "lucide-react";
+import { Plus, Trash2, RotateCcw, ThumbsUp, AlertTriangle, Zap, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/lib/notifications";
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogTrigger,
@@ -74,7 +75,9 @@ function RetroSkeleton() {
 export function SprintRetroPage() {
   const projectId = useCurrentProjectId();
   const qc        = useQueryClient();
+  const reportRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [form, setForm] = useState({
     sprint_name:   "",
     sprint_number: "1",
@@ -113,11 +116,15 @@ export function SprintRetroPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       qc.invalidateQueries({ queryKey: ["sprint-retros"] });
       setOpen(false);
       setForm({ sprint_name: "", sprint_number: "1", went_well: "", to_improve: "", action_items: "", team_mood: "good" });
       toast.success("Retrospectiva criada!");
+      await notify.info(
+        "📝 Nova Retrospectiva",
+        `A retrospectiva da ${form.sprint_name} foi registrada com sucesso.`
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -134,6 +141,48 @@ export function SprintRetroPage() {
     onError: () => toast.error("Erro ao remover retrospectiva"),
   });
 
+  const handleExportPdf = async () => {
+    if (!reportRef.current || retros.length === 0) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d0e12",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL("image/png");
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`sprint-retros-${new Date().getTime()}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -148,6 +197,19 @@ export function SprintRetroPage() {
               variant="outline"
               size="sm"
             />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={exporting || retros.length === 0}
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-1.5" />
+              )}
+              PDF
+            </Button>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
                 <Button size="sm">
@@ -247,7 +309,7 @@ export function SprintRetroPage() {
             action={{ label: "Criar primeira retro", onClick: () => setOpen(true) }}
           />
         ) : (
-          <div className="space-y-4">
+          <div ref={reportRef} className="space-y-4">
             {retros.map(r => (
               <Card key={r.id}>
                 <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -316,6 +378,14 @@ export function SprintRetroPage() {
           </div>
         )}
       </ErrorBoundary>
+
+      <style>{`
+        @media print {
+          body { background: white !important; color: black !important; }
+          .print\\:hidden { display: none !important; }
+          .break-inside-avoid { break-inside: avoid; }
+        }
+      `}</style>
     </div>
   );
 }

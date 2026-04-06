@@ -4,12 +4,30 @@ import {
   fetchTasks, fetchPersonas, updateTaskStatus,
 } from "@/lib/api";
 
+// ─── Auxiliares de Teste — restaura mock singleton do Supabase ────────────────
+async function restoreSupabase() {
+  const { supabase } = await import("@/integrations/supabase/client");
+  vi.mocked(supabase.from).mockReturnValue({
+    select:      vi.fn().mockReturnThis(),
+    insert:      vi.fn().mockReturnThis(),
+    update:      vi.fn().mockReturnThis(),
+    delete:      vi.fn().mockReturnThis(),
+    upsert:      vi.fn().mockReturnThis(),
+    eq:          vi.fn().mockReturnThis(),
+    order:       vi.fn().mockReturnThis(),
+    limit:       vi.fn().mockReturnThis(),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    single:      vi.fn().mockResolvedValue({ data: null, error: null }),
+  } as any);
+}
+
 // ─── getProjectId — promise deduplication ─────────────────────────────────────
 describe("getProjectId", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     clearCurrentProjectId();
     localStorage.clear();
     vi.clearAllMocks();
+    await restoreSupabase();
   });
 
   it("retorna '' quando usuário não tem projetos", async () => {
@@ -50,9 +68,10 @@ describe("getProjectId", () => {
 
 // ─── fetchTasks ───────────────────────────────────────────────────────────────
 describe("fetchTasks", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     clearCurrentProjectId();
     vi.clearAllMocks();
+    await restoreSupabase();
   });
 
   it("retorna [] quando não há projeto ativo", async () => {
@@ -83,23 +102,19 @@ describe("fetchTasks", () => {
 });
 
 // ─── fetchPersonas ────────────────────────────────────────────────────────────
+// O problema: vi.clearAllMocks() zera os mocks do setup.ts, incluindo .limit().
+// resolveProjectId() internamente chama .select().eq().order().limit().maybeSingle()
+// então precisamos reinstalar a chain completa antes deste teste.
 describe("fetchPersonas", () => {
   beforeEach(async () => {
     clearCurrentProjectId();
-    vi.clearAllMocks();
-    // Reinstala chain completa após clearAllMocks para garantir .limit()
-    const { supabase } = await import("@/integrations/supabase/client");
-    vi.mocked(supabase.from).mockReturnValue({
-      select:      vi.fn().mockReturnThis(),
-      eq:          vi.fn().mockReturnThis(),
-      order:       vi.fn().mockReturnThis(),
-      limit:       vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-      single:      vi.fn().mockResolvedValue({ data: null, error: null }),
-    } as any);
+    // NÃO chamamos vi.clearAllMocks() aqui — preserva o mock completo do setup.ts
+    // No entanto, para garantir que o mock de describe anteriores não vazou:
+    await restoreSupabase();
   });
 
   it("retorna [] quando não há projeto ativo", async () => {
+    // Com usuário sem projetos, getProjectId retorna "" → withProject retorna []
     const personas = await fetchPersonas();
     expect(personas).toEqual([]);
   });
@@ -107,7 +122,10 @@ describe("fetchPersonas", () => {
 
 // ─── updateTaskStatus ─────────────────────────────────────────────────────────
 describe("updateTaskStatus", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    await restoreSupabase();
+  });
 
   it("chama supabase.update com os parâmetros corretos", async () => {
     const { supabase } = await import("@/integrations/supabase/client");

@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import { useTasks } from "@/hooks/useProjectData";
 import { updateTaskStatus, type DbTask } from "@/lib/api";
 import { KanbanSkeleton } from "@/components/ui/skeletons";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   AlertCircle, Clock, CheckCircle2, Circle,
-  Eye, PlayCircle, Filter, Inbox,
+  Eye, PlayCircle, Filter, FileDown, Loader2
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader, ActionBar, ResponsiveTable, type Column } from "@/components/ui/responsive-layout";
+import { notify } from "@/lib/notifications";
 
 // ─── Configuração das colunas ─────────────────────────────────────────────────
 
@@ -119,8 +121,11 @@ function TaskCard({
 
 export function KanbanPage() {
   const { data: tasks, isLoading } = useTasks();
-  const queryClient = useQueryClient();
+  const queryClient    = useQueryClient();
+  const reportRef      = useRef<HTMLDivElement>(null);
   const [moduleFilter, setModuleFilter] = useState<"all" | "ux" | "ui" | "dev">("all");
+  const [draggingTask, setDraggingTask] = useState<DbTask | null>(null);
+  const [exporting,    setExporting]    = useState(false);
 
   const filtered = useMemo(() => {
     if (!tasks) return [];
@@ -136,16 +141,70 @@ export function KanbanPage() {
     return map;
   }, [filtered]);
 
-  const handleStatusChange = async (taskId: string, newStatus: DbTask["status"]) => {
+  const handleStatusChange = useCallback(async (taskId: string, newStatus: DbTask["status"]) => {
+    const task = tasks?.find(t => t.id === taskId);
+    setDraggingTask(null);
+    
     // Optimistic update
     queryClient.setQueryData<DbTask[]>(["tasks"], old =>
       old?.map(t => t.id === taskId ? { ...t, status: newStatus } : t) ?? [],
     );
+
     try {
       await updateTaskStatus(taskId, newStatus);
+      
+      // Notify if unblocked
+      if (task && task.status === "blocked" && newStatus !== "blocked") {
+        await notify.success(
+          "🔓 Tarefa Desbloqueada",
+          `A tarefa "${task.title}" não está mais bloqueada e pode seguir para ${newStatus}.`
+        );
+      }
     } catch {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       toast.error("Erro ao atualizar tarefa.");
+    }
+  }, [queryClient, tasks]);
+
+  const handleExportPdf = async () => {
+    if (!reportRef.current || filtered.length === 0) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d0e12",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      let heightLeft = imgHeight;
+      let position = 0;
+      const imgData = canvas.toDataURL("image/png");
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`kanban-${new Date().getTime()}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -158,6 +217,21 @@ export function KanbanPage() {
       <PageHeader
         title="Kanban"
         description={`${filtered.length} tarefas${blockedCount > 0 ? ` · ${blockedCount} bloqueada${blockedCount > 1 ? "s" : ""}` : ""}`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || filtered.length === 0}
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-1.5" />
+            )}
+            PDF
+          </Button>
+        }
       />
 
       <ActionBar
@@ -182,7 +256,12 @@ export function KanbanPage() {
       />
 
       {/* Board */}
-      <div className="flex gap-3 overflow-x-auto pb-4">
+      <div
+        ref={reportRef}
+        className="flex gap-3 overflow-x-auto pb-4"
+        // Cancela drop fora de qualquer coluna
+        onDragOver={e => e.preventDefault()}
+      >
         {COLUMNS.map(col => {
           const Icon = col.icon;
           const colTasks = byStatus[col.id] ?? [];
@@ -225,11 +304,44 @@ export function KanbanPage() {
 
 export function QAPage() {
   const { data: tasks, isLoading } = useTasks();
+  const reportRef   = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   const qaIssues = useMemo(() =>
     tasks?.filter(t => t.status === "blocked" || t.priority === "urgent") ?? [],
     [tasks],
   );
+
+  const handleExportPdf = async () => {
+    if (!reportRef.current || qaIssues.length === 0) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d0e12",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+
+      pdf.save(`qa-${new Date().getTime()}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const columns = useMemo<Column<DbTask>[]>(() => [
     {
@@ -286,6 +398,21 @@ export function QAPage() {
       <PageHeader
         title="QA"
         description={`Tarefas bloqueadas e urgentes — ${qaIssues.length} issue${qaIssues.length !== 1 ? "s" : ""}`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || qaIssues.length === 0}
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-1.5" />
+            )}
+            PDF
+          </Button>
+        }
       />
 
       {qaIssues.length === 0 ? (
@@ -296,12 +423,13 @@ export function QAPage() {
           size="page"
         />
       ) : (
-        <ResponsiveTable
-          columns={columns}
-          data={qaIssues}
-          keyExtractor={(t) => t.id}
-          emptyMessage="Nenhuma issue aberta. Tudo certo!"
-        />
+        <div ref={reportRef}>
+          <ResponsiveTable
+            columns={columns}
+            data={qaIssues}
+            keyExtractor={(t) => t.id}
+          />
+        </div>
       )}
     </div>
   );
@@ -311,6 +439,8 @@ export function QAPage() {
 
 export function TeamMetricsPage() {
   const { data: tasks, isLoading } = useTasks();
+  const reportRef   = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
 
   const byAssignee = useMemo(() => {
     if (!tasks) return [];
@@ -325,6 +455,37 @@ export function TeamMetricsPage() {
     }
     return Object.entries(map).sort((a, b) => b[1].total - a[1].total);
   }, [tasks]);
+
+  const handleExportPdf = async () => {
+    if (!reportRef.current || byAssignee.length === 0) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d0e12",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+
+      pdf.save(`team-metrics-${new Date().getTime()}.pdf`);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (isLoading) return (
     <div className="space-y-4">
@@ -342,9 +503,24 @@ export function TeamMetricsPage() {
       <PageHeader
         title="Métricas do Time"
         description={`${byAssignee.length} membro${byAssignee.length !== 1 ? "s" : ""} com tarefas atribuídas`}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || byAssignee.length === 0}
+          >
+            {exporting ? (
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-1.5" />
+            )}
+            PDF
+          </Button>
+        }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div ref={reportRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {byAssignee.map(([name, stats]) => {
           const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
           return (
@@ -382,6 +558,14 @@ export function TeamMetricsPage() {
           );
         })}
       </div>
+
+      <style>{`
+        @media print {
+          body { background: white !important; color: black !important; }
+          .print\\:hidden { display: none !important; }
+          .break-inside-avoid { break-inside: avoid; }
+        }
+      `}</style>
     </div>
   );
 }
