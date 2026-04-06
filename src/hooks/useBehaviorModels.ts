@@ -55,6 +55,7 @@ const generateRecommendations = (motivation: number, ability: number, prompt: nu
 export function useBehaviorModels(projectId?: string) {
   return useQuery({
     queryKey: ["behavior-models", projectId],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       let query = supabase.from("behavior_models").select("*").order("created_at", { ascending: false });
       if (projectId) {

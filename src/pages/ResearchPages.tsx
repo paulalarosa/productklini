@@ -1,13 +1,14 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { BookOpen, Plus, Trash2, Pencil, Check, Users2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Plus, Trash2, Check, Users2 } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PageSkeleton } from "@/components/ui/skeletons";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { PageSkeleton } from "@/components/ui/skeletons";
 
 interface IDiaryEntry {
   id: string;
@@ -46,6 +47,7 @@ export function DiaryStudiesPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading) return <PageSkeleton />;
@@ -113,39 +115,40 @@ export function DiaryStudiesPage() {
         </div>
       )}
 
-      {(entries ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <BookOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum diary study registrado</p>
-          <p className="text-xs text-muted-foreground mt-1 mb-4">Diary studies capturam experiências reais dos usuários ao longo do tempo.</p>
-          <button onClick={() => setAdding(true)} className="px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeira entrada</button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {(entries ?? []).map((e: IDiaryEntry) => (
-
-            <div key={e.id} className="glass-card p-5 group">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">{e.participant_name}</h3>
-                  <p className="text-xs text-muted-foreground">{new Date(e.entry_date).toLocaleDateString("pt-BR")} • {e.context}</p>
+      <ErrorBoundary level="section">
+        {(entries ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={BookOpen}
+            title="Nenhum diary study registrado"
+            description="Capture experiências reais dos usuários ao longo do tempo para identificar padrões e dores."
+            action={{ label: "Criar primeira entrada", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-3">
+            {(entries ?? []).map((e: IDiaryEntry) => (
+              <div key={e.id} className="glass-card p-5 group">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{e.participant_name}</h3>
+                    <p className="text-xs text-muted-foreground">{new Date(e.entry_date).toLocaleDateString("pt-BR")} • {e.context}</p>
+                  </div>
+                  <button onClick={() => handleDelete(e.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                 </div>
-                <button onClick={() => handleDelete(e.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                {e.activity && <p className="text-xs text-foreground mb-2"><span className="font-medium">Atividade:</span> {e.activity}</p>}
+                {e.emotions && <p className="text-xs text-foreground mb-2"><span className="font-medium">Emoções:</span> {e.emotions}</p>}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {(e.pain_points || []).map((p: string) => (
+                    <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">{p}</span>
+                  ))}
+                  {(e.insights || []).map((i: string) => (
+                    <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">{i}</span>
+                  ))}
+                </div>
               </div>
-              {e.activity && <p className="text-xs text-foreground mb-2"><span className="font-medium">Atividade:</span> {e.activity}</p>}
-              {e.emotions && <p className="text-xs text-foreground mb-2"><span className="font-medium">Emoções:</span> {e.emotions}</p>}
-              <div className="flex flex-wrap gap-1 mt-2">
-                {(e.pain_points || []).map((p: string) => (
-                  <span key={p} className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">{p}</span>
-                ))}
-                {(e.insights || []).map((i: string) => (
-                  <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">{i}</span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -166,6 +169,7 @@ export function StakeholderMapPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   if (isLoading) return <PageSkeleton />;
@@ -192,7 +196,7 @@ export function StakeholderMapPage() {
   return (
     <ModulePage
       title="Mapa de Stakeholders"
-      subtitle="Mapeie influência e interesse dos stakeholders"
+      subtitle="Mapeie e analise o ecossistema de partes interessadas"
       icon={<Users2 className="w-4 h-4 text-primary-foreground" />}
       actions={
         <div className="flex items-center gap-2">
@@ -216,24 +220,24 @@ export function StakeholderMapPage() {
             <input value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="Cargo/Papel" className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <select value={form.influence_level} onChange={e => setForm(f => ({ ...f, influence_level: e.target.value }))} className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <select value={form.influence_level} onChange={e => setForm(f => ({ ...f, influence_level: e.target.value }))} className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground">
               <option value="high">Influência Alta</option>
               <option value="medium">Influência Média</option>
               <option value="low">Influência Baixa</option>
             </select>
-            <select value={form.interest_level} onChange={e => setForm(f => ({ ...f, interest_level: e.target.value }))} className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <select value={form.interest_level} onChange={e => setForm(f => ({ ...f, interest_level: e.target.value }))} className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground">
               <option value="high">Interesse Alto</option>
               <option value="medium">Interesse Médio</option>
               <option value="low">Interesse Baixo</option>
             </select>
-            <select value={form.relationship} onChange={e => setForm(f => ({ ...f, relationship: e.target.value }))} className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <select value={form.relationship} onChange={e => setForm(f => ({ ...f, relationship: e.target.value }))} className="px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground">
               <option value="champion">Champion</option>
               <option value="supporter">Apoiador</option>
               <option value="neutral">Neutro</option>
               <option value="critic">Crítico</option>
             </select>
           </div>
-          <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notas" rows={2} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none" />
+          <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notas estratégicas" rows={2} className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none" />
           <div className="flex gap-2 justify-end">
             <button onClick={() => setAdding(false)} className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">Cancelar</button>
             <button onClick={handleAdd} className="px-4 py-1.5 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium"><Check className="w-3 h-3 inline mr-1" />Adicionar</button>
@@ -241,43 +245,45 @@ export function StakeholderMapPage() {
         </div>
       )}
 
-      {(stakeholders ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <Users2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum stakeholder mapeado</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Mapear primeiro stakeholder</button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(stakeholders ?? []).map((s: IStakeholder) => (
-
-            <div key={s.id} className="glass-card p-5 group">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">{s.name}</h3>
-                  <p className="text-xs text-muted-foreground">{s.role}</p>
+      <ErrorBoundary level="section">
+        {(stakeholders ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={Users2}
+            title="Nenhum stakeholder mapeado"
+            description="Mapeie influência e interesse para gerenciar expectativas com eficácia."
+            action={{ label: "Mapear primeiro stakeholder", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {(stakeholders ?? []).map((s: IStakeholder) => (
+              <div key={s.id} className="glass-card p-5 group">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">{s.name}</h3>
+                    <p className="text-xs text-muted-foreground">{s.role}</p>
+                  </div>
+                  <button onClick={() => handleDelete(s.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                 </div>
-                <button onClick={() => handleDelete(s.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                <div className="space-y-1.5 mt-4">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Influência</span>
+                    <span className={`font-medium ${levelColors[s.influence_level]}`}>{levelLabels[s.influence_level]}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Interesse</span>
+                    <span className={`font-medium ${levelColors[s.interest_level]}`}>{levelLabels[s.interest_level]}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Relação</span>
+                    <span className="font-medium text-foreground capitalize">{s.relationship}</span>
+                  </div>
+                </div>
+                {s.notes && <p className="text-xs text-muted-foreground mt-4 italic border-t border-border pt-2">{s.notes}</p>}
               </div>
-              <div className="space-y-1 mt-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Influência</span>
-                  <span className={`font-medium ${levelColors[s.influence_level]}`}>{levelLabels[s.influence_level]}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Interesse</span>
-                  <span className={`font-medium ${levelColors[s.interest_level]}`}>{levelLabels[s.interest_level]}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Relação</span>
-                  <span className="font-medium text-foreground capitalize">{s.relationship}</span>
-                </div>
-              </div>
-              {s.notes && <p className="text-xs text-muted-foreground mt-3 italic">{s.notes}</p>}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }

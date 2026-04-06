@@ -6,6 +6,9 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface IRoadmapItem {
   id: string;
@@ -46,7 +49,7 @@ export function RoadmapPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", quarter: "Q1 2026", status: "planned", priority: "medium", effort: "medium", impact: "medium", category: "feature" });
 
-  const { data: items } = useQuery({
+  const { data: items, isLoading } = useQuery({
     queryKey: ["roadmap-items", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -55,7 +58,10 @@ export function RoadmapPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.title.trim() || !projectId) return;
@@ -125,37 +131,39 @@ export function RoadmapPage() {
         </div>
       )}
 
-      {quarters.length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <Map className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum item no roadmap</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeiro item</button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {quarters.map(q => (
-            <div key={q}>
-              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Flag className="w-4 h-4 text-primary" />{q}</h3>
-              <div className="space-y-2">
-                {(items ?? []).filter((i: IRoadmapItem) => i.quarter === q).map((i: IRoadmapItem) => (
-
-                  <div key={i.id} className="glass-card p-4 flex items-center gap-4 group">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-foreground">{i.title}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColors[i.status]}`}>{statusLabels[i.status]}</span>
-                        <span className={`text-[10px] font-medium ${priorityColors[i.priority]}`}>{i.priority === "high" ? "🔴" : i.priority === "medium" ? "🟡" : "🟢"}</span>
+      <ErrorBoundary level="section">
+        {quarters.length === 0 && !adding ? (
+          <EmptyState
+            icon={Map}
+            title="Nenhum item no roadmap"
+            description="Planeje a evolução do seu produto por quarters e priorize o que realmente importa."
+            action={{ label: "Criar primeiro item", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-6">
+            {quarters.map(q => (
+              <div key={q} className="animate-fade-in">
+                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Flag className="w-4 h-4 text-primary" />{q}</h3>
+                <div className="space-y-2">
+                  {(items ?? []).filter((i: IRoadmapItem) => i.quarter === q).map((i: IRoadmapItem) => (
+                    <div key={i.id} className="glass-card p-4 flex items-center gap-4 group hover:border-primary/30 transition-all">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium text-foreground">{i.title}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColors[i.status]}`}>{statusLabels[i.status]}</span>
+                          <span className={`text-[10px] font-medium ${priorityColors[i.priority]}`}>{i.priority === "high" ? "🔴" : i.priority === "medium" ? "🟡" : "🟢"}</span>
+                        </div>
+                        {i.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{i.description}</p>}
                       </div>
-                      {i.description && <p className="text-xs text-muted-foreground mt-0.5">{i.description}</p>}
+                      <button onClick={() => handleDelete(i.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                     </div>
-                    <button onClick={() => handleDelete(i.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -167,7 +175,7 @@ export function OKRsPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ objective: "", key_results: "", quarter: "Q1 2026", owner: "" });
 
-  const { data: okrs } = useQuery({
+  const { data: okrs, isLoading } = useQuery({
     queryKey: ["okrs", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -176,7 +184,10 @@ export function OKRsPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.objective.trim() || !projectId) return;
@@ -239,56 +250,58 @@ export function OKRsPage() {
         </div>
       )}
 
-      {(okrs ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <Target className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum OKR definido</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeiro OKR</button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(okrs ?? []).map((okr) => {
-            const krs = Array.isArray(okr.key_results) ? (okr.key_results as unknown as IKeyResult[]) : [];
-            const avgProgress = krs.length > 0 ? krs.reduce((sum: number, kr: IKeyResult) => sum + (kr.progress || 0), 0) / krs.length : 0;
+      <ErrorBoundary level="section">
+        {(okrs ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={Target}
+            title="Nenhum OKR definido"
+            description="Defina objetivos ambiciosos e resultados mensuráveis para alinhar o time."
+            action={{ label: "Criar primeiro OKR", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {(okrs ?? []).map((okr) => {
+              const krs = Array.isArray(okr.key_results) ? (okr.key_results as unknown as IKeyResult[]) : [];
+              const avgProgress = krs.length > 0 ? krs.reduce((sum: number, kr: IKeyResult) => sum + (kr.progress || 0), 0) / krs.length : 0;
 
-            return (
-              <div key={okr.id} className="glass-card p-5 group">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-foreground">{okr.objective}</h3>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColors[okr.status] || statusColors.on_track}`}>{statusLabels[okr.status] || "No caminho"}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{okr.quarter} {okr.owner && `• ${okr.owner}`}</p>
-                  </div>
-                  <button onClick={() => handleDelete(okr.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
-                </div>
-                <div className="space-y-2">
-                  {krs.map((kr: IKeyResult, i: number) => (
-
-                    <div key={kr.id || i} className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground w-5 shrink-0">KR{i + 1}</span>
-                      <div className="flex-1">
-                        <p className="text-xs text-foreground">{kr.description}</p>
-                        <div className="w-full h-1 rounded-full bg-secondary mt-1">
-                          <div className="h-full rounded-full bg-primary" style={{ width: `${kr.progress || 0}%` }} />
-                        </div>
+              return (
+                <div key={okr.id} className="glass-card p-5 group hover:border-primary/20 transition-all animate-fade-in">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-foreground">{okr.objective}</h3>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColors[okr.status] || statusColors.on_track}`}>{statusLabels[okr.status] || "No caminho"}</span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground">{kr.progress || 0}%</span>
+                      <p className="text-xs text-muted-foreground">{okr.quarter} {okr.owner && `• ${okr.owner}`}</p>
                     </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-secondary">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${avgProgress}%` }} />
+                    <button onClick={() => handleDelete(okr.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                   </div>
-                  <span className="text-xs font-medium text-foreground">{avgProgress.toFixed(0)}%</span>
+                  <div className="space-y-2">
+                    {krs.map((kr: IKeyResult, i: number) => (
+                      <div key={kr.id || i} className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground w-5 shrink-0">KR{i + 1}</span>
+                        <div className="flex-1">
+                          <p className="text-xs text-foreground">{kr.description}</p>
+                          <div className="w-full h-1 rounded-full bg-secondary mt-1 overflow-hidden">
+                            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${kr.progress || 0}%` }} />
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">{kr.progress || 0}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${avgProgress}%` }} />
+                    </div>
+                    <span className="text-xs font-medium text-foreground">{avgProgress.toFixed(0)}%</span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }

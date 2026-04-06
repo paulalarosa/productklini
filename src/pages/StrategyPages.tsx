@@ -6,10 +6,34 @@ import { SitemapTree } from "@/components/dashboard/SitemapTree";
 import { useDocuments } from "@/hooks/useProjectData";
 import { useSitemap, useDeleteSitemap } from "@/hooks/useSitemap";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+// ─── Skeletons ───────────────────────────────────────────────────────────────
+
+function SitemapSkeleton() {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="glass-card p-5 animate-pulse flex gap-4">
+          <div className="w-10 h-10 rounded-lg bg-muted shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="h-4 bg-muted rounded w-32" />
+              <div className="h-4 bg-muted/60 rounded w-20" />
+            </div>
+            <div className="h-3 bg-muted/60 rounded w-full max-w-md" />
+            <div className="h-2.5 bg-muted/40 rounded w-16 mt-2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function PrioritizationMatrixPage() {
   const { data: docs } = useDocuments("prioritization_matrix");
@@ -27,7 +51,9 @@ export function PrioritizationMatrixPage() {
         />
       }
     >
-      <DocumentManager documents={docs ?? []} docType="prioritization_matrix" docTypeLabel="Matriz de Priorização" emptyIcon={<ArrowUpDown className="w-10 h-10 text-muted-foreground/30 mx-auto" />} emptyMessage="Nenhuma matriz de priorização criada" />
+      <ErrorBoundary level="section">
+        <DocumentManager documents={docs ?? []} docType="prioritization_matrix" docTypeLabel="Matriz de Priorização" emptyIcon={<ArrowUpDown className="w-10 h-10 text-muted-foreground/30 mx-auto" />} emptyMessage="Nenhuma matriz de priorização criada" />
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -55,6 +81,14 @@ export function SitemapPage() {
     setAdding(false);
     toast.success("Nó adicionado");
   };
+
+  if (isLoading) {
+    return (
+      <ModulePage title="Sitemap" subtitle="Mapa hierárquico de telas e navegação" icon={<Network className="w-4 h-4 text-primary-foreground" />}>
+        <SitemapSkeleton />
+      </ModulePage>
+    );
+  }
 
   return (
     <ModulePage
@@ -91,14 +125,21 @@ export function SitemapPage() {
           </div>
         </div>
       )}
-      <SitemapTree nodes={nodes ?? []} onDelete={(id) => deleteNode({ id })} />
-      {!isLoading && (!nodes || nodes.length === 0) && !adding && (
-        <div className="py-20 text-center border-2 border-dashed border-muted rounded-xl">
-          <Network className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">Sitemap Vazio</h3>
-          <p className="text-sm text-muted-foreground mb-4">Crie nós manualmente ou gere com IA.</p>
+      
+      <ErrorBoundary level="section">
+        <div className="animate-fade-in stagger-children">
+          <SitemapTree nodes={nodes ?? []} onDelete={(id) => deleteNode({ id })} />
         </div>
-      )}
+        
+        {(!nodes || nodes.length === 0) && !adding && (
+          <EmptyState
+            icon={Network}
+            title="Sitemap Vazio"
+            description="Crie nós manualmente ou use a inteligência artificial para gerar a estrutura completa do seu projeto."
+            size="page"
+          />
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }

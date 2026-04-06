@@ -25,6 +25,7 @@ export function useBenchmarks(projectId?: string) {
       if (error) throw error;
       return data as Benchmark[];
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 

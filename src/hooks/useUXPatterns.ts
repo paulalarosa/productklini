@@ -18,6 +18,7 @@ export function useUXPatterns(filters?: {
   
   const query = useQuery({
     queryKey: ["ux-patterns", filters],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       let query = supabase
         .from("ux_patterns")
@@ -77,6 +78,7 @@ export function useUXPattern(patternId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!patternId,
   });
 }

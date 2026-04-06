@@ -11,6 +11,7 @@ export function useABExperiments(projectId?: string) {
 
   const query = useQuery({
     queryKey: ["ab-experiments", projectId],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       let q = supabase
         .from("ab_experiments")
@@ -53,6 +54,7 @@ export function useABResults(experimentId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!experimentId,
   });
 }

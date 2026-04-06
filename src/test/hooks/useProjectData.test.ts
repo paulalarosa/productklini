@@ -37,6 +37,19 @@ async function waitForQuery<T>(result: { current: { isSuccess: boolean; isError:
   );
 }
 
+interface MockSupabaseChain {
+  select:      () => MockSupabaseChain;
+  insert:      () => MockSupabaseChain;
+  update:      () => MockSupabaseChain;
+  delete:      () => MockSupabaseChain;
+  upsert:      () => MockSupabaseChain;
+  eq:          () => MockSupabaseChain;
+  order:       () => MockSupabaseChain;
+  limit:       () => MockSupabaseChain;
+  maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+  single:      () => Promise<{ data: unknown; error: unknown }>;
+}
+
 describe("useProject", () => {
   beforeEach(() => vi.clearAllMocks());
 
@@ -58,7 +71,7 @@ describe("useProject", () => {
       maybeSingle: vi.fn().mockResolvedValue({ data: mockProject, error: null }),
       single:      vi.fn().mockResolvedValue({ data: null, error: null }),
     };
-    vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+    vi.mocked(supabase.from).mockReturnValue(mockChain as unknown as MockSupabaseChain);
 
     const { result } = renderHook(() => useProject(), { wrapper: makeWrapper() });
     await waitForQuery(result);
@@ -88,7 +101,7 @@ describe("useTasks", () => {
       limit:       vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({ data: { id: "proj-1" }, error: null }),
     };
-    vi.mocked(supabase.from).mockReturnValue(mockChain as any);
+    vi.mocked(supabase.from).mockReturnValue(mockChain as unknown as MockSupabaseChain);
 
     const { result } = renderHook(() => useTasks(), { wrapper: makeWrapper() });
     await waitForQuery(result);

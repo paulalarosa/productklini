@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
@@ -15,6 +15,8 @@ import {
   MapPin, ArrowUpRight, FileDown, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import type { Json } from "@/integrations/supabase/types";
 
 interface StrategicBlock {
@@ -58,7 +60,7 @@ export function StrategicContextPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
 
-  const { data: doc } = useQuery({
+  const { data: doc, isLoading } = useQuery({
     queryKey: ["strategic-context", projectId],
     queryFn: async () => {
       if (!projectId) return null;
@@ -71,6 +73,7 @@ export function StrategicContextPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const content: Record<string, string> = doc?.content ? (() => { try { return JSON.parse(doc.content); } catch { return {}; } })() : {};
@@ -152,6 +155,8 @@ export function StrategicContextPage() {
   const allBlocks = [...INVESTIGATION_BLOCKS, ...IMMERSION_BLOCKS];
   const filledCount = allBlocks.filter(b => (content[b.fieldKey] || "").trim().length > 0).length;
 
+  if (isLoading) return <PageSkeleton />;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -185,29 +190,31 @@ export function StrategicContextPage() {
         </div>
       </div>
 
-      <div ref={reportRef} className="space-y-8">
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 1</span>
-            Investigação Contextual
-          </h2>
-          <p className="text-xs text-muted-foreground">O que precisamos compreender para gerar insumos estratégicos?</p>
-          {INVESTIGATION_BLOCKS.map(block => (
-            <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
-          ))}
-        </div>
+      <ErrorBoundary level="section">
+        <div ref={reportRef} className="space-y-8">
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 1</span>
+              Investigação Contextual
+            </h2>
+            <p className="text-xs text-muted-foreground">O que precisamos compreender para gerar insumos estratégicos?</p>
+            {INVESTIGATION_BLOCKS.map(block => (
+              <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
+            ))}
+          </div>
 
-        <div className="space-y-3">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 2</span>
-            Imersão
-          </h2>
-          <p className="text-xs text-muted-foreground">Materializando informações em decisões estratégicas.</p>
-          {IMMERSION_BLOCKS.map(block => (
-            <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
-          ))}
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">Parte 2</span>
+              Imersão
+            </h2>
+            <p className="text-xs text-muted-foreground">Materializando informações em decisões estratégicas.</p>
+            {IMMERSION_BLOCKS.map(block => (
+              <BlockCard key={block.id} block={block} value={getValue(block.fieldKey)} onChange={val => setLocalValues(p => ({ ...p, [block.fieldKey]: val }))} onSave={() => handleSave(block.fieldKey)} isSaving={saveMut.isPending} />
+            ))}
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
 
       <style>{`
         @media print {

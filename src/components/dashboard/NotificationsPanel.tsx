@@ -1,21 +1,9 @@
 import { useState } from "react";
 import { Bell, X, Check, CheckCheck, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion, AnimatePresence } from "framer-motion";
-import { getProjectId } from "@/lib/api";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-
-// ─── Tipos ────────────────────────────────────────────────────────────────────
-
-interface Notification {
-  id: string;
-  type: "info" | "warning" | "success" | "error";
-  title: string;
-  message: string;
-  is_read: boolean;
-  created_at: string;
-}
+import { getProjectId, type DbNotification } from "@/lib/api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNotifications } from "@/hooks/useProjectData";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -25,20 +13,6 @@ const TYPE_COLORS: Record<string, string> = {
   success: "bg-status-develop/20   text-status-develop",
   error:   "bg-destructive/20      text-destructive",
 };
-
-// ─── Fetcher ─────────────────────────────────────────────────────────────────
-
-async function fetchNotifications(): Promise<Notification[]> {
-  const projectId = await getProjectId();
-  if (!projectId) return [];
-  const { data } = await supabase
-    .from("notifications")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  return (data as Notification[]) ?? [];
-}
 
 // ─── Utilitário de tempo ──────────────────────────────────────────────────────
 
@@ -56,41 +30,7 @@ function timeAgo(date: string): string {
 export function NotificationsPanel() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
-
-  // Realtime — canal dedicado para notificações
-  useEffect(() => {
-    let channel: any;
-    
-    getProjectId().then(projectId => {
-      if (!projectId) return;
-      
-      channel = supabase
-        .channel(`notifications-${projectId}`)
-        .on(
-          "postgres_changes", 
-          { 
-            event: "*", 
-            schema: "public", 
-            table: "notifications",
-            filter: `project_id=eq.${projectId}`
-          }, 
-          () => {
-            queryClient.invalidateQueries({ queryKey: ["notifications"] });
-          }
-        )
-        .subscribe();
-    });
-
-    return () => { 
-      if (channel) supabase.removeChannel(channel); 
-    };
-  }, [queryClient]);
-
-  const { data: notifications = [] } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: fetchNotifications,
-    staleTime: 0, // sempre fresco — dados driven por realtime
-  });
+  const { data: notifications = [] } = useNotifications();
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -100,16 +40,15 @@ export function NotificationsPanel() {
     mutationFn: async (id: string) => {
       await supabase.from("notifications").update({ is_read: true }).eq("id", id);
     },
-    // Optimistic update — marca como lido antes da resposta do servidor
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const prev = queryClient.getQueryData<Notification[]>(["notifications"]);
-      queryClient.setQueryData<Notification[]>(["notifications"], old =>
+      const prev = queryClient.getQueryData<DbNotification[]>(["notifications"]);
+      queryClient.setQueryData<DbNotification[]>(["notifications"], old =>
         old?.map(n => n.id === id ? { ...n, is_read: true } : n) ?? [],
       );
       return { prev };
     },
-    onError: (_err, _id, ctx: { prev?: Notification[] } | undefined) => {
+    onError: (_err, _id, ctx: { prev?: DbNotification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
@@ -126,13 +65,13 @@ export function NotificationsPanel() {
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const prev = queryClient.getQueryData<Notification[]>(["notifications"]);
-      queryClient.setQueryData<Notification[]>(["notifications"], old =>
+      const prev = queryClient.getQueryData<DbNotification[]>(["notifications"]);
+      queryClient.setQueryData<DbNotification[]>(["notifications"], old =>
         old?.map(n => ({ ...n, is_read: true })) ?? [],
       );
       return { prev };
     },
-    onError: (_err, _vars, ctx: { prev?: Notification[] } | undefined) => {
+    onError: (_err, _vars, ctx: { prev?: DbNotification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
@@ -143,13 +82,13 @@ export function NotificationsPanel() {
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const prev = queryClient.getQueryData<Notification[]>(["notifications"]);
-      queryClient.setQueryData<Notification[]>(["notifications"], old =>
+      const prev = queryClient.getQueryData<DbNotification[]>(["notifications"]);
+      queryClient.setQueryData<DbNotification[]>(["notifications"], old =>
         old?.filter(n => n.id !== id) ?? [],
       );
       return { prev };
     },
-    onError: (_err, _id, ctx: { prev?: Notification[] } | undefined) => {
+    onError: (_err, _id, ctx: { prev?: DbNotification[] } | undefined) => {
       queryClient.setQueryData(["notifications"], ctx?.prev);
     },
   });
@@ -171,46 +110,40 @@ export function NotificationsPanel() {
         )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0  }}
-              exit={{   opacity: 0, y: -8  }}
-              transition={{ duration: 0.12 }}
-              className="fixed right-2 top-14 md:absolute md:right-0 md:top-full md:mt-2 w-[calc(100vw-1rem)] max-w-[320px] max-h-[70vh] md:max-h-96 glass-card rounded-lg border border-border z-50 flex flex-col overflow-hidden"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
-                <span className="text-xs font-semibold text-foreground">Notificações</span>
-                <div className="flex items-center gap-1">
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={() => markAllRead.mutate()}
-                      title="Marcar todas como lidas"
-                      className="p-1 rounded hover:bg-accent transition-colors"
-                      disabled={markAllRead.isPending}
-                    >
-                      <CheckCheck className="w-3 h-3 text-muted-foreground" />
-                    </button>
-                  )}
-                  <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-accent transition-colors">
-                    <X className="w-3 h-3 text-muted-foreground" />
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed right-2 top-14 md:absolute md:right-0 md:top-full md:mt-2 w-[calc(100vw-1rem)] max-w-[320px] max-h-[70vh] md:max-h-96 glass-card rounded-lg border border-border z-50 flex flex-col overflow-hidden animate-slide-down">
+            {/* Header */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
+              <span className="text-xs font-semibold text-foreground">Notificações</span>
+              <div className="flex items-center gap-1">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={() => markAllRead.mutate()}
+                    title="Marcar todas como lidas"
+                    className="p-1 rounded hover:bg-accent transition-colors"
+                    disabled={markAllRead.isPending}
+                  >
+                    <CheckCheck className="w-3 h-3 text-muted-foreground" />
                   </button>
-                </div>
+                )}
+                <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-accent transition-colors">
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
               </div>
+            </div>
 
-              {/* Lista */}
-              <div className="flex-1 overflow-y-auto overscroll-contain">
-                {notifications.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground text-center py-8">Sem notificações</p>
-                ) : (
-                  notifications.map(n => (
+            {/* Lista */}
+            <div className="flex-1 overflow-y-auto overscroll-contain">
+              {notifications.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground text-center py-8">Sem notificações</p>
+              ) : (
+                <div className="stagger-children">
+                  {notifications.map(n => (
                     <div
                       key={n.id}
-                      className={`flex items-start gap-2 px-3 py-2 border-b border-border/50 transition-colors ${
+                      className={`flex items-start gap-2 px-3 py-2 border-b border-border/50 transition-colors animate-fade-in ${
                         n.is_read ? "opacity-60" : "bg-accent/20"
                       }`}
                     >
@@ -246,13 +179,13 @@ export function NotificationsPanel() {
                         </button>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Heart, Star, BarChart3, Plus, Trash2, Check, Target, TrendingUp } from "lucide-react";
+import { Heart, Star, BarChart3, Plus, Trash2, Check } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +38,6 @@ interface INpsSurvey {
   segment: string;
 }
 
-
 // ─── HEART Framework ───
 const HEART_CATEGORIES = [
   { key: "happiness", label: "Happiness", color: "text-pink-500", bg: "bg-pink-500/10" },
@@ -52,7 +53,7 @@ export function HEARTFrameworkPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ category: "happiness", metric_name: "", signal: "", goal: "", current_value: "", target_value: "", unit: "%" });
 
-  const { data: metrics } = useQuery({
+  const { data: metrics, isLoading } = useQuery({
     queryKey: ["heart-metrics", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -61,6 +62,7 @@ export function HEARTFrameworkPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAdd = async () => {
@@ -87,6 +89,29 @@ export function HEARTFrameworkPage() {
     qc.invalidateQueries({ queryKey: ["heart-metrics"] });
     toast.success("Removido");
   };
+
+  if (isLoading) {
+    return (
+      <ModulePage title="HEART Framework" subtitle="Happiness, Engagement, Adoption, Retention, Task Success" icon={<Heart className="w-4 h-4 text-primary-foreground" />}>
+        <div className="space-y-6">
+          {HEART_CATEGORIES.map(cat => (
+            <div key={cat.key}>
+              <div className="h-3 bg-muted rounded w-24 mb-3 animate-pulse" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="glass-card p-4 animate-pulse space-y-2">
+                    <div className="h-4 bg-muted rounded w-32" />
+                    <div className="h-3 bg-muted rounded w-48" />
+                    <div className="h-1.5 bg-muted rounded-full w-full mt-3" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ModulePage>
+    );
+  }
 
   return (
     <ModulePage
@@ -130,46 +155,50 @@ export function HEARTFrameworkPage() {
         </div>
       )}
 
-      {HEART_CATEGORIES.map(cat => {
-        const catMetrics = (metrics ?? []).filter((m: IHeartMetric) => m.category === cat.key);
-        if (catMetrics.length === 0 && !adding) return null;
-        return (
-          <div key={cat.key} className="mb-6">
-            <h3 className={`text-xs font-bold uppercase tracking-wider ${cat.color} mb-3`}>{cat.label}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {catMetrics.map((m: IHeartMetric) => {
-
-                const progress = m.target_value > 0 ? Math.min(100, (m.current_value / m.target_value) * 100) : 0;
-                return (
-                  <div key={m.id} className="glass-card p-4 group">
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-semibold text-foreground">{m.metric_name}</h4>
-                      <button onClick={() => handleDelete(m.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
-                    </div>
-                    {m.signal && <p className="text-xs text-muted-foreground mb-1"><span className="font-medium">Sinal:</span> {m.signal}</p>}
-                    {m.goal && <p className="text-xs text-muted-foreground mb-2"><span className="font-medium">Goal:</span> {m.goal}</p>}
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-lg font-bold text-foreground">{m.current_value}{m.unit}</span>
-                      <span className="text-xs text-muted-foreground">/ {m.target_value}{m.unit}</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-secondary mt-2">
-                      <div className={`h-full rounded-full ${cat.bg.replace('/10', '')} opacity-70`} style={{ width: `${progress}%` }} />
-                    </div>
+      <ErrorBoundary level="section">
+        {(metrics ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={Heart}
+            title="Nenhuma métrica HEART definida"
+            description="Defina métricas de Happiness, Engagement, Adoption, Retention e Task Success."
+            action={{ label: "Criar primeira métrica", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <>
+            {HEART_CATEGORIES.map(cat => {
+              const catMetrics = (metrics ?? []).filter((m: IHeartMetric) => m.category === cat.key);
+              if (catMetrics.length === 0) return null;
+              return (
+                <div key={cat.key} className="mb-6">
+                  <h3 className={`text-xs font-bold uppercase tracking-wider ${cat.color} mb-3`}>{cat.label}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {catMetrics.map((m: IHeartMetric) => {
+                      const progress = m.target_value > 0 ? Math.min(100, (m.current_value / m.target_value) * 100) : 0;
+                      return (
+                        <div key={m.id} className="glass-card p-4 group">
+                          <div className="flex items-start justify-between mb-2">
+                            <h4 className="text-sm font-semibold text-foreground">{m.metric_name}</h4>
+                            <button onClick={() => handleDelete(m.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                          </div>
+                          {m.signal && <p className="text-xs text-muted-foreground mb-1"><span className="font-medium">Sinal:</span> {m.signal}</p>}
+                          {m.goal && <p className="text-xs text-muted-foreground mb-2"><span className="font-medium">Goal:</span> {m.goal}</p>}
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-lg font-bold text-foreground">{m.current_value}{m.unit}</span>
+                            <span className="text-xs text-muted-foreground">/ {m.target_value}{m.unit}</span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-secondary mt-2">
+                            <div className={`h-full rounded-full ${cat.bg.replace('/10', '')} opacity-70`} style={{ width: `${progress}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-
-      {(metrics ?? []).length === 0 && !adding && (
-        <div className="glass-card p-8 text-center">
-          <Heart className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma métrica HEART definida</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeira métrica</button>
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -181,7 +210,7 @@ export function NorthStarPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ metric_name: "", description: "", current_value: "", target_value: "", unit: "" });
 
-  const { data: metrics } = useQuery({
+  const { data: metrics, isLoading } = useQuery({
     queryKey: ["north-star", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -190,6 +219,7 @@ export function NorthStarPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAdd = async () => {
@@ -214,6 +244,28 @@ export function NorthStarPage() {
     qc.invalidateQueries({ queryKey: ["north-star"] });
     toast.success("Removido");
   };
+
+  if (isLoading) {
+    return (
+      <ModulePage title="North Star Metric" subtitle="A métrica que mais importa para o produto" icon={<Star className="w-4 h-4 text-primary-foreground" />}>
+        <div className="space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="glass-card p-6 border-2 border-primary/10 animate-pulse">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-muted" />
+                <div className="space-y-1.5">
+                  <div className="h-4 bg-muted rounded w-40" />
+                  <div className="h-3 bg-muted rounded w-56" />
+                </div>
+              </div>
+              <div className="h-8 bg-muted rounded w-24 mb-2" />
+              <div className="h-2 bg-muted rounded-full w-full" />
+            </div>
+          ))}
+        </div>
+      </ModulePage>
+    );
+  }
 
   return (
     <ModulePage
@@ -251,44 +303,45 @@ export function NorthStarPage() {
         </div>
       )}
 
-      {(metrics ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <Star className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma North Star definida</p>
-          <p className="text-xs text-muted-foreground mt-1 mb-4">A North Star Metric é o indicador que melhor captura o valor que seu produto entrega.</p>
-          <button onClick={() => setAdding(true)} className="px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Definir North Star</button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(metrics ?? []).map((m: INorthStarMetric) => {
-
-            const progress = m.target_value > 0 ? Math.min(100, (m.current_value / m.target_value) * 100) : 0;
-            return (
-              <div key={m.id} className="glass-card p-6 border-2 border-primary/20 group">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center"><Star className="w-5 h-5 text-primary-foreground" /></div>
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">{m.metric_name}</h3>
-                      <p className="text-xs text-muted-foreground">{m.description}</p>
+      <ErrorBoundary level="section">
+        {(metrics ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={Star}
+            title="Nenhuma North Star definida"
+            description="A North Star Metric é o indicador que melhor captura o valor que seu produto entrega."
+            action={{ label: "Definir North Star", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {(metrics ?? []).map((m: INorthStarMetric) => {
+              const progress = m.target_value > 0 ? Math.min(100, (m.current_value / m.target_value) * 100) : 0;
+              return (
+                <div key={m.id} className="glass-card p-6 border-2 border-primary/20 group">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center"><Star className="w-5 h-5 text-primary-foreground" /></div>
+                      <div>
+                        <h3 className="text-base font-bold text-foreground">{m.metric_name}</h3>
+                        <p className="text-xs text-muted-foreground">{m.description}</p>
+                      </div>
                     </div>
+                    <button onClick={() => handleDelete(m.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-4 h-4 text-destructive" /></button>
                   </div>
-                  <button onClick={() => handleDelete(m.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-4 h-4 text-destructive" /></button>
+                  <div className="mt-4 flex items-end gap-2">
+                    <span className="text-3xl font-bold text-foreground">{m.current_value}</span>
+                    <span className="text-sm text-muted-foreground mb-1">{m.unit}</span>
+                    <span className="text-xs text-muted-foreground mb-1.5">/ meta: {m.target_value} {m.unit}</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-secondary mt-3">
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{progress.toFixed(0)}% da meta</p>
                 </div>
-                <div className="mt-4 flex items-end gap-2">
-                  <span className="text-3xl font-bold text-foreground">{m.current_value}</span>
-                  <span className="text-sm text-muted-foreground mb-1">{m.unit}</span>
-                  <span className="text-xs text-muted-foreground mb-1.5">/ meta: {m.target_value} {m.unit}</span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-secondary mt-3">
-                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">{progress.toFixed(0)}% da meta</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -300,7 +353,7 @@ export function NPSSurveysPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ survey_type: "nps", score: "", respondent_name: "", feedback: "", segment: "" });
 
-  const { data: surveys } = useQuery({
+  const { data: surveys, isLoading } = useQuery({
     queryKey: ["nps-surveys", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -309,6 +362,7 @@ export function NPSSurveysPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAdd = async () => {
@@ -334,14 +388,37 @@ export function NPSSurveysPage() {
     toast.success("Removido");
   };
 
-  // NPS calculation
   const npsSurveys = (surveys ?? []).filter((s: INpsSurvey) => s.survey_type === "nps");
   const promoters = npsSurveys.filter((s: INpsSurvey) => s.score >= 9).length;
   const detractors = npsSurveys.filter((s: INpsSurvey) => s.score <= 6).length;
-
   const npsScore = npsSurveys.length > 0 ? Math.round(((promoters - detractors) / npsSurveys.length) * 100) : null;
-
   const typeLabels: Record<string, string> = { nps: "NPS", csat: "CSAT", ces: "CES" };
+
+  if (isLoading) {
+    return (
+      <ModulePage title="NPS / CSAT / CES" subtitle="Pesquisas de satisfação e esforço do cliente" icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="glass-card p-4 text-center animate-pulse">
+              <div className="h-3 bg-muted rounded w-16 mx-auto mb-2" />
+              <div className="h-8 bg-muted rounded w-12 mx-auto" />
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="glass-card p-4 flex items-center gap-4 animate-pulse">
+              <div className="w-10 h-10 rounded-lg bg-muted" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 bg-muted rounded w-32" />
+                <div className="h-2.5 bg-muted rounded w-48" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </ModulePage>
+    );
+  }
 
   return (
     <ModulePage
@@ -362,7 +439,6 @@ export function NPSSurveysPage() {
         </div>
       }
     >
-      {/* Score Cards */}
       {npsScore !== null && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="glass-card p-4 text-center">
@@ -401,33 +477,35 @@ export function NPSSurveysPage() {
         </div>
       )}
 
-      {(surveys ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <BarChart3 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma pesquisa registrada</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Registrar primeira resposta</button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {(surveys ?? []).map((s: INpsSurvey) => (
-
-            <div key={s.id} className="glass-card p-4 flex items-center gap-4 group">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${s.survey_type === "nps" ? (s.score >= 9 ? "bg-green-500/10 text-green-500" : s.score <= 6 ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-500") : "bg-primary/10 text-primary"}`}>
-                {s.score}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-foreground">{s.respondent_name}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{typeLabels[s.survey_type]}</span>
-                  {s.segment && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{s.segment}</span>}
+      <ErrorBoundary level="section">
+        {(surveys ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={BarChart3}
+            title="Nenhuma pesquisa registrada"
+            description="Registre respostas NPS, CSAT ou CES para medir a satisfação dos usuários."
+            action={{ label: "Registrar primeira resposta", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-2">
+            {(surveys ?? []).map((s: INpsSurvey) => (
+              <div key={s.id} className="glass-card p-4 flex items-center gap-4 group">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold ${s.survey_type === "nps" ? (s.score >= 9 ? "bg-green-500/10 text-green-500" : s.score <= 6 ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-500") : "bg-primary/10 text-primary"}`}>
+                  {s.score}
                 </div>
-                {s.feedback && <p className="text-xs text-muted-foreground mt-0.5 truncate">{s.feedback}</p>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-foreground">{s.respondent_name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{typeLabels[s.survey_type]}</span>
+                    {s.segment && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">{s.segment}</span>}
+                  </div>
+                  {s.feedback && <p className="text-xs text-muted-foreground mt-0.5 truncate">{s.feedback}</p>}
+                </div>
+                <button onClick={() => handleDelete(s.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
               </div>
-              <button onClick={() => handleDelete(s.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }

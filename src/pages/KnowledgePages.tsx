@@ -6,6 +6,9 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 interface IDesignPrinciple {
   id: string;
@@ -46,7 +49,7 @@ export function DesignPrinciplesPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", example: "" });
 
-  const { data: principles } = useQuery({
+  const { data: principles, isLoading } = useQuery({
     queryKey: ["design-principles", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -55,7 +58,10 @@ export function DesignPrinciplesPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.title.trim() || !projectId) return;
@@ -111,36 +117,37 @@ export function DesignPrinciplesPage() {
         </div>
       )}
 
-      {(principles ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <Star className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum princípio de design definido</p>
-          <p className="text-xs text-muted-foreground mt-1 mb-4">Princípios de design ajudam a alinhar decisões do time.</p>
-          <button onClick={() => setAdding(true)} className="px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeiro princípio</button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
-          {(principles ?? []).map((p: IDesignPrinciple, i: number) => (
-
-            <div key={p.id} className="glass-card p-5 group animate-slide-up">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground">{i + 1}</div>
-                  <h3 className="text-sm font-bold text-foreground">{p.title}</h3>
+      <ErrorBoundary level="section">
+        {(principles ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={Star}
+            title="Nenhum princípio de design definido"
+            description="Princípios de design ajudam a alinhar decisões do time e garantir consistência na experiência."
+            action={{ label: "Criar primeiro princípio", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-children">
+            {(principles ?? []).map((p: IDesignPrinciple, i: number) => (
+              <div key={p.id} className="glass-card p-5 group animate-slide-up">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center text-sm font-bold text-primary-foreground">{i + 1}</div>
+                    <h3 className="text-sm font-bold text-foreground">{p.title}</h3>
+                  </div>
+                  <button onClick={() => handleDelete(p.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                 </div>
-                <button onClick={() => handleDelete(p.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                <p className="text-xs text-muted-foreground mt-2">{p.description}</p>
+                {p.example && (
+                  <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-1">Exemplo</p>
+                    <p className="text-xs text-foreground">{p.example}</p>
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{p.description}</p>
-              {p.example && (
-                <div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-primary mb-1">Exemplo</p>
-                  <p className="text-xs text-foreground">{p.example}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -152,7 +159,7 @@ export function DecisionLogPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ title: "", context: "", decision: "", alternatives: "", rationale: "", impact: "medium", decided_by: "" });
 
-  const { data: decisions } = useQuery({
+  const { data: decisions, isLoading } = useQuery({
     queryKey: ["decision-log", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -161,7 +168,10 @@ export function DecisionLogPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.title.trim() || !projectId) return;
@@ -230,42 +240,43 @@ export function DecisionLogPage() {
         </div>
       )}
 
-      {(decisions ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma decisão registrada</p>
-          <p className="text-xs text-muted-foreground mt-1 mb-4">Documente decisões para manter o histórico e contexto do projeto.</p>
-          <button onClick={() => setAdding(true)} className="px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Registrar primeira decisão</button>
-        </div>
-      ) : (
-        <div className="space-y-3 stagger-children">
-          {(decisions ?? []).map((d: IDecisionLog) => (
-
-            <div key={d.id} className="glass-card p-5 group animate-slide-up">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-foreground">{d.title}</h3>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${impactColors[d.impact]}`}>{d.impact === "high" ? "Alto impacto" : d.impact === "medium" ? "Médio impacto" : "Baixo impacto"}</span>
+      <ErrorBoundary level="section">
+        {(decisions ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={FileText}
+            title="Nenhuma decisão registrada"
+            description="Documente decisões para manter o histórico e contexto do projeto, evitando retrabalho e desalinhamento."
+            action={{ label: "Registrar primeira decisão", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-3 stagger-children">
+            {(decisions ?? []).map((d: IDecisionLog) => (
+              <div key={d.id} className="glass-card p-5 group animate-slide-up hover:border-primary/20 transition-all">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-foreground">{d.title}</h3>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${impactColors[d.impact]}`}>{d.impact === "high" ? "Alto impacto" : d.impact === "medium" ? "Médio impacto" : "Baixo impacto"}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{new Date(d.decided_at).toLocaleDateString("pt-BR")} {d.decided_by && `• ${d.decided_by}`}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{new Date(d.decided_at).toLocaleDateString("pt-BR")} {d.decided_by && `• ${d.decided_by}`}</p>
+                  <button onClick={() => handleDelete(d.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                 </div>
-                <button onClick={() => handleDelete(d.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                {d.context && <p className="text-xs text-muted-foreground mb-2"><span className="font-medium text-foreground">Contexto:</span> {d.context}</p>}
+                {d.decision && <p className="text-xs text-foreground mb-2"><span className="font-medium">Decisão:</span> {d.decision}</p>}
+                {d.rationale && <p className="text-xs text-muted-foreground mb-2"><span className="font-medium text-foreground">Racional:</span> {d.rationale}</p>}
+                {(d.alternatives || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {d.alternatives.map((a: string) => (
+                      <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">❌ {a}</span>
+                    ))}
+                  </div>
+                )}
               </div>
-              {d.context && <p className="text-xs text-muted-foreground mb-2"><span className="font-medium text-foreground">Contexto:</span> {d.context}</p>}
-              {d.decision && <p className="text-xs text-foreground mb-2"><span className="font-medium">Decisão:</span> {d.decision}</p>}
-              {d.rationale && <p className="text-xs text-muted-foreground mb-2"><span className="font-medium text-foreground">Racional:</span> {d.rationale}</p>}
-              {(d.alternatives || []).length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {d.alternatives.map((a: string) => (
-                    <span key={a} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">❌ {a}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -277,7 +288,7 @@ export function DesignCritiquesPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ screen_name: "", critique_type: "visual", feedback: "", severity: "medium", reviewer: "" });
 
-  const { data: critiques } = useQuery({
+  const { data: critiques, isLoading } = useQuery({
     queryKey: ["design-critiques", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -286,7 +297,10 @@ export function DesignCritiquesPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleAdd = async () => {
     if (!form.screen_name.trim() || !projectId) return;
@@ -349,32 +363,34 @@ export function DesignCritiquesPage() {
         </div>
       )}
 
-      {(critiques ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <MessageSquareMore className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhuma critique registrada</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Registrar primeira critique</button>
-        </div>
-      ) : (
-        <div className="space-y-2 stagger-children">
-          {(critiques ?? []).map((c: IDesignCritique) => (
-
-            <div key={c.id} className="glass-card p-4 group animate-slide-up">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-semibold text-foreground">{c.screen_name}</h3>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${sevColors[c.severity]}`}>{c.severity}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColors[c.status]}`}>{c.status}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground capitalize">{c.critique_type}</span>
+      <ErrorBoundary level="section">
+        {(critiques ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={MessageSquareMore}
+            title="Nenhuma critique registrada"
+            description="Colete feedback estruturado sobre as telas para iterar com qualidade."
+            action={{ label: "Registrar primeira critique", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-2 stagger-children">
+            {(critiques ?? []).map((c: IDesignCritique) => (
+              <div key={c.id} className="glass-card p-4 group animate-slide-up hover:border-primary/20 transition-all">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-semibold text-foreground">{c.screen_name}</h3>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${sevColors[c.severity]}`}>{c.severity}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusColors[c.status]}`}>{c.status}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground capitalize">{c.critique_type}</span>
+                  </div>
+                  <button onClick={() => handleDelete(c.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10 transition-all"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                 </div>
-                <button onClick={() => handleDelete(c.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                <p className="text-xs text-muted-foreground">{c.feedback}</p>
+                {c.reviewer && <p className="text-[10px] text-muted-foreground mt-2">— {c.reviewer}</p>}
               </div>
-              <p className="text-xs text-muted-foreground">{c.feedback}</p>
-              {c.reviewer && <p className="text-[10px] text-muted-foreground mt-2">— {c.reviewer}</p>}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }

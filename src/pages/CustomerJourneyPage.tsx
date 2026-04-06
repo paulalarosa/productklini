@@ -215,7 +215,7 @@ export function CustomerJourneyPage() {
                   {j.description && <p className="text-sm text-muted-foreground">{j.description}</p>}
                   {Array.isArray(j.stages) && j.stages.length > 0 && (
                     <div className="flex items-start gap-2 overflow-x-auto pb-2">
-                      {j.stages.map((s: any, idx: number) => (
+                      {j.stages.map((s, idx) => (
                         <div key={idx} className="flex items-center gap-2 shrink-0">
                           <div className="flex flex-col items-center gap-1 min-w-[100px]">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">{idx + 1}</div>

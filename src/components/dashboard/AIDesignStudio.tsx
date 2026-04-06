@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   Sparkles, Send, History, Wand2, Users, Route, CreditCard, LayoutDashboard,
   Loader2, Code2, Save, FileDown, ChevronRight, Compass, Blocks,
@@ -8,7 +8,6 @@ import {
   RotateCw, AlignLeft, Bold, Italic, Lock, Unlock, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { useAiMessages } from "@/hooks/useProjectData";
@@ -35,9 +34,57 @@ interface PreviewElement {
   locked?: boolean;
 }
 
+interface PersonaData {
+  name: string;
+  role: string;
+  age?: number | string;
+  bio: string;
+  goals: string[];
+  pain_points: string[];
+  behaviors: string[];
+}
+
+interface JourneyStage {
+  name: string;
+  description: string;
+  touchpoint: string;
+  action: string;
+  emotion: "happy" | "satisfied" | "neutral" | "confused" | "frustrated";
+  opportunity?: string;
+}
+
+interface JourneyMapData {
+  stages: JourneyStage[];
+}
+
+interface UserFlowStep {
+  id: string;
+  type: "start" | "end" | "action" | "decision" | "screen";
+  label: string;
+}
+
+interface UserFlowData {
+  steps: UserFlowStep[];
+}
+
+interface SitemapChild {
+  name: string;
+}
+
+interface SitemapPage {
+  name: string;
+  path: string;
+  children?: SitemapChild[];
+}
+
+interface SitemapData {
+  pages: SitemapPage[];
+}
+
 interface StudioResult {
   title?: string; component_name?: string; artifact_type?: string;
-  code?: string; description?: string; data?: any;
+  code?: string; description?: string; 
+  data?: PersonaData | JourneyMapData | UserFlowData | SitemapData | Record<string, unknown>;
   preview_elements?: PreviewElement[];
   flutter_code?: string;
 }
@@ -309,6 +356,12 @@ export function AIDesignStudio() {
   const loadingMsgs = mode === "ux-pilot" ? UX_LOADING : UI_LOADING;
   const currentSaved = iterations.length > 0 && iterations[0]?.savedToDS;
 
+  const deviceWidths = useMemo<Record<DeviceFrame, { w: number; label: string }>>(() => ({
+    desktop: { w: 800, label: "1440px" },
+    tablet: { w: 600, label: "768px" },
+    mobile: { w: 375, label: "375px" },
+  }), []);
+
   const getSVGPoint = useCallback((e: React.MouseEvent) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -319,7 +372,7 @@ export function AIDesignStudio() {
       x: ((e.clientX - rect.left) / rect.width) * vw,
       y: ((e.clientY - rect.top) / rect.height) * vh,
     };
-  }, [deviceFrame]);
+  }, [deviceFrame, deviceWidths]);
 
   const updateElement = useCallback((idx: number, updates: Partial<PreviewElement>) => {
     setCanvasElements(prev => prev.map((el, i) => i === idx ? { ...el, ...updates } : el));
@@ -512,11 +565,8 @@ export function AIDesignStudio() {
     toast.success("SVG exportado!");
   };
 
-  const deviceWidths: Record<DeviceFrame, { w: number; label: string }> = {
-    desktop: { w: 800, label: "1440px" },
-    tablet: { w: 600, label: "768px" },
-    mobile: { w: 375, label: "375px" },
-  };
+  // deviceWidths moved above to be used in useCallback dependency
+
 
   const selectedEl = selectedElement !== null ? canvasElements[selectedElement] : null;
 
@@ -604,40 +654,36 @@ export function AIDesignStudio() {
           )}
         </div>
 
-        {/* History */}
         <div className="border-t border-border">
           <button onClick={() => setShowHistory(!showHistory)}
             className="w-full flex items-center justify-between px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:bg-accent/30 transition-colors">
             <span className="flex items-center gap-1.5"><History className="w-3 h-3" />Histórico ({iterations.length})</span>
             <ChevronRight className={`w-3 h-3 transition-transform ${showHistory ? "rotate-90" : ""}`} />
           </button>
-          <AnimatePresence>
-            {showHistory && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="overflow-hidden border-t border-border/50"
-                style={{ maxHeight: 200, overflowY: "auto" }}>
-                {iterations.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground text-center py-4">Nenhuma iteração</p>
-                ) : iterations.map(iter => (
-                  <button key={iter.id} onClick={() => restoreIteration(iter)}
-                    className="w-full text-left px-4 py-2 border-b border-border/30 hover:bg-accent/30 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${iter.mode === "ux-pilot" ? "bg-blue-500/20 text-blue-500" : "bg-primary/20 text-primary"}`}>
-                        {iter.mode === "ux-pilot" ? "UX" : "UI"}
-                      </span>
-                      {iter.savedToDS && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-500">DS</span>}
-                      <span className="text-[10px] text-muted-foreground">{iter.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
-                    </div>
-                    <p className="text-[10px] text-foreground mt-0.5 truncate">{iter.prompt}</p>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {showHistory && (
+            <div className="overflow-hidden border-t border-border/50 animate-slide-down"
+              style={{ maxHeight: 200, overflowY: "auto" }}>
+              {iterations.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground text-center py-4">Nenhuma iteração</p>
+              ) : (
+                <div className="stagger-children">
+                  {iterations.map(iter => (
+                    <button key={iter.id} onClick={() => restoreIteration(iter)}
+                      className="w-full text-left px-4 py-2 border-b border-border/30 hover:bg-accent/30 transition-colors animate-fade-in">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${iter.mode === "ux-pilot" ? "bg-blue-500/20 text-blue-500" : "bg-primary/20 text-primary"}`}>
+                          {iter.mode === "ux-pilot" ? "UX" : "UI"}
+                        </span>
+                        {iter.savedToDS && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-500">DS</span>}
+                        <span className="text-[10px] text-muted-foreground">{iter.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                      </div>
+                      <p className="text-[10px] text-foreground mt-0.5 truncate">{iter.prompt}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -702,10 +748,9 @@ export function AIDesignStudio() {
             }} />
 
             <div className="relative z-10 p-6 min-h-full flex items-center justify-center">
-              <AnimatePresence mode="wait">
                 {/* Loading */}
                 {isLoading && (
-                  <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full max-w-2xl space-y-4">
+                  <div className="w-full max-w-2xl space-y-4 animate-fade-in">
                     <div className="flex items-center gap-3 mb-6">
                       <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                         <Sparkles className="w-4 h-4 text-primary-foreground animate-pulse" />
@@ -724,29 +769,29 @@ export function AIDesignStudio() {
                         <div className="h-3 bg-secondary/50 rounded w-1/2 animate-pulse" />
                       </div>
                     ))}
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* Empty */}
                 {!isLoading && !result && (
-                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+                  <div className="text-center animate-fade-in">
                     <div className="w-16 h-16 rounded-2xl bg-primary mx-auto mb-4 flex items-center justify-center opacity-40">
                       {mode === "ux-pilot" ? <Compass className="w-8 h-8 text-primary-foreground" /> : <Blocks className="w-8 h-8 text-primary-foreground" />}
                     </div>
                     <h3 className="text-lg font-semibold text-foreground/40 mb-1">{mode === "ux-pilot" ? "UX Pilot" : "UI Make"}</h3>
                     <p className="text-sm text-muted-foreground/60">Descreva o que vamos construir hoje</p>
                     <p className="text-[10px] text-muted-foreground/40 mt-2">Use os atalhos rápidos ou escreva seu prompt</p>
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* UX Pilot Result */}
                 {!isLoading && result && mode === "ux-pilot" && (
                   <div key="ux" className="w-full max-w-4xl animate-slide-up">
-                    {result.artifact_type === "persona" && <PersonaView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                    {result.artifact_type === "journey_map" && <JourneyMapView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                    {result.artifact_type === "user_flow" && <UserFlowView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                    {result.artifact_type === "sitemap" && <SitemapView data={result.data} title={result.title || ""} description={result.description || ""} />}
-                    {result.artifact_type === "wireframe_concept" && <GenericView data={result.data} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "persona" && <PersonaView data={result.data as PersonaData} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "journey_map" && <JourneyMapView data={result.data as JourneyMapData} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "user_flow" && <UserFlowView data={result.data as UserFlowData} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "sitemap" && <SitemapView data={result.data as SitemapData} title={result.title || ""} description={result.description || ""} />}
+                    {result.artifact_type === "wireframe_concept" && <GenericView data={result.data as Record<string, unknown>} title={result.title || ""} description={result.description || ""} />}
                   </div>
                 )}
 
@@ -860,7 +905,6 @@ export function AIDesignStudio() {
                     )}
                   </div>
                 )}
-              </AnimatePresence>
             </div>
           </div>
 
@@ -902,7 +946,7 @@ function CodePanel({ code, name, lang, onCopy }: { code: string; name: string; l
   );
 }
 
-function PersonaView({ data, title, description }: { data: any; title: string; description: string }) {
+function PersonaView({ data, title, description }: { data: PersonaData; title: string; description: string }) {
   return (
     <div className="border border-border rounded-lg p-6 bg-card space-y-5">
       <div className="flex items-start gap-4">
@@ -935,7 +979,7 @@ function PersonaView({ data, title, description }: { data: any; title: string; d
   );
 }
 
-function JourneyMapView({ data, title, description }: { data: any; title: string; description: string }) {
+function JourneyMapView({ data, title, description }: { data: JourneyMapData; title: string; description: string }) {
   const stages = data?.stages || [];
   return (
     <div className="space-y-4">
@@ -944,7 +988,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
       <div className="flex gap-2 overflow-x-auto pb-4">
-        {stages.map((stage: any, i: number) => {
+        {stages.map((stage, i) => {
           const em = emotionColors[stage.emotion] || emotionColors.neutral;
           return (
             <div key={i} className="min-w-[200px] border border-border rounded-lg p-4 bg-card flex flex-col gap-2 relative animate-slide-up" style={{ animationDelay: `${i * 80}ms` }}>
@@ -969,7 +1013,7 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
       <div className="border border-border rounded-lg p-4 bg-card">
         <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3">Curva Emocional</h4>
         <div className="flex items-end gap-1 h-16">
-          {stages.map((stage: any, i: number) => {
+          {stages.map((stage, i) => {
             const levels: Record<string, number> = { happy: 100, satisfied: 80, neutral: 50, confused: 30, frustrated: 10 };
             const h = levels[stage.emotion] || 50;
             const em = emotionColors[stage.emotion] || emotionColors.neutral;
@@ -985,14 +1029,14 @@ function JourneyMapView({ data, title, description }: { data: any; title: string
   );
 }
 
-function UserFlowView({ data, title, description }: { data: any; title: string; description: string }) {
+function UserFlowView({ data, title, description }: { data: UserFlowData; title: string; description: string }) {
   const steps = data?.steps || [];
   return (
     <div className="space-y-4">
       <div className="border border-border rounded-lg p-4 bg-card"><h2 className="text-sm font-bold text-foreground">{title}</h2><p className="text-xs text-muted-foreground mt-0.5">{description}</p></div>
       <div className="border border-border rounded-lg p-6 bg-card overflow-x-auto">
         <div className="flex flex-wrap gap-3 items-start justify-center">
-          {steps.map((step: any, i: number) => {
+          {steps.map((step, i) => {
             const color = flowNodeColors[step.type] || flowNodeColors.action;
             return (
               <div key={step.id} className="flex items-center gap-2 animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
@@ -1010,20 +1054,20 @@ function UserFlowView({ data, title, description }: { data: any; title: string; 
   );
 }
 
-function SitemapView({ data, title, description }: { data: any; title: string; description: string }) {
+function SitemapView({ data, title, description }: { data: SitemapData; title: string; description: string }) {
   const pages = data?.pages || [];
   return (
     <div className="space-y-4">
       <div className="border border-border rounded-lg p-4 bg-card"><h2 className="text-sm font-bold text-foreground">{title}</h2><p className="text-xs text-muted-foreground mt-0.5">{description}</p></div>
       <div className="border border-border rounded-lg p-6 bg-card">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {pages.map((page: any, i: number) => (
+          {pages.map((page, i) => (
             <div key={i} className="border border-border rounded-lg p-3 bg-card hover:border-primary/30 transition-colors animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
               <div className="flex items-center gap-1.5 mb-2"><div className="w-2 h-2 rounded-full bg-primary" /><span className="text-xs font-semibold text-foreground">{page.name}</span></div>
               <p className="text-[9px] text-muted-foreground font-mono">{page.path}</p>
-              {page.children?.length > 0 && (
+              {(page.children || []).length > 0 && (
                 <div className="mt-2 space-y-1 pl-3 border-l border-border/50">
-                  {page.children.map((child: any, j: number) => (
+                  {page.children?.map((child, j) => (
                     <div key={j} className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" /><span className="text-[9px] text-muted-foreground">{child.name}</span></div>
                   ))}
                 </div>
@@ -1036,7 +1080,7 @@ function SitemapView({ data, title, description }: { data: any; title: string; d
   );
 }
 
-function GenericView({ data, title, description }: { data: any; title: string; description: string }) {
+function GenericView({ data, title, description }: { data: Record<string, unknown>; title: string; description: string }) {
   return (
     <div className="border border-border rounded-lg p-6 bg-card space-y-4">
       <h2 className="text-sm font-bold text-foreground">{title}</h2>

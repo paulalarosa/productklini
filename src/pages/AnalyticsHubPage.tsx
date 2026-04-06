@@ -43,7 +43,7 @@ const TAG_STYLES: Record<string, string> = {
   accessibility: "bg-status-define/15 text-status-define border-status-define/30",
 };
 
-export const TAG_LABELS: Record<string, string> = {
+const TAG_LABELS: Record<string, string> = {
   bug:           "🐛 Bug",
   performance:   "⚡ Performance",
   praise:        "👏 Elogio",

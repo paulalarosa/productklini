@@ -12,6 +12,9 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export function HeuristicEvalPage() {
   const projectId = useCurrentProjectId();
@@ -79,17 +82,18 @@ export function HeuristicEvalPage() {
         )}
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
-          </div>
+          <PageSkeleton />
         ) : heuristics && heuristics.length > 0 ? (
-          <HeuristicsList heuristics={heuristics} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <ErrorBoundary level="section">
+            <HeuristicsList heuristics={heuristics} onDelete={(id) => deleteMutation.mutate({ id })} />
+          </ErrorBoundary>
         ) : !adding ? (
-          <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
-            <ListChecks className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">Nenhuma avaliação encontrada</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Use o botão acima para gerar ou adicionar manualmente.</p>
-          </div>
+          <EmptyState
+            icon={ListChecks}
+            title="Nenhuma avaliação encontrada"
+            description="Avalie seu produto com base nas 10 heurísticas de Nielsen para identificar problemas de usabilidade."
+            action={{ label: "Gerar Avaliação", onClick: () => {} }}
+          />
         ) : null}
       </div>
     </ModulePage>
@@ -160,17 +164,18 @@ export function UsabilityTestPage() {
         )}
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
-          </div>
+          <PageSkeleton />
         ) : tests && tests.length > 0 ? (
-          <UsabilityResults tests={tests} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <ErrorBoundary level="section">
+            <UsabilityResults tests={tests} onDelete={(id) => deleteMutation.mutate({ id })} />
+          </ErrorBoundary>
         ) : !adding ? (
-          <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
-            <PlayCircle className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">Sem testes registrados</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Documente resultados de testes com usuários reais.</p>
-          </div>
+          <EmptyState
+            icon={PlayCircle}
+            title="Sem testes registrados"
+            description="Documente resultados de testes com usuários reais para validar suas hipóteses."
+            action={{ label: "Gerar Testes", onClick: () => {} }}
+          />
         ) : null}
       </div>
     </ModulePage>
@@ -242,17 +247,18 @@ export function WCAGChecklistPage() {
         )}
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
-          </div>
+          <PageSkeleton />
         ) : audits && audits.length > 0 ? (
-          <WCAGAuditList audits={audits} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <ErrorBoundary level="section">
+            <WCAGAuditList audits={audits} onDelete={(id) => deleteMutation.mutate({ id })} />
+          </ErrorBoundary>
         ) : !adding ? (
-          <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
-            <Accessibility className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">Checklist Limpo</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Nenhuma auditoria registrada. Use a IA para varrer seus componentes.</p>
-          </div>
+          <EmptyState
+            icon={Accessibility}
+            title="Checklist Limpo"
+            description="Nenhuma auditoria registrada. Use a IA para varrer seus componentes e garantir acessibilidade."
+            action={{ label: "Gerar Auditoria WCAG", onClick: () => {} }}
+          />
         ) : null}
       </div>
     </ModulePage>

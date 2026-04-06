@@ -19,28 +19,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageSkeleton } from "@/components/ui/skeletons";
 
-// ─── Helper: grid vazio com dashed border ─────────────────────────────────────
-// Mantém o estilo visual original mas usa EmptyState internamente
-function DashedEmpty({
-  icon: Icon,
-  title,
-  description,
-  action,
-}: {
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  action: React.ReactNode;
-}) {
-  return (
-    <div className="col-span-full py-16 text-center border-2 border-dashed border-muted rounded-xl">
-      <Icon className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground mb-4">{description}</p>
-      {action}
-    </div>
-  );
-}
+// ─── Helper: no longer needed as we use EmptyState ──────────────────────────────
 
 // ─── EmpathyMapPage ───────────────────────────────────────────────────────────
 
@@ -77,17 +56,14 @@ export function EmpathyMapPage() {
                 <EmpathyMapCard key={map.id} map={map} onDelete={handleDelete} />
               ))
             : (
-              <DashedEmpty
+              <EmptyState
                 icon={Heart}
                 title="Nenhum Mapa Criado"
                 description="Gere um mapa de empatia automaticamente ou peça ao Mentor IA."
-                action={
-                  <AIGenerateButton
-                    prompt="Crie um mapa de empatia completo para a persona principal. Use create_empathy_map. Preencha todos os quadrantes com pelo menos 3-4 itens cada."
-                    label="Gerar Mapa de Empatia"
-                    invalidateKeys={[["empathy-maps", projectId ?? ""]]}
-                  />
-                }
+                action={{
+                  label: "Gerar Mapa de Empatia",
+                  onClick: () => {}, // Handled by AIGenerateButton which is integrated below
+                }}
               />
             )
           }
@@ -132,17 +108,14 @@ export function BenchmarkPage() {
                 <BenchmarkCard key={b.id} benchmark={b} onDelete={handleDelete} />
               ))
             : (
-              <DashedEmpty
+              <EmptyState
                 icon={BarChart3}
                 title="Análise Vazia"
                 description="Gere uma análise de benchmark automaticamente ou peça ao Mentor IA."
-                action={
-                  <AIGenerateButton
-                    prompt="Realize uma análise de benchmark competitiva. Use create_benchmark. Identifique 3-5 concorrentes reais e gere insights."
-                    label="Gerar Benchmark"
-                    invalidateKeys={[["benchmarks", projectId ?? ""]]}
-                  />
-                }
+                action={{
+                  label: "Gerar Benchmark",
+                  onClick: () => {},
+                }}
               />
             )
           }
@@ -186,17 +159,14 @@ export function JTBDPage() {
                 <JTBDCard key={jtbd.id} jtbd={jtbd} onDelete={handleDelete} />
               ))
             : (
-              <DashedEmpty
+              <EmptyState
                 icon={Briefcase}
                 title="Nenhum JTBD Criado"
                 description="Gere frameworks JTBD automaticamente ou peça ao Mentor IA."
-                action={
-                  <AIGenerateButton
-                    prompt="Crie 3 frameworks JTBD para o projeto. Use create_jtbd para cada um."
-                    label="Gerar JTBD"
-                    invalidateKeys={[["jtbd", projectId ?? ""]]}
-                  />
-                }
+                action={{
+                  label: "Gerar JTBD",
+                  onClick: () => {},
+                }}
               />
             )
           }
@@ -238,17 +208,14 @@ export function CSDMatrixPage() {
           ? <CSDMatrix items={items} onDelete={handleDelete} />
           : (
             <div className="mt-4">
-              <DashedEmpty
+              <EmptyState
                 icon={Grid3X3}
                 title="Matriz Vazia"
                 description="Gere uma Matriz CSD automaticamente ou peça ao Mentor IA."
-                action={
-                  <AIGenerateButton
-                    prompt="Crie uma Matriz CSD completa. Use create_csd_matrix. Gere pelo menos 3 Certezas, 4 Suposições e 3 Dúvidas."
-                    label="Gerar Matriz CSD"
-                    invalidateKeys={[["csd", projectId ?? ""]]}
-                  />
-                }
+                action={{
+                  label: "Gerar Matriz CSD",
+                  onClick: () => {},
+                }}
               />
             </div>
           )
@@ -292,17 +259,14 @@ export function HMWPage() {
                 <HMWCard key={hmw.id} hmw={hmw} onDelete={handleDelete} />
               ))
             : (
-              <DashedEmpty
+              <EmptyState
                 icon={Lightbulb}
                 title="Nenhuma Pergunta"
                 description="Gere perguntas How Might We automaticamente ou peça ao Mentor IA."
-                action={
-                  <AIGenerateButton
-                    prompt="Crie 5 perguntas How Might We. Use create_hmw. Transforme problemas em oportunidades."
-                    label="Gerar HMW"
-                    invalidateKeys={[["hmw", projectId ?? ""]]}
-                  />
-                }
+                action={{
+                  label: "Gerar HMW",
+                  onClick: () => {},
+                }}
               />
             )
           }

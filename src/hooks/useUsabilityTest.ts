@@ -29,6 +29,7 @@ export const useUsabilityTest = (projectId?: string) => {
       if (error) throw error;
       return data as UsabilityTest[];
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 

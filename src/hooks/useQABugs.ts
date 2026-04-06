@@ -29,6 +29,7 @@ export const useQABugs = (projectId?: string) => {
       if (error) throw error;
       return data as QABug[];
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 

@@ -80,7 +80,7 @@ const ABTestingPage          = lazy(() => import("./pages/ABTestingPage").then(m
 
 const ResponsiveAuditPage    = lazy(() => import("./pages/ResponsiveAuditPage").then(m => ({ default: m.ResponsiveAuditPage as unknown as React.ComponentType<unknown> })));
 const UXAnalysisPage         = lazy(() => import("./pages/UXAnalysisPage").then(m => ({ default: m.UXAnalysisPage as unknown as React.ComponentType<unknown> })));
-const EnhancedReportPage     = lazy(() => import("./pages/EnhancedReportPage").then(m => ({ default: m.EnhancedReportPage as unknown as React.ComponentType<unknown> })));
+const ReportPage             = lazy(() => import("./pages/ReportPage").then(m => ({ default: m.ReportPage as unknown as React.ComponentType<unknown> })));
 const GitSyncHubPage         = lazy(() => import("./pages/GitSyncHubPage").then(m => ({ default: m.GitSyncHubPage as unknown as React.ComponentType<unknown> })));
 const AIDesignStudioPage     = lazy(() => import("./pages/AIStudioPage").then(m => ({ default: m.AIDesignStudioPage as unknown as React.ComponentType<unknown> })));
 const ConfigPage             = lazy(() => import("./pages/ConfigPage").then(m => ({ default: m.ConfigPage as unknown as React.ComponentType<unknown> })));
@@ -213,7 +213,7 @@ const App = () => (
                 <Route path="/ab-testing" element={<ABTestingPage />} />
                 <Route path="/responsive-audit" element={<ResponsiveAuditPage />} />
                 <Route path="/ux-analysis" element={<UXAnalysisPage />} />
-                <Route path="/relatorio" element={<EnhancedReportPage />} />
+                <Route path="/relatorio" element={<ReportPage />} />
                 <Route path="/git-sync" element={<GitSyncHubPage />} />
                 <Route path="/config" element={<ConfigPage />} />
                 <Route path="/research/diary-studies" element={<DiaryStudiesPage />} />

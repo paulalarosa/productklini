@@ -12,6 +12,7 @@ type UserPoints = Tables<"user_points">;
 export function useAchievementDefinitions() {
   return useQuery({
     queryKey: ["achievement-definitions"],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("achievement_definitions")
@@ -39,6 +40,7 @@ export function useUserProgress(projectId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 }
@@ -61,6 +63,7 @@ export function useUserAchievements(projectId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 }
@@ -80,6 +83,7 @@ export function useUserPoints(projectId?: string) {
       if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 }

@@ -98,6 +98,11 @@ export type DbTokenHistoryEntry = {
   old_value: string; new_value: string; author: string; reason: string; changed_at: string;
 };
 
+export type DbNotification = {
+  id: string; project_id: string; type: string; title: string; message: string | null;
+  is_read: boolean; created_at: string;
+};
+
 // ─── Gerenciamento de projeto atual ───────────────────────────────────────────
 
 const CURRENT_PROJECT_KEY = "current_project_id";
@@ -475,6 +480,16 @@ export const fetchTokenHistory = (): Promise<DbTokenHistoryEntry[]> =>
       .eq("project_id", projectId)
       .order("changed_at", { ascending: false });
     return (data as unknown as DbTokenHistoryEntry[]) ?? [];
+  }, []);
+
+export const fetchNotifications = (): Promise<DbNotification[]> =>
+  withProject(async (projectId) => {
+    const { data } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+    return (data as unknown as DbNotification[]) ?? [];
   }, []);
 
 // ─── Seed de dados de exemplo ─────────────────────────────────────────────────

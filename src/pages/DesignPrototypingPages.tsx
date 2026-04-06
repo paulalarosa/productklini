@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { GitBranch, Image, MessageSquareMore, Plus, Trash2, Check, ArrowRight, ExternalLink } from "lucide-react";
+import { GitBranch, Image, Plus, Trash2, Check, ArrowRight, ExternalLink } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +18,7 @@ export function UserFlowEditorPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ flow_name: "", description: "", persona: "", goal: "", steps: "" });
 
-  const { data: flows } = useQuery({
+  const { data: flows, isLoading } = useQuery({
     queryKey: ["user-flows", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -25,6 +27,7 @@ export function UserFlowEditorPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAdd = async () => {
@@ -43,6 +46,24 @@ export function UserFlowEditorPage() {
     qc.invalidateQueries({ queryKey: ["user-flows"] });
     toast.success("Removido");
   };
+
+  if (isLoading) {
+    return (
+      <ModulePage title="User Flow Editor" subtitle="Fluxos de usuário visuais e interativos" icon={<GitBranch className="w-4 h-4 text-primary-foreground" />}>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="glass-card p-5 animate-pulse space-y-3">
+              <div className="h-4 bg-muted rounded w-40" />
+              <div className="h-3 bg-muted rounded w-64" />
+              <div className="flex gap-2">
+                {[...Array(4)].map((_, j) => <div key={j} className="h-6 bg-muted rounded w-16" />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ModulePage>
+    );
+  }
 
   return (
     <ModulePage title="User Flow Editor" subtitle="Fluxos de usuário visuais e interativos" icon={<GitBranch className="w-4 h-4 text-primary-foreground" />}
@@ -67,43 +88,46 @@ export function UserFlowEditorPage() {
         </div>
       )}
 
-      {(flows ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <GitBranch className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum user flow criado</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeiro fluxo</button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(flows ?? []).map((flow) => {
-            const steps = Array.isArray(flow.steps) ? (flow.steps as unknown as IFlowStep[]) : [];
-            return (
-              <div key={flow.id} className="glass-card p-5 group">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground">{flow.flow_name}</h3>
-                    <p className="text-xs text-muted-foreground">{flow.persona && `Persona: ${flow.persona} • `}{flow.goal && `Objetivo: ${flow.goal}`}</p>
-                    {flow.description && <p className="text-xs text-muted-foreground mt-1">{flow.description}</p>}
+      <ErrorBoundary level="section">
+        {(flows ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={GitBranch}
+            title="Nenhum user flow criado"
+            description="Mapeie jornadas de usuário com etapas visuais e conectadas."
+            action={{ label: "Criar primeiro fluxo", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="space-y-4">
+            {(flows ?? []).map((flow) => {
+              const steps = Array.isArray(flow.steps) ? (flow.steps as unknown as IFlowStep[]) : [];
+              return (
+                <div key={flow.id} className="glass-card p-5 group">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground">{flow.flow_name}</h3>
+                      <p className="text-xs text-muted-foreground">{flow.persona && `Persona: ${flow.persona} • `}{flow.goal && `Objetivo: ${flow.goal}`}</p>
+                      {flow.description && <p className="text-xs text-muted-foreground mt-1">{flow.description}</p>}
+                    </div>
+                    <button onClick={() => handleDelete(flow.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
                   </div>
-                  <button onClick={() => handleDelete(flow.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                  {steps.length > 0 && (
+                    <div className="flex items-center gap-1 flex-wrap mt-2">
+                      {steps.map((step, i) => (
+                        <div key={step.id || i} className="flex items-center gap-1">
+                          <span className={`text-[10px] px-2 py-1 rounded-md border ${step.type === "start" ? "bg-primary/10 border-primary/30 text-primary" : step.type === "decision" ? "bg-amber-500/10 border-amber-500/30 text-amber-600" : "bg-secondary border-border text-foreground"}`}>
+                            {step.label}
+                          </span>
+                          {i < steps.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                {steps.length > 0 && (
-                  <div className="flex items-center gap-1 flex-wrap mt-2">
-                    {steps.map((step, i) => (
-                      <div key={step.id || i} className="flex items-center gap-1">
-                        <span className={`text-[10px] px-2 py-1 rounded-md border ${step.type === "start" ? "bg-primary/10 border-primary/30 text-primary" : step.type === "decision" ? "bg-amber-500/10 border-amber-500/30 text-amber-600" : "bg-secondary border-border text-foreground"}`}>
-                          {step.label}
-                        </span>
-                        {i < steps.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground" />}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -115,7 +139,7 @@ export function MoodboardPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", tags: "", image_urls: "", color_palette: "", references_notes: "" });
 
-  const { data: boards } = useQuery({
+  const { data: boards, isLoading } = useQuery({
     queryKey: ["moodboards", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -124,6 +148,7 @@ export function MoodboardPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAdd = async () => {
@@ -148,11 +173,32 @@ export function MoodboardPage() {
     toast.success("Removido");
   };
 
+  if (isLoading) {
+    return (
+      <ModulePage title="Moodboards" subtitle="Coleção de referências visuais e inspirações" icon={<Image className="w-4 h-4 text-primary-foreground" />}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="glass-card p-5 animate-pulse space-y-3">
+              <div className="h-4 bg-muted rounded w-32" />
+              <div className="h-3 bg-muted rounded w-full" />
+              <div className="flex gap-1">
+                {[...Array(4)].map((_, j) => <div key={j} className="w-6 h-6 rounded-md bg-muted" />)}
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[...Array(6)].map((_, j) => <div key={j} className="aspect-square rounded-md bg-muted" />)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ModulePage>
+    );
+  }
+
   return (
     <ModulePage title="Moodboards" subtitle="Coleção de referências visuais e inspirações" icon={<Image className="w-4 h-4 text-primary-foreground" />}
       actions={<div className="flex items-center gap-2">
         <button onClick={() => setAdding(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"><Plus className="w-3.5 h-3.5" /> Novo Board</button>
-        <AIGenerateButton prompt="Crie 2 moodboards para o projeto com referências visuais relevantes. Use create_moodboard para cada com title, description, tags, color_palette e references_notes." label="Gerar com IA" invalidateKeys={[["moodboards"]]} size="sm" />
+        <AIGenerateButton prompt="Crie 2 moodboards para o projeto with referências visuais relevantes. Use create_moodboard para cada com title, description, tags, color_palette e references_notes." label="Gerar com IA" invalidateKeys={[["moodboards"]]} size="sm" />
       </div>}>
       {adding && (
         <div className="glass-card p-5 space-y-3 border-2 border-primary/20 mb-4">
@@ -170,49 +216,52 @@ export function MoodboardPage() {
         </div>
       )}
 
-      {(boards ?? []).length === 0 && !adding ? (
-        <div className="glass-card p-8 text-center">
-          <Image className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Nenhum moodboard criado</p>
-          <button onClick={() => setAdding(true)} className="mt-4 px-4 py-2 rounded-lg text-xs gradient-primary text-primary-foreground hover:opacity-90 font-medium">Criar primeiro moodboard</button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {(boards ?? []).map((board) => (
-            <div key={board.id} className="glass-card p-5 group">
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="text-sm font-bold text-foreground">{board.title}</h3>
-                <button onClick={() => handleDelete(board.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+      <ErrorBoundary level="section">
+        {(boards ?? []).length === 0 && !adding ? (
+          <EmptyState
+            icon={Image}
+            title="Nenhum moodboard criado"
+            description="Colecione referências visuais, paletas e inspirações para o seu produto."
+            action={{ label: "Criar primeiro moodboard", onClick: () => setAdding(true) }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {(boards ?? []).map((board) => (
+              <div key={board.id} className="glass-card p-5 group">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-sm font-bold text-foreground">{board.title}</h3>
+                  <button onClick={() => handleDelete(board.id)} className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5 text-destructive" /></button>
+                </div>
+                {board.description && <p className="text-xs text-muted-foreground mb-2">{board.description}</p>}
+                {(board.color_palette as string[])?.length > 0 && (
+                  <div className="flex gap-1 mb-2">
+                    {(board.color_palette as string[]).map((c, i) => (
+                      <div key={i} className="w-6 h-6 rounded-md border border-border" style={{ backgroundColor: c }} title={c} />
+                    ))}
+                  </div>
+                )}
+                {(board.tags as string[])?.length > 0 && (
+                  <div className="flex gap-1 flex-wrap mb-2">
+                    {(board.tags as string[]).map((t, i) => (
+                      <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{t}</span>
+                    ))}
+                  </div>
+                )}
+                {(board.image_urls as string[])?.length > 0 && (
+                  <div className="grid grid-cols-3 gap-1.5 mt-2">
+                    {(board.image_urls as string[]).slice(0, 6).map((url, i) => (
+                      <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-md bg-secondary border border-border flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
+                        <img src={url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {board.references_notes && <p className="text-[10px] text-muted-foreground mt-2 italic">{board.references_notes}</p>}
               </div>
-              {board.description && <p className="text-xs text-muted-foreground mb-2">{board.description}</p>}
-              {(board.color_palette as string[])?.length > 0 && (
-                <div className="flex gap-1 mb-2">
-                  {(board.color_palette as string[]).map((c, i) => (
-                    <div key={i} className="w-6 h-6 rounded-md border border-border" style={{ backgroundColor: c }} title={c} />
-                  ))}
-                </div>
-              )}
-              {(board.tags as string[])?.length > 0 && (
-                <div className="flex gap-1 flex-wrap mb-2">
-                  {(board.tags as string[]).map((t, i) => (
-                    <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{t}</span>
-                  ))}
-                </div>
-              )}
-              {(board.image_urls as string[])?.length > 0 && (
-                <div className="grid grid-cols-3 gap-1.5 mt-2">
-                  {(board.image_urls as string[]).slice(0, 6).map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-md bg-secondary border border-border flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors">
-                      <img src={url} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                    </a>
-                  ))}
-                </div>
-              )}
-              {board.references_notes && <p className="text-[10px] text-muted-foreground mt-2 italic">{board.references_notes}</p>}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </ErrorBoundary>
     </ModulePage>
   );
 }
@@ -240,7 +289,7 @@ export function ImpactEffortPage() {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", impact_level: "high", effort_level: "low", category: "feature" });
 
-  const { data: items } = useQuery({
+  const { data: items, isLoading } = useQuery({
     queryKey: ["impact-effort", projectId],
     queryFn: async () => {
       if (!projectId) return [];
@@ -249,6 +298,7 @@ export function ImpactEffortPage() {
       return data;
     },
     enabled: !!projectId,
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleAdd = async () => {
@@ -273,6 +323,26 @@ export function ImpactEffortPage() {
     ...quadrantLabels[q],
     items: (items ?? []).filter(i => getQuadrant(i.impact_level, i.effort_level) === q),
   }));
+
+  if (isLoading) {
+    return (
+      <ModulePage title="Impact vs Effort Matrix" subtitle="Priorização visual 2x2" icon={<ExternalLink className="w-4 h-4 text-primary-foreground" />}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-lg border border-border p-4 animate-pulse space-y-3">
+              <div className="h-4 bg-muted rounded w-24" />
+              {[...Array(2)].map((_, j) => (
+                <div key={j} className="bg-card rounded-md p-3 border border-border space-y-1.5">
+                  <div className="h-3 bg-muted rounded w-32" />
+                  <div className="h-2.5 bg-muted rounded w-48" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </ModulePage>
+    );
+  }
 
   return (
     <ModulePage title="Impact vs Effort Matrix" subtitle="Priorização visual 2x2" icon={<ExternalLink className="w-4 h-4 text-primary-foreground" />}
@@ -303,30 +373,32 @@ export function ImpactEffortPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {grouped.map(g => (
-          <div key={g.quadrant} className={`rounded-lg border p-4 ${g.color}`}>
-            <h3 className="text-sm font-bold mb-3">{g.label}</h3>
-            {g.items.length === 0 ? (
-              <p className="text-[10px] opacity-60">Nenhum item neste quadrante</p>
-            ) : (
-              <div className="space-y-2">
-                {g.items.map(item => (
-                  <div key={item.id} className="bg-card rounded-md p-3 border border-border group">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-xs font-medium text-foreground">{item.title}</p>
-                        {item.description && <p className="text-[10px] text-muted-foreground mt-0.5">{item.description}</p>}
+      <ErrorBoundary level="section">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {grouped.map(g => (
+            <div key={g.quadrant} className={`rounded-lg border p-4 ${g.color}`}>
+              <h3 className="text-sm font-bold mb-3">{g.label}</h3>
+              {g.items.length === 0 ? (
+                <p className="text-[10px] opacity-60">Nenhum item neste quadrante</p>
+              ) : (
+                <div className="space-y-2">
+                  {g.items.map(item => (
+                    <div key={item.id} className="bg-card rounded-md p-3 border border-border group">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs font-medium text-foreground">{item.title}</p>
+                          {item.description && <p className="text-[10px] text-muted-foreground mt-0.5">{item.description}</p>}
+                        </div>
+                        <button onClick={() => handleDelete(item.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10"><Trash2 className="w-3 h-3 text-destructive" /></button>
                       </div>
-                      <button onClick={() => handleDelete(item.id)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10"><Trash2 className="w-3 h-3 text-destructive" /></button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </ErrorBoundary>
     </ModulePage>
   );
 }

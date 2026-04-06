@@ -15,6 +15,7 @@ import {
   fetchDesignTokens,
   fetchTokenHistory,
   fetchAiMessages,
+  fetchNotifications,
 } from "@/lib/api";
 
 export type { Persona } from "@/lib/api";
@@ -190,6 +191,16 @@ export function useAiMessages() {
   return useQuery({
     queryKey: ["ai-messages"],
     queryFn: fetchAiMessages,
+    staleTime: STALE.realtime,
+  });
+}
+
+export function useNotifications() {
+  useRealtimeInvalidation("notifications", "notifications-realtime", ["notifications"]);
+
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: fetchNotifications,
     staleTime: STALE.realtime,
   });
 }

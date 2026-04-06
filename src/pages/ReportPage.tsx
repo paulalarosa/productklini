@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Printer, Download, FileText, Users, BarChart3, CheckSquare, Calendar, FileDown, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   todo: "bg-muted text-muted-foreground",
@@ -62,9 +63,19 @@ const tooltipStyle = {
   color: "hsl(210, 20%, 92%)",
 };
 
+// ─── Export progress label ────────────────────────────────────────────────────
+const EXPORT_STEPS = [
+  "Preparando relatório...",
+  "Renderizando gráficos...",
+  "Gerando páginas PDF...",
+  "Finalizando download...",
+];
+
 export function ReportPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportStep, setExportStep] = useState(0);
+
   const { data: project } = useProject();
   const { data: tasks } = useTasks();
   const { data: personas } = usePersonas();
@@ -75,16 +86,15 @@ export function ReportPage() {
   const now = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
 
   const tasksByStatus = {
-    todo: tasks?.filter((t) => t.status === "todo") ?? [],
+    todo:        tasks?.filter((t) => t.status === "todo")        ?? [],
     in_progress: tasks?.filter((t) => t.status === "in_progress") ?? [],
-    review: tasks?.filter((t) => t.status === "review") ?? [],
-    done: tasks?.filter((t) => t.status === "done") ?? [],
-    blocked: tasks?.filter((t) => t.status === "blocked") ?? [],
+    review:      tasks?.filter((t) => t.status === "review")      ?? [],
+    done:        tasks?.filter((t) => t.status === "done")        ?? [],
+    blocked:     tasks?.filter((t) => t.status === "blocked")     ?? [],
   };
 
   const phaseProgress = (project?.phase_progress as Record<string, number>) ?? {};
 
-  // Chart data
   const statusChartData = useMemo(() => {
     const counts: Record<string, number> = {};
     (tasks ?? []).forEach((t) => { counts[t.status] = (counts[t.status] || 0) + 1; });
@@ -105,46 +115,82 @@ export function ReportPage() {
 
   const handlePrint = () => window.print();
 
+  // ─── PDF Export ─────────────────────────────────────────────────────────────
   const handleExportPdf = async () => {
-    if (!reportRef.current) return;
+    if (!reportRef.current || exporting) return;
     setExporting(true);
+    setExportStep(0);
+
     try {
+      // Step 1: preparar
+      setExportStep(0);
       const html2canvas = (await import("html2canvas-pro")).default;
       const { jsPDF } = await import("jspdf");
+
+      // Step 2: renderizar — aguarda gráficos SVG estabilizarem
+      setExportStep(1);
+      await new Promise((r) => setTimeout(r, 400));
 
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: "#0d0e12",
+        // Força renderização de SVGs (Recharts)
+        foreignObjectRendering: false,
+        logging: false,
+        onclone: (clonedDoc) => {
+          // Garante que os SVGs do Recharts tenham dimensões explícitas
+          clonedDoc.querySelectorAll("svg").forEach((svg) => {
+            const bbox = svg.getBoundingClientRect();
+            if (!svg.getAttribute("width"))  svg.setAttribute("width",  String(bbox.width  || 300));
+            if (!svg.getAttribute("height")) svg.setAttribute("height", String(bbox.height || 200));
+          });
+        },
       });
 
-      const imgWidth = 210; // A4 mm
-      const pageHeight = 297;
+      // Step 3: gerar páginas
+      setExportStep(2);
+
+      const A4_WIDTH  = 210; // mm
+      const A4_HEIGHT = 297; // mm
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const imgData   = canvas.toDataURL("image/png", 1.0);
+      const imgWidth  = A4_WIDTH;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const pdf = new jsPDF("p", "mm", "a4");
 
-      let heightLeft = imgHeight;
-      let position = 0;
-      const imgData = canvas.toDataURL("image/png");
+      let remainingHeight = imgHeight;
+      let pageTop = 0; // posição do topo da fatia atual na imagem original (mm)
 
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      while (remainingHeight > 0) {
+        // addImage(data, format, x, y, width, height)
+        // y negativo desloca a imagem para cima, mostrando a fatia correta
+        pdf.addImage(imgData, "PNG", 0, -pageTop, imgWidth, imgHeight);
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
+        remainingHeight -= A4_HEIGHT;
+        if (remainingHeight > 0) {
+          pageTop += A4_HEIGHT;
+          pdf.addPage();
+        }
       }
 
-      pdf.save(`relatorio-${project?.name?.toLowerCase().replace(/\s+/g, "-") ?? "projeto"}.pdf`);
+      // Step 4: download
+      setExportStep(3);
+      const filename = `relatorio-${project?.name?.toLowerCase().replace(/\s+/g, "-") ?? "projeto"}.pdf`;
+      pdf.save(filename);
+
+      toast.success("PDF exportado com sucesso!");
     } catch (e) {
       console.error("PDF export failed:", e);
+      toast.error("Erro ao exportar PDF. Tente novamente.");
     } finally {
       setExporting(false);
+      setExportStep(0);
     }
   };
 
+  // ─── Markdown Export ─────────────────────────────────────────────────────────
   const handleExportMarkdown = () => {
     let md = `# Relatório do Projeto: ${project?.name ?? "Sem nome"}\n`;
     md += `> Gerado em ${now}\n\n`;
@@ -165,7 +211,7 @@ export function ReportPage() {
       md += `\n## Tarefas (${tasks.length})\n`;
       md += `| Título | Módulo | Fase | Status | Prioridade |\n|---|---|---|---|---|\n`;
       tasks.forEach((t) => {
-        md += `| ${t.title} | ${t.module} | ${phaseLabels[t.phase] ?? t.phase} | ${t.status} | ${priorityLabels[t.priority] ?? t.priority} |\n`;
+        md += `| ${t.title} | ${t.module} | ${phaseLabels[t.phase] ?? t.phase} | ${statusLabels[t.status] ?? t.status} | ${priorityLabels[t.priority] ?? t.priority} |\n`;
       });
     }
 
@@ -173,7 +219,7 @@ export function ReportPage() {
       md += `\n## Personas (${personas.length})\n`;
       personas.forEach((p) => {
         md += `### ${p.name} — ${p.role}\n`;
-        if (p.goals?.length) md += `**Objetivos:** ${p.goals.join(", ")}\n`;
+        if (p.goals?.length)       md += `**Objetivos:** ${p.goals.join(", ")}\n`;
         if (p.pain_points?.length) md += `**Dores:** ${p.pain_points.join(", ")}\n\n`;
       });
     }
@@ -194,12 +240,13 @@ export function ReportPage() {
     }
 
     const blob = new Blob([md], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
     a.download = `relatorio-${project?.name?.toLowerCase().replace(/\s+/g, "-") ?? "projeto"}.md`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success("Markdown exportado!");
   };
 
   const renderCustomLabel = ({ name, percent }: { name: string; percent: number }) =>
@@ -207,7 +254,7 @@ export function ReportPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header - hidden in print */}
+      {/* Header */}
       <div className="flex items-center justify-between print:hidden">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Relatório do Projeto</h1>
@@ -218,8 +265,10 @@ export function ReportPage() {
             <Download className="w-4 h-4 mr-1.5" /> .md
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={exporting}>
-            {exporting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <FileDown className="w-4 h-4 mr-1.5" />}
-            PDF
+            {exporting
+              ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />{EXPORT_STEPS[exportStep]}</>
+              : <><FileDown className="w-4 h-4 mr-1.5" />PDF</>
+            }
           </Button>
           <Button size="sm" onClick={handlePrint}>
             <Printer className="w-4 h-4 mr-1.5" /> Imprimir
@@ -269,10 +318,7 @@ export function ReportPage() {
                 <div key={phase}>
                   <p className="text-xs text-muted-foreground mb-1">{phaseLabels[phase] ?? phase}</p>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
+                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{pct}%</p>
                 </div>
@@ -291,7 +337,7 @@ export function ReportPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* By Status - Pie */}
+                {/* By Status */}
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-center">Por Status</p>
                   <ResponsiveContainer width="100%" height={200}>
@@ -314,7 +360,7 @@ export function ReportPage() {
                   </div>
                 </div>
 
-                {/* By Module - Pie */}
+                {/* By Module */}
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-center">Por Módulo</p>
                   <ResponsiveContainer width="100%" height={200}>
@@ -337,7 +383,7 @@ export function ReportPage() {
                   </div>
                 </div>
 
-                {/* By Phase - Bar */}
+                {/* By Phase */}
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 text-center">Por Fase</p>
                   <ResponsiveContainer width="100%" height={200}>

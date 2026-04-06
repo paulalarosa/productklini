@@ -12,6 +12,7 @@ export function useBusinessModelCanvases() {
   
   const query = useQuery({
     queryKey: ["business-model-canvas"],
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("business_model_canvas")
@@ -54,6 +55,7 @@ export function useBusinessModelCanvas(canvasId?: string) {
       if (error) throw error;
       return data;
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!canvasId,
   });
 

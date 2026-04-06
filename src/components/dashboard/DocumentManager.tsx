@@ -1,6 +1,6 @@
 import { useState, forwardRef } from "react";
-import { motion } from "framer-motion";
 import { FileText, Sparkles, Pencil, Trash2, Save, X, Plus, Loader2, Eye, EyeOff } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { getProjectId, type DbProjectDocument } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
@@ -130,8 +130,7 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
         </div>
 
         {adding && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-            className="glass-card p-5 space-y-3 border-2 border-primary/20">
+          <div className="glass-card p-5 space-y-3 border-2 border-primary/20 animate-slide-down">
             <input value={newTitle} onChange={e => setNewTitle(e.target.value)}
               placeholder="Título do documento" autoFocus
               className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50" />
@@ -146,22 +145,20 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
                 <Save className="w-3 h-3 inline mr-1" /> Salvar
               </button>
             </div>
-          </motion.div>
-        )}
-
-        {documents.length === 0 && !adding && (
-          <div className="glass-card p-8 text-center">
-            {emptyIcon}
-            <p className="text-sm text-muted-foreground mt-3">{emptyMessage}</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Use o botão "Gerar com IA" para criar um rascunho inicial ou crie manualmente.
-            </p>
           </div>
         )}
 
-        {documents.map((doc, i) => (
-          <motion.div key={doc.id} className="glass-card overflow-hidden"
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+        {documents.length === 0 && !adding && (
+          <EmptyState
+            title={emptyMessage}
+            description="Use o botão 'Gerar com IA' para criar um rascunho inicial ou crie manualmente."
+            size="page"
+          />
+        )}
+
+        <div className="stagger-children">
+          {documents.map((doc) => (
+            <div key={doc.id} className="glass-card overflow-hidden animate-fade-in">
             {editingId === doc.id ? (
               <div className="p-5 space-y-3">
                 <input value={editTitle} onChange={e => setEditTitle(e.target.value)}
@@ -241,8 +238,9 @@ export const DocumentManager = forwardRef<HTMLDivElement, Props>(
                 </div>
               </>
             )}
-          </motion.div>
+          </div>
         ))}
+      </div>
       </div>
     );
   }

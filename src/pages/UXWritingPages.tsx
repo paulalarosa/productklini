@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { MessageSquare, BookOpen, ClipboardList, Sparkles, Loader2, Plus, Check } from "lucide-react";
+import { MessageSquare, BookOpen, ClipboardList, Sparkles, Loader2, Plus, Check, FileText, Trash2 } from "lucide-react";
 import { ModulePage } from "@/components/dashboard/ModulePage";
 import { useToneOfVoice, useDeleteToneOfVoice } from "@/hooks/useToneOfVoice";
 import { useMicrocopy, useDeleteMicrocopy } from "@/hooks/useMicrocopy";
 import { ToneOfVoiceCard } from "@/components/dashboard/ToneOfVoiceCard";
 import { MicrocopyInventory } from "@/components/dashboard/MicrocopyInventory";
 import { AIGenerateButton } from "@/components/dashboard/AIGenerateButton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -70,9 +73,7 @@ export function ToneOfVoicePage() {
         )}
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
-          </div>
+          <PageSkeleton />
         ) : tones && tones.length > 0 ? (
           <div className="space-y-4">
             {tones.map((tone) => (
@@ -80,11 +81,12 @@ export function ToneOfVoicePage() {
             ))}
           </div>
         ) : !adding ? (
-          <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
-            <MessageSquare className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">Sem Guia de Tom</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Defina como seu produto deve se comunicar.</p>
-          </div>
+          <EmptyState
+            icon={MessageSquare}
+            title="Sem Guia de Tom"
+            description="Defina como seu produto deve se comunicar."
+            action={{ label: "Adicionar Tom", onClick: () => setAdding(true) }}
+          />
         ) : null}
       </div>
     </ModulePage>
@@ -154,17 +156,18 @@ export function MicrocopyLibraryPage() {
         )}
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
-          </div>
+          <PageSkeleton />
         ) : items && items.length > 0 ? (
-          <MicrocopyInventory items={items || []} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <ErrorBoundary level="section">
+            <MicrocopyInventory items={items || []} onDelete={(id) => deleteMutation.mutate({ id })} />
+          </ErrorBoundary>
         ) : !adding ? (
-          <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
-            <BookOpen className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">Biblioteca Vazia</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Documente e padronize os textos da interface.</p>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="Biblioteca Vazia"
+            description="Documente e padronize os textos da interface."
+            action={{ label: "Adicionar Microcopy", onClick: () => setAdding(true) }}
+          />
         ) : null}
       </div>
     </ModulePage>
@@ -192,17 +195,18 @@ export function ContentAuditPage() {
     >
       <div className="space-y-6">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-            <Loader2 className="w-10 h-10 animate-spin mb-4 opacity-20" />
-          </div>
+          <PageSkeleton />
         ) : items && items.length > 0 ? (
-          <MicrocopyInventory items={items || []} onDelete={(id) => deleteMutation.mutate({ id })} />
+          <ErrorBoundary level="section">
+            <MicrocopyInventory items={items || []} onDelete={(id) => deleteMutation.mutate({ id })} />
+          </ErrorBoundary>
         ) : (
-          <div className="text-center py-20 glass-card bg-card/10 border-dashed border-2">
-            <ClipboardList className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-foreground mb-2">Nenhum item auditado</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">Utilize esta aba para auditar e sugerir melhorias nos textos existentes.</p>
-          </div>
+          <EmptyState
+            icon={ClipboardList}
+            title="Nenhum item auditado"
+            description="Utilize esta aba para auditar e sugerir melhorias nos textos existentes."
+            action={{ label: "Gerar Auditoria", onClick: () => {} }}
+          />
         )}
       </div>
     </ModulePage>

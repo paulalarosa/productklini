@@ -29,6 +29,7 @@ export const useWCAG = (projectId?: string) => {
       if (error) throw error;
       return data as WCAGAudit[];
     },
+    staleTime: 5 * 60 * 1000,
     enabled: !!projectId,
   });
 

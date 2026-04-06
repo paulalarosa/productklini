@@ -4,6 +4,19 @@ import {
   fetchTasks, fetchPersonas, updateTaskStatus,
 } from "@/lib/api";
 
+interface MockSupabaseChain {
+  select:      () => MockSupabaseChain;
+  insert:      () => MockSupabaseChain;
+  update:      () => MockSupabaseChain;
+  delete:      () => MockSupabaseChain;
+  upsert:      () => MockSupabaseChain;
+  eq:          () => MockSupabaseChain;
+  order:       () => MockSupabaseChain;
+  limit:       () => MockSupabaseChain;
+  maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+  single:      () => Promise<{ data: unknown; error: unknown }>;
+}
+
 // ─── Auxiliares de Teste — restaura mock singleton do Supabase ────────────────
 async function restoreSupabase() {
   const { supabase } = await import("@/integrations/supabase/client");
@@ -18,7 +31,7 @@ async function restoreSupabase() {
     limit:       vi.fn().mockReturnThis(),
     maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     single:      vi.fn().mockResolvedValue({ data: null, error: null }),
-  } as any);
+  } as unknown as MockSupabaseChain);
 }
 
 // ─── getProjectId — promise deduplication ─────────────────────────────────────
@@ -93,7 +106,7 @@ describe("fetchTasks", () => {
       select: vi.fn().mockReturnThis(),
       eq:     vi.fn().mockReturnThis(),
       order:  vi.fn().mockResolvedValue({ data: mockData, error: null }),
-    } as any);
+    } as unknown as MockSupabaseChain);
 
     const tasks = await fetchTasks();
     expect(tasks).toHaveLength(1);
@@ -135,7 +148,7 @@ describe("updateTaskStatus", () => {
     vi.mocked(supabase.from).mockReturnValue({
       update: updateMock,
       eq:     eqMock,
-    } as any);
+    } as unknown as MockSupabaseChain);
 
     await updateTaskStatus("task-123", "done");
 
@@ -148,7 +161,7 @@ describe("updateTaskStatus", () => {
     vi.mocked(supabase.from).mockReturnValue({
       update: vi.fn().mockReturnThis(),
       eq:     vi.fn().mockResolvedValue({ error: { message: "DB error" } }),
-    } as any);
+    } as unknown as MockSupabaseChain);
 
     await expect(updateTaskStatus("task-123", "done")).rejects.toThrow();
   });

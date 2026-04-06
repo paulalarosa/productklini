@@ -10,6 +10,7 @@ import {
   Eye, PlayCircle, Filter, FileDown, Loader2
 } from "lucide-react";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageHeader, ActionBar, ResponsiveTable, type Column } from "@/components/ui/responsive-layout";
 import { notify } from "@/lib/notifications";
 
@@ -41,6 +42,47 @@ const MODULE_COLORS: Record<string, string> = {
   ui:  "bg-pink-500/10 text-pink-600",
   dev: "bg-cyan-500/10 text-cyan-600",
 };
+
+// ─── Skeletons ───────────────────────────────────────────────────────────────
+
+function QASkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="h-8 w-48 rounded bg-muted animate-pulse" />
+      <div className="border rounded-lg overflow-hidden">
+        <div className="h-10 bg-secondary/50 border-b border-border animate-pulse" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-12 border-b border-border/50 animate-pulse bg-card/30" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MetricsSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="h-8 w-40 rounded bg-muted animate-pulse" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="border rounded-lg p-4 space-y-4 bg-card animate-pulse">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted" />
+              <div className="space-y-1.5 flex-1">
+                <div className="h-3 bg-muted rounded w-1/2" />
+                <div className="h-2 bg-muted/60 rounded w-1/4" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-1.5 bg-muted rounded-full" />
+              <div className="h-2 bg-muted/60 rounded w-1/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Card de tarefa ───────────────────────────────────────────────────────────
 
@@ -255,47 +297,51 @@ export function KanbanPage() {
         }
       />
 
-      {/* Board */}
-      <div
-        ref={reportRef}
-        className="flex gap-3 overflow-x-auto pb-4"
-        // Cancela drop fora de qualquer coluna
-        onDragOver={e => e.preventDefault()}
-      >
-        {COLUMNS.map(col => {
-          const Icon = col.icon;
-          const colTasks = byStatus[col.id] ?? [];
-          return (
-            <div key={col.id} className="min-w-[240px] w-[240px] shrink-0 space-y-2">
-              {/* Cabeçalho da coluna */}
-              <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${col.bg}`}>
-                <div className="flex items-center gap-1.5">
-                  <Icon className={`w-3.5 h-3.5 ${col.color}`} />
-                  <span className="text-xs font-medium text-foreground">{col.label}</span>
+      <ErrorBoundary level="section">
+        {/* Board */}
+        <div
+          ref={reportRef}
+          className="flex gap-3 overflow-x-auto pb-4"
+          // Cancela drop fora de qualquer coluna
+          onDragOver={e => e.preventDefault()}
+        >
+          {COLUMNS.map(col => {
+            const Icon = col.icon;
+            const colTasks = byStatus[col.id] ?? [];
+            return (
+              <div key={col.id} className="min-w-[240px] w-[240px] shrink-0 space-y-2 translate-y-0 animate-fade-in">
+                {/* Cabeçalho da coluna */}
+                <div className={`flex items-center justify-between px-3 py-2 rounded-lg ${col.bg}`}>
+                  <div className="flex items-center gap-1.5">
+                    <Icon className={`w-3.5 h-3.5 ${col.color}`} />
+                    <span className="text-xs font-medium text-foreground">{col.label}</span>
+                  </div>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${col.bg} ${col.color} border border-current/20`}>
+                    {colTasks.length}
+                  </span>
                 </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${col.bg} ${col.color} border border-current/20`}>
-                  {colTasks.length}
-                </span>
-              </div>
 
-              {/* Cards */}
-              <div className="space-y-2">
-                {colTasks.length === 0 ? (
-                  <EmptyState title="Vazio" size="inline" />
-                ) : (
-                  colTasks.map(task => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onStatusChange={handleStatusChange}
-                    />
-                  ))
-                )}
+                {/* Cards */}
+                <div className="space-y-2">
+                  {colTasks.length === 0 ? (
+                    <EmptyState title="Vazio" size="inline" />
+                  ) : (
+                    <div className="stagger-children">
+                      {colTasks.map(task => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onStatusChange={handleStatusChange}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </ErrorBoundary>
     </div>
   );
 }
@@ -382,16 +428,7 @@ export function QAPage() {
     },
   ], []);
 
-  if (isLoading) return (
-    <div className="space-y-4">
-      <div className="h-8 w-24 rounded-md bg-muted animate-pulse" />
-      <div className="space-y-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
-        ))}
-      </div>
-    </div>
-  );
+  if (isLoading) return <QASkeleton />;
 
   return (
     <div className="space-y-4">
@@ -415,22 +452,24 @@ export function QAPage() {
         }
       />
 
-      {qaIssues.length === 0 ? (
-        <EmptyState
-          icon={CheckCircle2}
-          title="Nenhuma issue aberta"
-          description="Tudo certo! Não há tarefas bloqueadas ou urgentes no momento."
-          size="page"
-        />
-      ) : (
-        <div ref={reportRef}>
-          <ResponsiveTable
-            columns={columns}
-            data={qaIssues}
-            keyExtractor={(t) => t.id}
+      <ErrorBoundary level="section">
+        {qaIssues.length === 0 ? (
+          <EmptyState
+            icon={CheckCircle2}
+            title="Nenhuma issue aberta"
+            description="Tudo certo! Não há tarefas bloqueadas ou urgentes no momento."
+            size="page"
           />
-        </div>
-      )}
+        ) : (
+          <div ref={reportRef} className="animate-fade-in">
+            <ResponsiveTable
+              columns={columns}
+              data={qaIssues}
+              keyExtractor={(t) => t.id}
+            />
+          </div>
+        )}
+      </ErrorBoundary>
     </div>
   );
 }
@@ -487,16 +526,7 @@ export function TeamMetricsPage() {
     }
   };
 
-  if (isLoading) return (
-    <div className="space-y-4">
-      <div className="h-8 w-36 rounded-md bg-muted animate-pulse" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-32 rounded-lg bg-muted animate-pulse" />
-        ))}
-      </div>
-    </div>
-  );
+  if (isLoading) return <MetricsSkeleton />;
 
   return (
     <div className="space-y-4">
@@ -520,44 +550,46 @@ export function TeamMetricsPage() {
         }
       />
 
-      <div ref={reportRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {byAssignee.map(([name, stats]) => {
-          const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
-          return (
-            <div key={name} className="border rounded-lg p-4 bg-card space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
-                  {name.slice(0, 2).toUpperCase()}
+      <ErrorBoundary level="section">
+        <div ref={reportRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 animate-fade-in">
+          {byAssignee.map(([name, stats]) => {
+            const pct = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
+            return (
+              <div key={name} className="border rounded-lg p-4 bg-card space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-xs font-semibold text-primary shrink-0">
+                    {name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{name}</p>
+                    <p className="text-[10px] text-muted-foreground">{stats.total} tarefa{stats.total !== 1 ? "s" : ""}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{name}</p>
-                  <p className="text-[10px] text-muted-foreground">{stats.total} tarefa{stats.total !== 1 ? "s" : ""}</p>
+                {/* Barra de progresso */}
+                <div>
+                  <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                    <span>Progresso</span>
+                    <span>{pct}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-green-500 transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+                {/* Stats */}
+                <div className="flex gap-3 text-[10px]">
+                  <span className="text-blue-500">{stats.inProgress} em andamento</span>
+                  {stats.blocked > 0 && (
+                    <span className="text-destructive font-medium">{stats.blocked} bloqueada{stats.blocked > 1 ? "s" : ""}</span>
+                  )}
                 </div>
               </div>
-              {/* Barra de progresso */}
-              <div>
-                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                  <span>Progresso</span>
-                  <span>{pct}%</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-green-500 transition-all"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </div>
-              {/* Stats */}
-              <div className="flex gap-3 text-[10px]">
-                <span className="text-blue-500">{stats.inProgress} em andamento</span>
-                {stats.blocked > 0 && (
-                  <span className="text-destructive font-medium">{stats.blocked} bloqueada{stats.blocked > 1 ? "s" : ""}</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </ErrorBoundary>
 
       <style>{`
         @media print {
