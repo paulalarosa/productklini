@@ -133,6 +133,11 @@ const ComponentAnalyticsPage = lazy(() => import("./pages/ComponentAnalyticsPage
 const ProductPipelinePage    = lazy(() => import("./pages/ProductPipelinePage").then(m => ({ default: m.ProductPipelinePage as unknown as React.ComponentType<unknown> })));
 const StrategicContextPage   = lazy(() => import("./pages/StrategicContextPage").then(m => ({ default: m.StrategicContextPage as unknown as React.ComponentType<unknown> })));
 
+// New modules (etapa 2)
+const ResearchRepositoryPage  = lazy(() => import("./pages/ResearchRepositoryPage").then(m => ({ default: m.ResearchRepositoryPage as unknown as React.ComponentType<unknown> })));
+const AcceptanceCriteriaPage  = lazy(() => import("./pages/AcceptanceCriteriaPage").then(m => ({ default: m.AcceptanceCriteriaPage as unknown as React.ComponentType<unknown> })));
+const ReleaseNotesPage        = lazy(() => import("./pages/ReleaseNotesPage").then(m => ({ default: m.ReleaseNotesPage as unknown as React.ComponentType<unknown> })));
+
 // ─── QueryClient com configuração otimizada ───────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
