@@ -15,6 +15,7 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { notify } from "@/lib/notifications";
 
 interface Insight {
   id: string;
@@ -98,11 +99,15 @@ export function ResearchRepositoryPage() {
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ["research-repository"] });
       setOpen(false);
       setForm({ title: "", quote: "", source: "", tags: "", category: "Comportamento" });
       toast.success("Insight registrado com sucesso");
+      await notify.info(
+        "🧠 Novo Insight",
+        `O insight "${form.title}" foi adicionado ao repositório de pesquisa.`
+      );
     },
     onError: () => toast.error("Erro ao registrar insight"),
   });

@@ -59,13 +59,31 @@ export function NotificationsPanel() {
 
   // Realtime — canal dedicado para notificações
   useEffect(() => {
-    const channel = supabase
-      .channel("notifications-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => {
-        queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let channel: any;
+    
+    getProjectId().then(projectId => {
+      if (!projectId) return;
+      
+      channel = supabase
+        .channel(`notifications-${projectId}`)
+        .on(
+          "postgres_changes", 
+          { 
+            event: "*", 
+            schema: "public", 
+            table: "notifications",
+            filter: `project_id=eq.${projectId}`
+          }, 
+          () => {
+            queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          }
+        )
+        .subscribe();
+    });
+
+    return () => { 
+      if (channel) supabase.removeChannel(channel); 
+    };
   }, [queryClient]);
 
   const { data: notifications = [] } = useQuery({

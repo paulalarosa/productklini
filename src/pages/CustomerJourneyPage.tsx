@@ -14,6 +14,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageHeader } from "@/components/ui/responsive-layout";
 import { Plus, Trash2, MapPin, ArrowRight, FileDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { notify } from "@/lib/notifications";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface Journey {
@@ -66,7 +67,16 @@ export function CustomerJourneyPage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["customer-journeys"] }); setOpen(false); setForm({ journey_name: "", persona: "", description: "", stages: "", pain_points: "", opportunities: "" }); toast.success("Jornada criada!"); },
+    onSuccess: async () => {
+      qc.invalidateQueries({ queryKey: ["customer-journeys"] });
+      setOpen(false);
+      setForm({ journey_name: "", persona: "", description: "", stages: "", pain_points: "", opportunities: "" });
+      toast.success("Jornada criada!");
+      await notify.info(
+        "🗺️ Nova Jornada",
+        `O mapa da jornada "${form.journey_name}" foi criado com sucesso.`
+      );
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

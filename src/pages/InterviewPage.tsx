@@ -7,6 +7,7 @@ import { getProjectId } from "@/lib/api";
 import { getAuthHeaders } from "@/lib/authHeaders";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { notify } from "@/lib/notifications";
 
 const getAnalyzeUrl = () => `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-ux`;
 
@@ -48,6 +49,10 @@ export function InterviewTranscriberPage() {
         metadata: { source_length: text.length, analyzed_at: new Date().toISOString() },
       });
       toast.success("Análise concluída e salva!");
+      await notify.success(
+        "🎙️ Análise de Entrevista",
+        "A IA concluiu a extração de insights da sua entrevista e salvou no histórico."
+      );
     } catch {
       toast.error("Erro de conexão");
     }
