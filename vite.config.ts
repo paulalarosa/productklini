@@ -5,7 +5,6 @@ import path from "path";
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-    // Lovable tagger apenas em dev
     mode === "development" && import("lovable-tagger").then(m => m.componentTagger()),
   ].filter(Boolean),
 
@@ -14,51 +13,92 @@ export default defineConfig(({ mode }) => ({
   },
 
   build: {
-    // ── Code splitting manual por categoria ─────────────────────────────────
-    // Separa as dependências pesadas em chunks próprios para que o browser
-    // possa fazer cache independente de cada uma.
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Supabase — muda raramente, cache longo
+          // ── React core — cache máximo, muda nunca ──────────────────────────
+          if (id.includes("node_modules/react/") ||
+              id.includes("node_modules/react-dom/") ||
+              id.includes("node_modules/scheduler/")) return "react";
+
+          // ── React Router ───────────────────────────────────────────────────
+          if (id.includes("react-router")) return "router";
+
+          // ── Supabase — muda raramente ──────────────────────────────────────
           if (id.includes("@supabase")) return "supabase";
 
-          // Recharts — usado só em páginas de analytics
-          if (id.includes("recharts") || id.includes("d3-")) return "charts";
-
-          // Framer Motion — usado em poucos componentes
-          if (id.includes("framer-motion")) return "motion";
-
-          // jsPDF + html2canvas — usados só no export de PDF
-          if (id.includes("jspdf") || id.includes("html2canvas")) return "pdf";
-
-          // Radix UI — base do shadcn/ui
+          // ── Radix UI — base do shadcn/ui ───────────────────────────────────
           if (id.includes("@radix-ui")) return "radix";
 
-          // React core
-          if (id.includes("react-dom") || id.includes("react/")) return "react";
+          // ── Tanstack Query ─────────────────────────────────────────────────
+          if (id.includes("@tanstack")) return "query";
 
-          // date-fns — grande, mas tree-shakeable
+          // ── Recharts separado por submódulo ───────────────────────────────
+          // d3-shape, d3-scale, etc. são importados internamente pelo recharts
+          if (id.includes("recharts")) return "recharts";
+          if (id.includes("/d3-")) return "d3";
+
+          // ── PDF — carregado lazily só no ReportPage ────────────────────────
+          if (id.includes("jspdf"))        return "jspdf";
+          if (id.includes("html2canvas")) return "html2canvas";
+
+          // ── Framer Motion ──────────────────────────────────────────────────
+          if (id.includes("framer-motion")) return "motion";
+
+          // ── date-fns ───────────────────────────────────────────────────────
           if (id.includes("date-fns")) return "dates";
 
-          // react-markdown
-          if (id.includes("react-markdown") || id.includes("remark") || id.includes("rehype")) return "markdown";
+          // ── Markdown pipeline ──────────────────────────────────────────────
+          if (id.includes("react-markdown") ||
+              id.includes("remark") ||
+              id.includes("rehype") ||
+              id.includes("micromark") ||
+              id.includes("unified") ||
+              id.includes("mdast") ||
+              id.includes("hast"))         return "markdown";
+
+          // ── Lucide icons — grande mas tree-shakeable ───────────────────────
+          if (id.includes("lucide-react")) return "icons";
+
+          // ── Sonner (toasts) ────────────────────────────────────────────────
+          if (id.includes("sonner")) return "ui-utils";
+
+          // ── cmdk (Command Palette) ─────────────────────────────────────────
+          if (id.includes("cmdk")) return "ui-utils";
+
+          // ── Restante do node_modules → vendor genérico ─────────────────────
+          if (id.includes("node_modules")) return "vendor";
         },
       },
     },
 
-    // Avisa quando um chunk ultrapassar 500 KB
-    chunkSizeWarningLimit: 500,
+    // Avisa acima de 600 KB (pdf é inevitavelmente grande)
+    chunkSizeWarningLimit: 600,
 
-    // Minificação agressiva em produção
+    // esbuild é mais rápido que terser e produz resultado similar
     minify: "esbuild",
     target: "es2020",
+
+    // Gera sourcemaps apenas em staging (não em prod puro)
+    sourcemap: mode === "staging",
   },
 
   server: {
-    host:        "::",
-    port:        8080,
-    // Evita erros de CORS com Supabase em dev
-    strictPort:  false,
+    host: "::",
+    port: 8080,
+    strictPort: false,
+  },
+
+  // Otimiza deps que são sempre usadas — pré-bundladas em dev
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "@supabase/supabase-js",
+    ],
+    // Exclui as pesadas — carregadas lazily
+    exclude: ["jspdf", "html2canvas-pro"],
   },
 }));

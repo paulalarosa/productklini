@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Users, Target, Lightbulb, Layers } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Check, Loader2, Users, Target, Lightbulb, Layers, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { createNewProject, setCurrentProjectId } from "@/lib/api";
 import { toast } from "sonner";
@@ -146,10 +146,17 @@ export function ProjectSetupWizard({ onComplete }: { onComplete: () => void }) {
             <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shrink-0">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-bold text-foreground">Criar Novo Projeto</h2>
               <p className="text-xs text-muted-foreground">Preencha as informações iniciais para começar</p>
             </div>
+            <button
+              onClick={onComplete}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              title="Fechar"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
           {/* Step indicators */}
           <div className="flex gap-2">
