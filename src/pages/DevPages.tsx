@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useCallback } from "react";
 import { useTasks } from "@/hooks/useProjectData";
 import { updateTaskStatus, type DbTask } from "@/lib/api";
-import { KanbanSkeleton } from "@/components/ui/skeletons";
+import { KanbanSkeleton, PageSkeleton } from "@/components/ui/skeletons";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,47 +42,6 @@ const MODULE_COLORS: Record<string, string> = {
   ui:  "bg-pink-500/10 text-pink-600",
   dev: "bg-cyan-500/10 text-cyan-600",
 };
-
-// ─── Skeletons ───────────────────────────────────────────────────────────────
-
-function QASkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="h-8 w-48 rounded bg-muted animate-pulse" />
-      <div className="border rounded-lg overflow-hidden">
-        <div className="h-10 bg-secondary/50 border-b border-border animate-pulse" />
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 border-b border-border/50 animate-pulse bg-card/30" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function MetricsSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="h-8 w-40 rounded bg-muted animate-pulse" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="border rounded-lg p-4 space-y-4 bg-card animate-pulse">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-muted" />
-              <div className="space-y-1.5 flex-1">
-                <div className="h-3 bg-muted rounded w-1/2" />
-                <div className="h-2 bg-muted/60 rounded w-1/4" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="h-1.5 bg-muted rounded-full" />
-              <div className="h-2 bg-muted/60 rounded w-1/3" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // ─── Card de tarefa ───────────────────────────────────────────────────────────
 
@@ -428,7 +387,7 @@ export function QAPage() {
     },
   ], []);
 
-  if (isLoading) return <QASkeleton />;
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <div className="space-y-4">
@@ -526,7 +485,7 @@ export function TeamMetricsPage() {
     }
   };
 
-  if (isLoading) return <MetricsSkeleton />;
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <div className="space-y-4">

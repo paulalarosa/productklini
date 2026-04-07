@@ -8,6 +8,7 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageSkeleton } from "@/components/ui/skeletons";
 
 const categoryLabels: Record<string, string> = { direct: "Direto", indirect: "Indireto", substitute: "Substituto", potential: "Potencial" };
 const categoryColors: Record<string, string> = { direct: "bg-destructive/10 text-destructive", indirect: "bg-amber-500/10 text-amber-600", substitute: "bg-blue-500/10 text-blue-600", potential: "bg-secondary text-muted-foreground" };
@@ -51,31 +52,7 @@ export function CompetitiveLandscapePage() {
     toast.success("Removido");
   };
 
-  if (isLoading) {
-    return (
-      <ModulePage title="Competitive Landscape" subtitle="Mapeamento visual de concorrentes" icon={<Globe className="w-4 h-4 text-primary-foreground" />}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="glass-card p-5 animate-pulse space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="h-4 bg-muted rounded w-28" />
-                <div className="h-4 bg-muted rounded w-14" />
-              </div>
-              <div className="h-3 bg-muted rounded w-full" />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  {[...Array(3)].map((_, j) => <div key={j} className="h-2.5 bg-muted rounded w-full" />)}
-                </div>
-                <div className="space-y-1.5">
-                  {[...Array(3)].map((_, j) => <div key={j} className="h-2.5 bg-muted rounded w-full" />)}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage title="Competitive Landscape" subtitle="Mapeamento visual de concorrentes" icon={<Globe className="w-4 h-4 text-primary-foreground" />}

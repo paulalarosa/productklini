@@ -10,6 +10,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { toast } from "sonner";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 const statusColors: Record<string, string> = {
   todo: "bg-muted text-muted-foreground",
@@ -76,12 +79,14 @@ export function ReportPage() {
   const [exporting, setExporting] = useState(false);
   const [exportStep, setExportStep] = useState(0);
 
-  const { data: project } = useProject();
-  const { data: tasks } = useTasks();
-  const { data: personas } = usePersonas();
-  const { data: metrics } = useUxMetrics();
-  const { data: docs } = useDocuments();
-  const { data: team } = useTeamMembers();
+  const { data: project, isLoading: loadingProject } = useProject();
+  const { data: tasks, isLoading: loadingTasks } = useTasks();
+  const { data: personas, isLoading: loadingPersonas } = usePersonas();
+  const { data: metrics, isLoading: loadingMetrics } = useUxMetrics();
+  const { data: docs, isLoading: loadingDocs } = useDocuments();
+  const { data: team, isLoading: loadingTeam } = useTeamMembers();
+
+  const isLoading = loadingProject || loadingTasks || loadingPersonas || loadingMetrics || loadingDocs || loadingTeam;
 
   const now = format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: ptBR });
 
@@ -252,6 +257,12 @@ export function ReportPage() {
   const renderCustomLabel = ({ name, percent }: { name: string; percent: number }) =>
     percent > 0.05 ? `${name}: ${(percent * 100).toFixed(0)}%` : "";
 
+  if (isLoading) return <PageSkeleton />;
+
+  if (!project && !isLoading) {
+    return <EmptyState title="Projeto não encontrado" size="page" />;
+  }
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -276,7 +287,8 @@ export function ReportPage() {
         </div>
       </div>
 
-      <div ref={reportRef} className="space-y-6">
+      <ErrorBoundary level="section">
+        <div ref={reportRef} className="space-y-6">
         {/* Print header */}
         <div className="hidden print:block mb-6">
           <h1 className="text-3xl font-bold">{project?.name}</h1>
@@ -595,6 +607,7 @@ export function ReportPage() {
           </Card>
         )}
       </div>
+    </ErrorBoundary>
 
       {/* Print styles */}
       <style>{`

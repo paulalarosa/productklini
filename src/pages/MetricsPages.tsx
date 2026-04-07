@@ -8,6 +8,7 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageSkeleton } from "@/components/ui/skeletons";
 
 interface IHeartMetric {
   id: string;
@@ -90,28 +91,7 @@ export function HEARTFrameworkPage() {
     toast.success("Removido");
   };
 
-  if (isLoading) {
-    return (
-      <ModulePage title="HEART Framework" subtitle="Happiness, Engagement, Adoption, Retention, Task Success" icon={<Heart className="w-4 h-4 text-primary-foreground" />}>
-        <div className="space-y-6">
-          {HEART_CATEGORIES.map(cat => (
-            <div key={cat.key}>
-              <div className="h-3 bg-muted rounded w-24 mb-3 animate-pulse" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[...Array(2)].map((_, i) => (
-                  <div key={i} className="glass-card p-4 animate-pulse space-y-2">
-                    <div className="h-4 bg-muted rounded w-32" />
-                    <div className="h-3 bg-muted rounded w-48" />
-                    <div className="h-1.5 bg-muted rounded-full w-full mt-3" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage
@@ -245,27 +225,7 @@ export function NorthStarPage() {
     toast.success("Removido");
   };
 
-  if (isLoading) {
-    return (
-      <ModulePage title="North Star Metric" subtitle="A métrica que mais importa para o produto" icon={<Star className="w-4 h-4 text-primary-foreground" />}>
-        <div className="space-y-4">
-          {[...Array(2)].map((_, i) => (
-            <div key={i} className="glass-card p-6 border-2 border-primary/10 animate-pulse">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-muted" />
-                <div className="space-y-1.5">
-                  <div className="h-4 bg-muted rounded w-40" />
-                  <div className="h-3 bg-muted rounded w-56" />
-                </div>
-              </div>
-              <div className="h-8 bg-muted rounded w-24 mb-2" />
-              <div className="h-2 bg-muted rounded-full w-full" />
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage
@@ -394,31 +354,7 @@ export function NPSSurveysPage() {
   const npsScore = npsSurveys.length > 0 ? Math.round(((promoters - detractors) / npsSurveys.length) * 100) : null;
   const typeLabels: Record<string, string> = { nps: "NPS", csat: "CSAT", ces: "CES" };
 
-  if (isLoading) {
-    return (
-      <ModulePage title="NPS / CSAT / CES" subtitle="Pesquisas de satisfação e esforço do cliente" icon={<BarChart3 className="w-4 h-4 text-primary-foreground" />}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="glass-card p-4 text-center animate-pulse">
-              <div className="h-3 bg-muted rounded w-16 mx-auto mb-2" />
-              <div className="h-8 bg-muted rounded w-12 mx-auto" />
-            </div>
-          ))}
-        </div>
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="glass-card p-4 flex items-center gap-4 animate-pulse">
-              <div className="w-10 h-10 rounded-lg bg-muted" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 bg-muted rounded w-32" />
-                <div className="h-2.5 bg-muted rounded w-48" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage

@@ -8,6 +8,7 @@ import { useCurrentProjectId } from "@/hooks/useCurrentProjectId";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { PageSkeleton } from "@/components/ui/skeletons";
 
 // ─── User Flow Editor ───
 interface IFlowStep { id: string; label: string; description: string; type: string; }
@@ -47,23 +48,7 @@ export function UserFlowEditorPage() {
     toast.success("Removido");
   };
 
-  if (isLoading) {
-    return (
-      <ModulePage title="User Flow Editor" subtitle="Fluxos de usuário visuais e interativos" icon={<GitBranch className="w-4 h-4 text-primary-foreground" />}>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="glass-card p-5 animate-pulse space-y-3">
-              <div className="h-4 bg-muted rounded w-40" />
-              <div className="h-3 bg-muted rounded w-64" />
-              <div className="flex gap-2">
-                {[...Array(4)].map((_, j) => <div key={j} className="h-6 bg-muted rounded w-16" />)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage title="User Flow Editor" subtitle="Fluxos de usuário visuais e interativos" icon={<GitBranch className="w-4 h-4 text-primary-foreground" />}
@@ -173,26 +158,7 @@ export function MoodboardPage() {
     toast.success("Removido");
   };
 
-  if (isLoading) {
-    return (
-      <ModulePage title="Moodboards" subtitle="Coleção de referências visuais e inspirações" icon={<Image className="w-4 h-4 text-primary-foreground" />}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="glass-card p-5 animate-pulse space-y-3">
-              <div className="h-4 bg-muted rounded w-32" />
-              <div className="h-3 bg-muted rounded w-full" />
-              <div className="flex gap-1">
-                {[...Array(4)].map((_, j) => <div key={j} className="w-6 h-6 rounded-md bg-muted" />)}
-              </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {[...Array(6)].map((_, j) => <div key={j} className="aspect-square rounded-md bg-muted" />)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage title="Moodboards" subtitle="Coleção de referências visuais e inspirações" icon={<Image className="w-4 h-4 text-primary-foreground" />}
@@ -324,25 +290,7 @@ export function ImpactEffortPage() {
     items: (items ?? []).filter(i => getQuadrant(i.impact_level, i.effort_level) === q),
   }));
 
-  if (isLoading) {
-    return (
-      <ModulePage title="Impact vs Effort Matrix" subtitle="Priorização visual 2x2" icon={<ExternalLink className="w-4 h-4 text-primary-foreground" />}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-lg border border-border p-4 animate-pulse space-y-3">
-              <div className="h-4 bg-muted rounded w-24" />
-              {[...Array(2)].map((_, j) => (
-                <div key={j} className="bg-card rounded-md p-3 border border-border space-y-1.5">
-                  <div className="h-3 bg-muted rounded w-32" />
-                  <div className="h-2.5 bg-muted rounded w-48" />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </ModulePage>
-    );
-  }
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <ModulePage title="Impact vs Effort Matrix" subtitle="Priorização visual 2x2" icon={<ExternalLink className="w-4 h-4 text-primary-foreground" />}

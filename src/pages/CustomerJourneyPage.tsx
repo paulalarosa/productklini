@@ -16,6 +16,7 @@ import { Plus, Trash2, MapPin, ArrowRight, FileDown, Loader2 } from "lucide-reac
 import { toast } from "sonner";
 import { notify } from "@/lib/notifications";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PageSkeleton } from "@/components/ui/skeletons";
 
 interface Journey {
   id: string;
@@ -112,10 +113,10 @@ export function CustomerJourneyPage() {
     } catch (error) {
       console.error("PDF export failed:", error);
       toast.error("Erro ao gerar PDF");
-    } finally {
-      setExporting(false);
-    }
+    } finally { setExporting(false); }
   };
+
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -186,9 +187,7 @@ export function CustomerJourneyPage() {
       />
 
       <ErrorBoundary level="section">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Carregando...</p>
-        ) : journeys.length === 0 ? (
+        {journeys.length === 0 ? (
           <EmptyState
             icon={MapPin}
             title="Nenhuma jornada mapeada"

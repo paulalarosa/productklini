@@ -25,6 +25,8 @@ import {
 } from "@/hooks/useProjectData";
 import { PageHeader, ActionBar, MetricCard } from "@/components/ui/responsive-layout";
 import { notify } from "@/lib/notifications";
+import { PageSkeleton } from "@/components/ui/skeletons";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const SENTIMENT_COLORS = {
   positive: "hsl(160, 70%, 50%)",
@@ -80,7 +82,8 @@ export function AnalyticsHubPage() {
   const { data: funnel, isLoading: loadingFunnel } = useFunnelSteps();
   const { data: reviews, isLoading: loadingReviews } = useAppReviews();
 
-  const isEmpty = !loadingSnapshots && (!snapshots || snapshots.length === 0);
+  const isLoading = loadingSnapshots || loadingFunnel || loadingReviews;
+  const isEmpty = !isLoading && (!snapshots || snapshots.length === 0);
 
   const handleSeedData = async () => {
     setSeeding(true);
@@ -170,8 +173,10 @@ export function AnalyticsHubPage() {
     if (positiveCount > total * 0.6) recommendations.push("Sentimento majoritariamente positivo! Aproveite para solicitar reviews e melhorar o ranking na loja.");
     if (recommendations.length === 0) recommendations.push("Métricas equilibradas. Continue monitorando tendências semanalmente.");
 
-    return { total, sorted, topIssues, praiseCount, negativeCount, positiveCount, recommendations };
+    return { total, positiveCount: positiveCount, negativeCount: negativeCount, sorted, recommendations };
   }, [reviews]);
+
+  if (isLoading) return <PageSkeleton />;
 
   const handleExportPDF = () => {
     if (!aiInsightsSummary) {
@@ -421,7 +426,8 @@ export function AnalyticsHubPage() {
   }
 
   return (
-    <div className="p-3 md:p-6 space-y-6 max-w-[1400px] mx-auto">
+    <ErrorBoundary level="section">
+      <div className="p-3 md:p-6 space-y-6 max-w-[1400px] mx-auto">
       <PageHeader
         title="Analytics & Continuous Feedback"
         description="Métricas de uso + voz do usuário, interpretados por IA"
@@ -775,5 +781,6 @@ export function AnalyticsHubPage() {
         )}
       </div>
     </div>
-  );
+  </ErrorBoundary>
+);
 }
