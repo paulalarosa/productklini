@@ -300,7 +300,7 @@ export function HEARTFrameworkPage() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((m: any) => {
+            {filtered.map((m: IHeartMetric) => {
               const cat = HEART_CATEGORIES.find(c => c.key === m.category) || HEART_CATEGORIES[0];
               const curVal = m.current_value;
               const tarVal = m.target_value;
